@@ -1,6 +1,5 @@
 #pragma once
 
-#include <juce_core/juce_core.h>
 #include <juce_events/juce_events.h>
 #include <SDL3/SDL.h>
 #include <functional>

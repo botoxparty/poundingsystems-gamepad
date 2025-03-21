@@ -36,7 +36,7 @@ bool GamepadManager::initSDL()
 void GamepadManager::cleanupSDL()
 {
     // Close all open gamepads
-    for (int i = 0; i < MAX_GAMEPADS; ++i)
+    for (size_t i = 0; i < MAX_GAMEPADS; ++i)
     {
         if (sdlGamepads[i] != nullptr)
         {
@@ -67,14 +67,14 @@ void GamepadManager::updateGamepadStates()
     handleSDLEvents();
     
     // Check for new gamepads
-    for (int i = 0; i < MAX_GAMEPADS; ++i)
+    for (size_t i = 0; i < MAX_GAMEPADS; ++i)
     {
         if (sdlGamepads[i] == nullptr)
         {
             // Try to open the gamepad using device index
-            if (SDL_IsGamepad(i))
+            if (SDL_IsGamepad(static_cast<int>(i)))
             {
-                sdlGamepads[i] = SDL_OpenGamepad(i);
+                sdlGamepads[i] = SDL_OpenGamepad(static_cast<int>(i));
                 if (sdlGamepads[i] != nullptr)
                 {
                     gamepadStates[i].connected = true;
@@ -92,12 +92,12 @@ void GamepadManager::updateGamepadStates()
     // Update states of connected gamepads
     bool stateChanged = false;
     
-    for (int i = 0; i < MAX_GAMEPADS; ++i)
+    for (size_t i = 0; i < MAX_GAMEPADS; ++i)
     {
         if (sdlGamepads[i] != nullptr)
         {
             // Update axes
-            for (int axis = 0; axis < MAX_AXES; ++axis)
+            for (size_t axis = 0; axis < MAX_AXES; ++axis)
             {
                 SDL_GamepadAxis sdlAxis = SDL_GAMEPAD_AXIS_INVALID;
                 
@@ -132,7 +132,7 @@ void GamepadManager::updateGamepadStates()
             }
             
             // Update buttons
-            for (int button = 0; button < MAX_BUTTONS; ++button)
+            for (size_t button = 0; button < MAX_BUTTONS; ++button)
             {
                 SDL_GamepadButton sdlButton = SDL_GAMEPAD_BUTTON_INVALID;
                 
@@ -192,7 +192,7 @@ void GamepadManager::handleSDLEvents()
         else if (event.type == SDL_EVENT_GAMEPAD_REMOVED)
         {
             // Find which gamepad was disconnected
-            for (int i = 0; i < MAX_GAMEPADS; ++i)
+            for (size_t i = 0; i < MAX_GAMEPADS; ++i)
             {
                 if (sdlGamepads[i] != nullptr && SDL_GetGamepadID(sdlGamepads[i]) == event.gdevice.which)
                 {
@@ -224,7 +224,7 @@ const GamepadManager::GamepadState& GamepadManager::getGamepadState(int index) c
 {
     // Ensure index is in range
     jassert(index >= 0 && index < MAX_GAMEPADS);
-    return gamepadStates[index];
+    return gamepadStates[static_cast<size_t>(index)];
 }
 
 int GamepadManager::getNumConnectedGamepads() const
@@ -241,7 +241,7 @@ int GamepadManager::getNumConnectedGamepads() const
 bool GamepadManager::isGamepadConnected(int index) const
 {
     if (index >= 0 && index < MAX_GAMEPADS)
-        return gamepadStates[index].connected;
+        return gamepadStates[static_cast<size_t>(index)].connected;
     return false;
 }
 
