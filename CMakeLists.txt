@@ -36,6 +36,28 @@ enable_language(C)
 
 project(${PROJECT_NAME} VERSION ${CURRENT_VERSION} LANGUAGES C CXX)
 
+# macOS specific configuration
+if(APPLE)
+    # Define that we're on macOS for conditional compilation
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DJUCE_MAC=1")
+    
+    # Critical: explicitly disable App Sandbox for MIDI virtual devices
+    set(CMAKE_XCODE_ATTRIBUTE_ENABLE_APP_SANDBOX "NO")
+    
+    # Make sure we use the hardened runtime (required for notarization)
+    set(CMAKE_XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME "YES")
+    
+    # Force proper code signing for MIDI functionality
+    set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Apple Development")
+    set(CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "")  # Add your team ID here if you have one
+    set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "YES")
+    set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "YES")
+    set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic")
+    
+    # Allow unsigned libraries for MIDI drivers
+    set(CMAKE_XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS "--deep --options=runtime")
+endif()
+
 # Set output directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
@@ -62,7 +84,23 @@ juce_add_gui_app(${PROJECT_NAME}
     BUNDLE_ID "${BUNDLE_ID}"
     PRODUCT_NAME "${PRODUCT_NAME}"
     OSX_ARCHITECTURE "arm64"
+    MICROPHONE_PERMISSION_ENABLED TRUE
+    MICROPHONE_PERMISSION_TEXT "This app requires microphone access to enable MIDI device creation."
+    DOCUMENT_BROWSER_ENABLED FALSE
+    HARDENED_RUNTIME_ENABLED TRUE
+    APP_SANDBOX_ENABLED FALSE
+    DOCUMENT_EXTENSIONS ""
+    PUSH_NOTIFICATIONS_ENABLED FALSE
+    FILE_SHARING_ENABLED FALSE
+    PLIST_TO_MERGE "${CMAKE_CURRENT_SOURCE_DIR}/packaging/Info.plist"
 )
+
+# Set entitlements for macOS
+if(APPLE)
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS "${CMAKE_CURRENT_SOURCE_DIR}/packaging/GamepadMIDI.entitlements"
+    )
+endif()
 
 # Add source files
 file(GLOB_RECURSE SourceFiles CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/source/*.h")
@@ -146,3 +184,7 @@ if(APPLE)
         message(WARNING "SDL3 library not found. The application may not run correctly.")
     endif()
 endif()
+
+add_custom_command(TARGET "${PROJECT_NAME}" POST_BUILD
+    COMMAND codesign --force --sign - --entitlements "${CMAKE_CURRENT_SOURCE_DIR}/packaging/GamepadMIDI.entitlements" "$<TARGET_FILE_DIR:${PROJECT_NAME}>/../.."
+    COMMENT "Signing app with entitlements")

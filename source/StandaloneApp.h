@@ -20,6 +20,14 @@ private:
     void handleGamepadStateChange();
     void setupMidiMappings();
     
+    // State tracking
+    struct GamepadState {
+        float axes[GamepadManager::MAX_AXES] = {};
+        bool buttons[GamepadManager::MAX_BUTTONS] = {};
+        bool connected = false;
+    };
+    std::array<GamepadState, GamepadManager::MAX_GAMEPADS> previousGamepadStates;
+    
     // UI Components
     juce::Label titleLabel;
     juce::Label statusLabel;

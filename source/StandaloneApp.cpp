@@ -112,35 +112,47 @@ void StandaloneApp::handleGamepadStateChange()
     // Process each gamepad's state
     for (int gamepadIndex = 0; gamepadIndex < GamepadManager::MAX_GAMEPADS; ++gamepadIndex)
     {
-        const auto& state = gamepadManager.getGamepadState(gamepadIndex);
-        
-        if (state.connected)
+        const auto& currentState = gamepadManager.getGamepadState(gamepadIndex);
+        auto& previousState = previousGamepadStates[gamepadIndex];
+
+        if (currentState.connected)
         {
-            // Process axes
+            // Process axes - only send if changed
             for (int axisIndex = 0; axisIndex < GamepadManager::MAX_AXES; ++axisIndex)
             {
-                const auto& mapping = axisMappings[gamepadIndex][axisIndex];
-                float normalizedValue = (state.axes[axisIndex] + 1.0f) * 0.5f; // Convert -1..1 to 0..1
-                int midiValue = juce::jmap(normalizedValue, 0.0f, 1.0f, 
-                                         static_cast<float>(mapping.minValue), 
-                                         static_cast<float>(mapping.maxValue));
-                midiOutput.sendControlChange(mapping.channel, mapping.ccNumber, midiValue);
+                if (currentState.axes[axisIndex] != previousState.axes[axisIndex])
+                {
+                    const auto& mapping = axisMappings[gamepadIndex][axisIndex];
+                    float normalizedValue = (currentState.axes[axisIndex] + 1.0f) * 0.5f;
+                    int midiValue = juce::jmap(normalizedValue, 0.0f, 1.0f, 
+                                             static_cast<float>(mapping.minValue), 
+                                             static_cast<float>(mapping.maxValue));
+                    
+                    midiOutput.sendControlChange(mapping.channel, mapping.ccNumber, midiValue);
+                    
+                    // Update previous state
+                    previousState.axes[axisIndex] = currentState.axes[axisIndex];
+                }
             }
             
-            // Process buttons
+            // Process buttons - only send if changed
             for (int buttonIndex = 0; buttonIndex < GamepadManager::MAX_BUTTONS; ++buttonIndex)
             {
-                const auto& mapping = buttonMappings[gamepadIndex][buttonIndex];
-                if (state.buttons[buttonIndex])
+                if (currentState.buttons[buttonIndex] != previousState.buttons[buttonIndex])
                 {
-                    midiOutput.sendControlChange(mapping.channel, mapping.ccNumber, mapping.maxValue);
-                }
-                else
-                {
-                    midiOutput.sendControlChange(mapping.channel, mapping.ccNumber, mapping.minValue);
+                    const auto& mapping = buttonMappings[gamepadIndex][buttonIndex];
+                    int midiValue = currentState.buttons[buttonIndex] ? mapping.maxValue : mapping.minValue;
+                    
+                    midiOutput.sendControlChange(mapping.channel, mapping.ccNumber, midiValue);
+                    
+                    // Update previous state
+                    previousState.buttons[buttonIndex] = currentState.buttons[buttonIndex];
                 }
             }
         }
+        
+        // Update connection state
+        previousState.connected = currentState.connected;
     }
 }
 
@@ -149,11 +161,11 @@ void StandaloneApp::setupMidiMappings()
     // Set up default MIDI mappings for each gamepad
     for (int gamepadIndex = 0; gamepadIndex < GamepadManager::MAX_GAMEPADS; ++gamepadIndex)
     {
-        // Map axes to CC 1-6 on channel 1 (0-based)
+        // Map axes to CC 1-6 on channel 1 (JUCE uses 1-16 for channels)
         for (int axisIndex = 0; axisIndex < GamepadManager::MAX_AXES; ++axisIndex)
         {
             axisMappings[gamepadIndex][axisIndex] = {
-                0, // channel (0-based)
+                1, // channel (1-based for JUCE)
                 axisIndex + 1, // CC number
                 0, // min value
                 127, // max value
@@ -161,11 +173,11 @@ void StandaloneApp::setupMidiMappings()
             };
         }
         
-        // Map buttons to CC 20-34 on channel 1 (0-based)
+        // Map buttons to CC 20-34 on channel 1 (JUCE uses 1-16 for channels)
         for (int buttonIndex = 0; buttonIndex < GamepadManager::MAX_BUTTONS; ++buttonIndex)
         {
             buttonMappings[gamepadIndex][buttonIndex] = {
-                0, // channel (0-based)
+                1, // channel (1-based for JUCE)
                 buttonIndex + 20, // CC number
                 0, // min value
                 127, // max value
