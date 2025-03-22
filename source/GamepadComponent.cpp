@@ -73,21 +73,21 @@ void GamepadComponent::paint(juce::Graphics& g)
     // Face buttons (right side)
     auto faceButtonsArea = bounds.removeFromRight(bounds.getWidth() * 0.25f).reduced(10.0f);
     
-    // A, B, X, Y buttons in a diamond pattern
+    // A, B, X, Y buttons in a diamond pattern (exactly matching D-pad pattern)
     float fbCenterX = faceButtonsArea.getCentreX();
     float fbCenterY = faceButtonsArea.getCentreY();
     
-    // A button (bottom)
-    buttonVisuals[0].bounds = juce::Rectangle<float>(fbCenterX - buttonSize/2, fbCenterY + buttonSize, buttonSize, buttonSize);
+    // Y button (top) - matches D-pad Up
+    buttonVisuals[3].bounds = juce::Rectangle<float>(fbCenterX - buttonSize/2, fbCenterY - buttonSize*1.5f, buttonSize, buttonSize);
     
-    // B button (right)
-    buttonVisuals[1].bounds = juce::Rectangle<float>(fbCenterX + buttonSize, fbCenterY - buttonSize/2, buttonSize, buttonSize);
+    // A button (bottom) - matches D-pad Down
+    buttonVisuals[0].bounds = juce::Rectangle<float>(fbCenterX - buttonSize/2, fbCenterY + buttonSize/2, buttonSize, buttonSize);
     
-    // X button (left)
+    // X button (left) - matches D-pad Left
     buttonVisuals[2].bounds = juce::Rectangle<float>(fbCenterX - buttonSize*1.5f, fbCenterY - buttonSize/2, buttonSize, buttonSize);
     
-    // Y button (top)
-    buttonVisuals[3].bounds = juce::Rectangle<float>(fbCenterX - buttonSize/2, fbCenterY - buttonSize*1.5f, buttonSize, buttonSize);
+    // B button (right) - matches D-pad Right
+    buttonVisuals[1].bounds = juce::Rectangle<float>(fbCenterX + buttonSize/2, fbCenterY - buttonSize/2, buttonSize, buttonSize);
     
     // D-Pad (left side)
     auto dpadArea = bounds.removeFromLeft(bounds.getWidth() * 0.33f).reduced(10.0f);
