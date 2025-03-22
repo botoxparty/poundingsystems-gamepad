@@ -17,8 +17,8 @@ GamepadManager::~GamepadManager()
 
 bool GamepadManager::initSDL()
 {
-    // Initialize SDL with gamepad subsystem first
-    if (SDL_Init(SDL_INIT_GAMEPAD) < 0)
+    // Initialize SDL with gamepad and joystick subsystems
+    if (SDL_Init(SDL_INIT_GAMEPAD | SDL_INIT_JOYSTICK) < 0)
     {
         juce::String errorMsg = "SDL could not initialize! SDL Error: " + juce::String(SDL_GetError());
         juce::Logger::writeToLog(errorMsg);
@@ -91,8 +91,23 @@ void GamepadManager::updateGamepadStates()
                 {
                     gamepadStates[i].connected = true;
                     gamepadStates[i].name = SDL_GetGamepadName(sdlGamepads[i]);
-                    SDL_JoystickID deviceId = SDL_GetGamepadID(sdlGamepads[i]);
-                    juce::Logger::writeToLog("Gamepad connected: " + gamepadStates[i].name + " (Device ID: " + juce::String(deviceId) + ")");
+                    gamepadStates[i].deviceId = SDL_GetGamepadID(sdlGamepads[i]);
+                    SDL_Joystick* joystick = SDL_GetGamepadJoystick(sdlGamepads[i]);
+                    
+                    // Add detailed joystick information
+                    if (joystick != nullptr)
+                    {
+                        SDL_JoystickID joyId = SDL_GetJoystickID(joystick);
+                        juce::Logger::writeToLog("Detailed joystick info:");
+                        juce::Logger::writeToLog(" - Joystick instance ID: " + juce::String(joyId));
+                        juce::Logger::writeToLog(" - Is game gamepad: " + juce::String((int)SDL_IsGamepad(joyId)));
+                    }
+                    
+                    juce::Logger::writeToLog("Gamepad details:");
+                    juce::Logger::writeToLog(" - Name: " + gamepadStates[i].name);
+                    juce::Logger::writeToLog(" - Gamepad ID: " + juce::String(gamepadStates[i].deviceId));
+                    juce::Logger::writeToLog(" - Joystick Instance ID: " + juce::String(SDL_GetGamepadID(sdlGamepads[i])));
+                    juce::Logger::writeToLog(" - Index used: " + juce::String(i));
                     
                     // Enable gyroscope if available
                     bool hasSensor = SDL_GamepadHasSensor(sdlGamepads[i], SDL_SENSOR_GYRO);
@@ -146,6 +161,28 @@ void GamepadManager::updateGamepadStates()
             {
                 float gyroData[3] = {0.0f, 0.0f, 0.0f};  // Initialize to zero
                 
+                // Get the current joystick instance to verify it's still valid
+                SDL_Joystick* joystick = SDL_GetGamepadJoystick(sdlGamepads[i]);
+                if (joystick == nullptr)
+                {
+                    // Joystick became invalid, disable gyroscope
+                    gamepadStates[i].gyroscope.enabled = false;
+                    juce::Logger::writeToLog("Gyroscope disabled - invalid joystick handle");
+                    continue;
+                }
+
+                // Verify sensor is still enabled before reading
+                if (!SDL_GamepadSensorEnabled(sdlGamepads[i], SDL_SENSOR_GYRO))
+                {
+                    // Try to re-enable the sensor
+                    if (SDL_SetGamepadSensorEnabled(sdlGamepads[i], SDL_SENSOR_GYRO, true) != 0)
+                    {
+                        gamepadStates[i].gyroscope.enabled = false;
+                        juce::Logger::writeToLog("Failed to re-enable gyroscope: " + juce::String(SDL_GetError()));
+                        continue;
+                    }
+                }
+                
                 // Try to read sensor data
                 int readResult = SDL_GetGamepadSensorData(sdlGamepads[i], SDL_SENSOR_GYRO, gyroData, 3);
                 if (readResult == 0)  // Success
@@ -188,9 +225,27 @@ void GamepadManager::updateGamepadStates()
                     static bool errorLogged = false;
                     if (!errorLogged)
                     {
-                        juce::Logger::writeToLog("Failed to get gyroscope data (code " + juce::String(readResult) + 
-                                               "): " + juce::String(SDL_GetError()));
-                        errorLogged = true;  // Only log the first error
+                        SDL_JoystickID joyId = SDL_GetGamepadID(sdlGamepads[i]);
+                        SDL_Joystick* joystick = SDL_GetGamepadJoystick(sdlGamepads[i]);
+                        
+                        juce::Logger::writeToLog("Gyroscope read error details:");
+                        juce::Logger::writeToLog(" - Error code: " + juce::String(readResult));
+                        juce::Logger::writeToLog(" - SDL Error: " + juce::String(SDL_GetError()));
+                        juce::Logger::writeToLog(" - Gamepad ID: " + juce::String(joyId));
+                        if (joystick)
+                        {
+                            juce::Logger::writeToLog(" - Joystick ID: " + juce::String(SDL_GetJoystickID(joystick)));
+                        }
+                        juce::Logger::writeToLog(" - Index: " + juce::String(i));
+                        errorLogged = true;
+                        
+                        // Check if the gamepad is still valid
+                        if (SDL_GetGamepadFromID(joyId) == nullptr)
+                        {
+                            juce::Logger::writeToLog("Gamepad no longer valid, disabling gyroscope");
+                            gamepadStates[i].gyroscope.enabled = false;
+                            continue;
+                        }
                         
                         // Try to re-enable the sensor
                         if (SDL_SetGamepadSensorEnabled(sdlGamepads[i], SDL_SENSOR_GYRO, true) == 0)

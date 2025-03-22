@@ -146,10 +146,15 @@ target_link_libraries(SharedCode
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags
+        Assets
 )
 
 # Link the main target with SharedCode
-target_link_libraries(${PROJECT_NAME} PRIVATE SharedCode)
+target_link_libraries(${PROJECT_NAME} 
+    PRIVATE 
+        SharedCode
+        Assets
+)
 
 # Set C++20 standard
 target_compile_features(SharedCode INTERFACE cxx_std_20)
@@ -184,6 +189,11 @@ if(APPLE)
         message(WARNING "SDL3 library not found. The application may not run correctly.")
     endif()
 endif()
+
+juce_add_binary_data(Assets 
+    SOURCES
+        assets/images/PoundingSystemsLogo.png
+)
 
 add_custom_command(TARGET "${PROJECT_NAME}" POST_BUILD
     COMMAND codesign --force --sign - --entitlements "${CMAKE_CURRENT_SOURCE_DIR}/packaging/GamepadMIDI.entitlements" "$<TARGET_FILE_DIR:${PROJECT_NAME}>/../.."

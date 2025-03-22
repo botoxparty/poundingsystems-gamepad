@@ -29,6 +29,7 @@ public:
     struct GamepadState
     {
         bool connected = false;
+        SDL_JoystickID deviceId = 0;  // Using 0 as sentinel value for uninitialized device
         std::array<float, MAX_AXES> axes = {0};       // Values from -1.0 to 1.0
         std::array<bool, MAX_BUTTONS> buttons = {false};
         juce::String name;

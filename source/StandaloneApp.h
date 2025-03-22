@@ -4,6 +4,7 @@
 #include "GamepadManager.h"
 #include "MidiOutputManager.h"
 #include "GamepadComponent.h"
+#include "BinaryData.h"
 
 class StandaloneApp : public juce::Component,
                       private juce::Timer
@@ -33,6 +34,7 @@ private:
     juce::Label statusLabel;
     juce::ComboBox midiDeviceSelector;
     std::array<std::unique_ptr<GamepadComponent>, GamepadManager::MAX_GAMEPADS> gamepadComponents;
+    juce::ImageComponent logoComponent;
     
     // Managers
     GamepadManager gamepadManager;

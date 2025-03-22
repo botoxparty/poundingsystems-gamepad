@@ -29,6 +29,12 @@ StandaloneApp::StandaloneApp()
         addChildComponent(gamepadComponents[i].get());
     }
     
+    // Set up logo
+    auto logoImage = juce::ImageCache::getFromMemory(BinaryData::PoundingSystemsLogo_png, BinaryData::PoundingSystemsLogo_pngSize);
+    logoComponent.setImage(logoImage);
+    logoComponent.setImagePlacement(juce::RectanglePlacement::centred | juce::RectanglePlacement::onlyReduceInSize);
+    addAndMakeVisible(logoComponent);
+    
     // Set up MIDI mappings
     setupMidiMappings();
     
@@ -63,19 +69,21 @@ void StandaloneApp::resized()
     statusLabel.setBounds(topArea.removeFromTop(30));
     midiDeviceSelector.setBounds(topArea.withSizeKeepingCentre(300, 25));
     
-    // Position gamepad components
+    // Position gamepad components - use all remaining space except logo height
+    auto logoHeight = 23;
+    auto gamepadArea = area.withTrimmedBottom(logoHeight + 10); // Just 10px gap before logo
     int connectedGamepads = gamepadManager.getNumConnectedGamepads();
     
     if (connectedGamepads > 0)
     {
-        int heightPerGamepad = area.getHeight() / connectedGamepads;
+        int heightPerGamepad = gamepadArea.getHeight() / connectedGamepads;
         
         int visibleCount = 0;
         for (int i = 0; i < GamepadManager::MAX_GAMEPADS; ++i)
         {
             if (gamepadManager.isGamepadConnected(i))
             {
-                auto componentBounds = area.removeFromTop(heightPerGamepad).reduced(10);
+                auto componentBounds = gamepadArea.removeFromTop(heightPerGamepad).reduced(10);
                 gamepadComponents[i]->setBounds(componentBounds);
                 gamepadComponents[i]->setVisible(true);
                 visibleCount++;
@@ -86,6 +94,12 @@ void StandaloneApp::resized()
             }
         }
     }
+
+    // Position logo at the bottom
+    auto bottomArea = getLocalBounds();
+    bottomArea.removeFromTop(getHeight() - logoHeight);
+    bottomArea.reduce(5, 0); // 5px padding on left and right
+    logoComponent.setBounds(bottomArea);
 }
 
 void StandaloneApp::timerCallback()
