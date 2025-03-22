@@ -374,6 +374,66 @@ void GamepadComponent::paint(juce::Graphics& g)
                    juce::Justification::centred, 
                    false);
     }
+
+    // Draw gyroscope data if enabled
+    if (cachedState.gyroscope.enabled)
+    {
+        // Create a box for gyroscope visualization below the touchpad
+        auto gyroArea = juce::Rectangle<float>(
+            touchpadBounds.getX(),
+            touchpadBounds.getBottom() + 40.0f,
+            touchpadBounds.getWidth(),
+            60.0f
+        );
+
+        // Draw gyroscope background
+        g.setColour(juce::Colours::darkgrey.brighter(0.1f));
+        g.fillRoundedRectangle(gyroArea, 5.0f);
+        g.setColour(juce::Colours::lightgrey);
+        g.drawRoundedRectangle(gyroArea, 5.0f, 1.0f);
+
+        // Draw gyroscope label
+        g.setColour(juce::Colours::white);
+        g.setFont(14.0f);
+        g.drawText("Gyroscope", 
+                   gyroArea.removeFromTop(20.0f), 
+                   juce::Justification::centred, 
+                   false);
+
+        // Display gyroscope values
+        juce::String gyroText = juce::String::formatted("X: %.2f Y: %.2f Z: %.2f rad/s",
+                                                       cachedState.gyroscope.x,
+                                                       cachedState.gyroscope.y,
+                                                       cachedState.gyroscope.z);
+        g.setColour(juce::Colours::white);
+        g.setFont(12.0f);
+        g.drawText(gyroText,
+                   gyroArea,
+                   juce::Justification::centred,
+                   false);
+
+        // Draw rotation indicators
+        float indicatorWidth = gyroArea.getWidth() / 3.0f;
+        float maxRotation = 10.0f; // Maximum rotation rate to visualize (rad/s)
+
+        // X axis (roll)
+        float xNormalized = juce::jlimit(-1.0f, 1.0f, cachedState.gyroscope.x / maxRotation);
+        g.setColour(juce::Colours::red.withAlpha(0.8f));
+        g.fillRect(gyroArea.getX(), gyroArea.getCentreY() - 2.0f,
+                  indicatorWidth * (xNormalized + 1.0f) / 2.0f, 4.0f);
+
+        // Y axis (pitch)
+        float yNormalized = juce::jlimit(-1.0f, 1.0f, cachedState.gyroscope.y / maxRotation);
+        g.setColour(juce::Colours::green.withAlpha(0.8f));
+        g.fillRect(gyroArea.getX() + indicatorWidth, gyroArea.getCentreY() - 2.0f,
+                  indicatorWidth * (yNormalized + 1.0f) / 2.0f, 4.0f);
+
+        // Z axis (yaw)
+        float zNormalized = juce::jlimit(-1.0f, 1.0f, cachedState.gyroscope.z / maxRotation);
+        g.setColour(juce::Colours::blue.withAlpha(0.8f));
+        g.fillRect(gyroArea.getX() + indicatorWidth * 2.0f, gyroArea.getCentreY() - 2.0f,
+                  indicatorWidth * (zNormalized + 1.0f) / 2.0f, 4.0f);
+    }
 }
 
 void GamepadComponent::resized()

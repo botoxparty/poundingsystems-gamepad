@@ -17,12 +17,24 @@ GamepadManager::~GamepadManager()
 
 bool GamepadManager::initSDL()
 {
-    // Initialize SDL with gamepad subsystem
+    // Initialize SDL with gamepad subsystem first
     if (SDL_Init(SDL_INIT_GAMEPAD) < 0)
     {
         juce::String errorMsg = "SDL could not initialize! SDL Error: " + juce::String(SDL_GetError());
         juce::Logger::writeToLog(errorMsg);
         return false;
+    }
+
+    // Initialize sensor subsystem separately
+    if (SDL_InitSubSystem(SDL_INIT_SENSOR) < 0)
+    {
+        juce::String errorMsg = "SDL sensor subsystem could not initialize! SDL Error: " + juce::String(SDL_GetError());
+        juce::Logger::writeToLog(errorMsg);
+        // Continue anyway, as gamepad might still work without sensors
+    }
+    else
+    {
+        juce::Logger::writeToLog("SDL sensor subsystem initialized successfully");
     }
     
     sdlInitialized = true;
@@ -79,7 +91,40 @@ void GamepadManager::updateGamepadStates()
                 {
                     gamepadStates[i].connected = true;
                     gamepadStates[i].name = SDL_GetGamepadName(sdlGamepads[i]);
-                    juce::Logger::writeToLog("Gamepad connected: " + gamepadStates[i].name);
+                    SDL_JoystickID deviceId = SDL_GetGamepadID(sdlGamepads[i]);
+                    juce::Logger::writeToLog("Gamepad connected: " + gamepadStates[i].name + " (Device ID: " + juce::String(deviceId) + ")");
+                    
+                    // Enable gyroscope if available
+                    bool hasSensor = SDL_GamepadHasSensor(sdlGamepads[i], SDL_SENSOR_GYRO);
+                    juce::Logger::writeToLog("Gyroscope support check for " + gamepadStates[i].name + ": " + (hasSensor ? "Supported" : "Not supported"));
+                    
+                    if (hasSensor)
+                    {
+                        // Log sensor capabilities
+                        float data_rate = SDL_GetGamepadSensorDataRate(sdlGamepads[i], SDL_SENSOR_GYRO);
+                        juce::Logger::writeToLog("Gyroscope data rate: " + juce::String(data_rate) + " Hz");
+                        
+                        // Try to enable the sensor
+                        int result = SDL_SetGamepadSensorEnabled(sdlGamepads[i], SDL_SENSOR_GYRO, true);
+                        juce::Logger::writeToLog("Enable sensor result: " + juce::String(result));
+                        
+                        // Check if sensor is actually enabled
+                        if (SDL_GamepadSensorEnabled(sdlGamepads[i], SDL_SENSOR_GYRO))
+                        {
+                            gamepadStates[i].gyroscope.enabled = true;
+                            juce::Logger::writeToLog("Gyroscope confirmed enabled for: " + gamepadStates[i].name);
+                            
+                            // Try an immediate sensor read to verify
+                            float testData[3];
+                            int readResult = SDL_GetGamepadSensorData(sdlGamepads[i], SDL_SENSOR_GYRO, testData, 3);
+                            juce::Logger::writeToLog("Initial sensor read result: " + juce::String(readResult) + 
+                                                   " (Error: " + juce::String(SDL_GetError()) + ")");
+                        }
+                        else
+                        {
+                            juce::Logger::writeToLog("Failed to enable gyroscope (state check failed): " + juce::String(SDL_GetError()));
+                        }
+                    }
                     
                     // Notify callbacks
                     for (auto& callback : stateChangeCallbacks)
@@ -96,6 +141,67 @@ void GamepadManager::updateGamepadStates()
     {
         if (sdlGamepads[i] != nullptr)
         {
+            // Update gyroscope data if enabled
+            if (gamepadStates[i].gyroscope.enabled)
+            {
+                float gyroData[3] = {0.0f, 0.0f, 0.0f};  // Initialize to zero
+                
+                // Try to read sensor data
+                int readResult = SDL_GetGamepadSensorData(sdlGamepads[i], SDL_SENSOR_GYRO, gyroData, 3);
+                if (readResult == 0)  // Success
+                {
+                    bool gyroChanged = false;
+                    static int logCounter = 0;  // Static counter to limit log frequency
+                    
+                    // Check if values have changed significantly (apply small threshold)
+                    if (std::abs(gamepadStates[i].gyroscope.x - gyroData[0]) > 0.01f)
+                    {
+                        gamepadStates[i].gyroscope.x = gyroData[0];
+                        gyroChanged = true;
+                    }
+                    if (std::abs(gamepadStates[i].gyroscope.y - gyroData[1]) > 0.01f)
+                    {
+                        gamepadStates[i].gyroscope.y = gyroData[1];
+                        gyroChanged = true;
+                    }
+                    if (std::abs(gamepadStates[i].gyroscope.z - gyroData[2]) > 0.01f)
+                    {
+                        gamepadStates[i].gyroscope.z = gyroData[2];
+                        gyroChanged = true;
+                    }
+                    
+                    if (gyroChanged)
+                    {
+                        stateChanged = true;
+                        
+                        // Log gyro data occasionally to avoid flooding
+                        if (++logCounter >= 30)  // Log every ~30th change
+                        {
+                            logCounter = 0;
+                            juce::Logger::writeToLog(juce::String::formatted("Gyro data - X: %.2f, Y: %.2f, Z: %.2f",
+                                                                           gyroData[0], gyroData[1], gyroData[2]));
+                        }
+                    }
+                }
+                else
+                {
+                    static bool errorLogged = false;
+                    if (!errorLogged)
+                    {
+                        juce::Logger::writeToLog("Failed to get gyroscope data (code " + juce::String(readResult) + 
+                                               "): " + juce::String(SDL_GetError()));
+                        errorLogged = true;  // Only log the first error
+                        
+                        // Try to re-enable the sensor
+                        if (SDL_SetGamepadSensorEnabled(sdlGamepads[i], SDL_SENSOR_GYRO, true) == 0)
+                        {
+                            juce::Logger::writeToLog("Re-enabled gyroscope after error");
+                            errorLogged = false;  // Reset error log flag to catch any new errors
+                        }
+                    }
+                }
+            }
+            
             // Update axes
             for (size_t axis = 0; axis < MAX_AXES; ++axis)
             {

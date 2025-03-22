@@ -2,6 +2,8 @@
 
 #include <juce_events/juce_events.h>
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_sensor.h>
+#include <SDL3/SDL_joystick.h>
 #include <functional>
 #include <array>
 #include <vector>
@@ -40,6 +42,15 @@ public:
             float pressure = 0.0f; // 0.0 to 1.0
         };
         TouchpadState touchpad;
+
+        // Gyroscope support
+        struct GyroscopeState {
+            bool enabled = false;
+            float x = 0.0f; // Rotation rate around X axis in radians/second
+            float y = 0.0f; // Rotation rate around Y axis in radians/second
+            float z = 0.0f; // Rotation rate around Z axis in radians/second
+        };
+        GyroscopeState gyroscope;
     };
     
     GamepadManager();
