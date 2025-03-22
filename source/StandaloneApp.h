@@ -30,7 +30,6 @@ private:
     std::array<GamepadState, GamepadManager::MAX_GAMEPADS> previousGamepadStates;
     
     // UI Components
-    juce::Label titleLabel;
     juce::Label statusLabel;
     juce::ComboBox midiDeviceSelector;
     std::array<std::unique_ptr<GamepadComponent>, GamepadManager::MAX_GAMEPADS> gamepadComponents;

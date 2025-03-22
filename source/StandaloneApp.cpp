@@ -2,16 +2,10 @@
 
 StandaloneApp::StandaloneApp()
 {
-    // Set up title label
-    titleLabel.setText("Gamepad MIDI Controller", juce::dontSendNotification);
-    titleLabel.setFont(juce::Font(24.0f, juce::Font::bold));
-    titleLabel.setJustificationType(juce::Justification::centred);
-    addAndMakeVisible(titleLabel);
-    
     // Set up status label
     statusLabel.setText("No gamepads connected", juce::dontSendNotification);
-    statusLabel.setFont(juce::Font(16.0f));
-    statusLabel.setJustificationType(juce::Justification::centred);
+    statusLabel.setFont(juce::Font(14.0f));
+    statusLabel.setJustificationType(juce::Justification::centredLeft);
     addAndMakeVisible(statusLabel);
     
     // Set up MIDI device selector
@@ -61,17 +55,18 @@ void StandaloneApp::resized()
 {
     auto area = getLocalBounds().reduced(20);
     
-    // Position title at the top
-    titleLabel.setBounds(area.removeFromTop(40));
+    // Create status bar at the top
+    auto statusBarHeight = 25;
+    auto statusBar = area.removeFromTop(statusBarHeight);
     
-    // Position status and MIDI device selector
-    auto topArea = area.removeFromTop(60);
-    statusLabel.setBounds(topArea.removeFromTop(30));
-    midiDeviceSelector.setBounds(topArea.withSizeKeepingCentre(300, 25));
+    // Layout status bar: connection status on left, MIDI selector on right
+    auto statusWidth = 200;
+    statusLabel.setBounds(statusBar.removeFromLeft(statusWidth));
+    midiDeviceSelector.setBounds(statusBar.withSizeKeepingCentre(300, statusBarHeight));
     
     // Position gamepad components - use all remaining space except logo height
     auto logoHeight = 23;
-    auto gamepadArea = area.withTrimmedBottom(logoHeight + 10); // Just 10px gap before logo
+    auto gamepadArea = area.withTrimmedBottom(logoHeight + 5); // Just 5px gap before logo
     int connectedGamepads = gamepadManager.getNumConnectedGamepads();
     
     if (connectedGamepads > 0)
