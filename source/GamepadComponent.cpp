@@ -378,44 +378,69 @@ void GamepadComponent::paint(juce::Graphics& g)
         // Draw gyroscope label
         g.setColour(juce::Colours::white);
         g.setFont(14.0f);
+        auto headerArea = gyroArea.removeFromTop(20.0f);
         g.drawText("Gyroscope", 
-                   gyroArea.removeFromTop(20.0f), 
+                   headerArea, 
                    juce::Justification::centred, 
                    false);
 
-        // Display gyroscope values
-        juce::String gyroText = juce::String::formatted("X: %.2f Y: %.2f Z: %.2f rad/s",
-                                                       cachedState.gyroscope.x,
-                                                       cachedState.gyroscope.y,
-                                                       cachedState.gyroscope.z);
-        g.setColour(juce::Colours::white);
-        g.setFont(12.0f);
-        g.drawText(gyroText,
-                   gyroArea,
-                   juce::Justification::centred,
-                   false);
-
-        // Draw rotation indicators
-        float indicatorWidth = gyroArea.getWidth() / 3.0f;
+        // Split the remaining area into three rows for each axis
+        float rowHeight = gyroArea.getHeight() / 3.0f;
+        float valueWidth = 80.0f; // Width for the value text
+        float barHeight = 6.0f;   // Height of the indicator bar
         float maxRotation = 10.0f; // Maximum rotation rate to visualize (rad/s)
-
-        // X axis (roll)
+        
+        // X axis (roll) - Red
+        auto xRow = gyroArea.removeFromTop(rowHeight);
+        auto xValueArea = xRow.removeFromLeft(valueWidth);
+        auto xBarArea = xRow.withHeight(barHeight).withY(xRow.getCentreY() - barHeight/2);
+        
         float xNormalized = juce::jlimit(-1.0f, 1.0f, cachedState.gyroscope.x / maxRotation);
-        g.setColour(juce::Colours::red.withAlpha(0.8f));
-        g.fillRect(gyroArea.getX(), gyroArea.getCentreY() - 2.0f,
-                  indicatorWidth * (xNormalized + 1.0f) / 2.0f, 4.0f);
-
-        // Y axis (pitch)
+        
+        // Draw X label and value
+        g.setColour(juce::Colours::red);
+        g.setFont(12.0f);
+        g.drawText("X: " + juce::String(cachedState.gyroscope.x, 2) + " rad/s",
+                  xValueArea,
+                  juce::Justification::centredLeft,
+                  false);
+        
+        // Draw X bar
+        g.fillRect(xBarArea.withWidth(xBarArea.getWidth() * (xNormalized + 1.0f) / 2.0f));
+        
+        // Y axis (pitch) - Green
+        auto yRow = gyroArea.removeFromTop(rowHeight);
+        auto yValueArea = yRow.removeFromLeft(valueWidth);
+        auto yBarArea = yRow.withHeight(barHeight).withY(yRow.getCentreY() - barHeight/2);
+        
         float yNormalized = juce::jlimit(-1.0f, 1.0f, cachedState.gyroscope.y / maxRotation);
-        g.setColour(juce::Colours::green.withAlpha(0.8f));
-        g.fillRect(gyroArea.getX() + indicatorWidth, gyroArea.getCentreY() - 2.0f,
-                  indicatorWidth * (yNormalized + 1.0f) / 2.0f, 4.0f);
-
-        // Z axis (yaw)
+        
+        // Draw Y label and value
+        g.setColour(juce::Colours::green);
+        g.drawText("Y: " + juce::String(cachedState.gyroscope.y, 2) + " rad/s",
+                  yValueArea,
+                  juce::Justification::centredLeft,
+                  false);
+        
+        // Draw Y bar
+        g.fillRect(yBarArea.withWidth(yBarArea.getWidth() * (yNormalized + 1.0f) / 2.0f));
+        
+        // Z axis (yaw) - Blue
+        auto zRow = gyroArea;
+        auto zValueArea = zRow.removeFromLeft(valueWidth);
+        auto zBarArea = zRow.withHeight(barHeight).withY(zRow.getCentreY() - barHeight/2);
+        
         float zNormalized = juce::jlimit(-1.0f, 1.0f, cachedState.gyroscope.z / maxRotation);
-        g.setColour(juce::Colours::blue.withAlpha(0.8f));
-        g.fillRect(gyroArea.getX() + indicatorWidth * 2.0f, gyroArea.getCentreY() - 2.0f,
-                  indicatorWidth * (zNormalized + 1.0f) / 2.0f, 4.0f);
+        
+        // Draw Z label and value
+        g.setColour(juce::Colours::blue);
+        g.drawText("Z: " + juce::String(cachedState.gyroscope.z, 2) + " rad/s",
+                  zValueArea,
+                  juce::Justification::centredLeft,
+                  false);
+        
+        // Draw Z bar
+        g.fillRect(zBarArea.withWidth(zBarArea.getWidth() * (zNormalized + 1.0f) / 2.0f));
     }
 }
 
