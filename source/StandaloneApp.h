@@ -51,8 +51,5 @@ private:
     std::array<std::array<MidiMapping, GamepadManager::MAX_AXES>, GamepadManager::MAX_GAMEPADS> axisMappings;
     std::array<std::array<MidiMapping, GamepadManager::MAX_BUTTONS>, GamepadManager::MAX_GAMEPADS> buttonMappings;
     
-    void refreshMidiDevices();
-    void midiDeviceChanged();
-    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(StandaloneApp)
 }; 

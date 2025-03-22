@@ -39,35 +39,80 @@ StandaloneApp::~StandaloneApp()
 
 void StandaloneApp::paint(juce::Graphics& g)
 {
-    g.fillAll(juce::Colour(30, 30, 30));
+    auto bounds = getLocalBounds().toFloat();
+    
+    // Create a sophisticated dark background
+    g.fillAll(juce::Colour(22, 22, 26));
+    
+    // Create a multi-layer gradient effect for depth
+    
+    // Layer 1: Base radial gradient from center
+    juce::ColourGradient baseGradient(
+        juce::Colour(28, 28, 32).withAlpha(0.7f),
+        bounds.getCentreX(), bounds.getCentreY(),
+        juce::Colour(22, 22, 26),
+        bounds.getRight(), bounds.getBottom(),
+        true);  // Make it radial
+    g.setGradientFill(baseGradient);
+    g.fillAll();
+    
+    // Layer 2: Subtle top-to-bottom gradient overlay
+    juce::ColourGradient overlayGradient(
+        juce::Colour(30, 30, 34).withAlpha(0.2f),
+        0.0f, 0.0f,
+        juce::Colour(25, 25, 29).withAlpha(0.2f),
+        0.0f, bounds.getHeight(),
+        false);
+    g.setGradientFill(overlayGradient);
+    g.fillAll();
+    
+    // Layer 3: Very subtle edge lighting effect
+    juce::ColourGradient edgeGlow(
+        juce::Colours::white.withAlpha(0.02f),
+        bounds.getX(), bounds.getY(),
+        juce::Colours::transparentWhite,
+        bounds.getX() + 50.0f, bounds.getY() + 50.0f,
+        true);
+    g.setGradientFill(edgeGlow);
+    g.fillRect(bounds.removeFromTop(100.0f));
 }
 
 void StandaloneApp::resized()
 {
-    auto area = getLocalBounds().reduced(20);
+    auto area = getLocalBounds();
     
-    // Position status bar at the top
-    auto statusBarHeight = 25;
-    statusBar.setBounds(area.removeFromTop(statusBarHeight));
+    // Status bar at the top
+    auto statusBarHeight = 45;  // Slightly taller for more presence
+    auto statusBarArea = area.removeFromTop(statusBarHeight);
+    statusBar.setBounds(statusBarArea);
     
-    // Position gamepad components - use all remaining space except logo height
-    auto logoHeight = 23;
-    auto gamepadArea = area.withTrimmedBottom(logoHeight + 5); // Just 5px gap before logo
+    // Add padding after status bar
+    area.removeFromTop(15);
+    
+    // Footer with logo
+    auto logoHeight = 35;  // Taller logo area
+    auto footerArea = area.removeFromBottom(logoHeight + 25);  // More padding for footer
+    
+    // Create a sleek container for the logo
+    auto logoArea = footerArea.reduced(20, 5);
+    logoComponent.setBounds(logoArea);
+    
+    // Gamepad area with modern spacing
+    auto gamepadArea = area.reduced(25, 0);  // More horizontal padding for better framing
     int connectedGamepads = gamepadManager.getNumConnectedGamepads();
     
     if (connectedGamepads > 0)
     {
         int heightPerGamepad = gamepadArea.getHeight() / connectedGamepads;
         
-        int visibleCount = 0;
         for (int i = 0; i < GamepadManager::MAX_GAMEPADS; ++i)
         {
             if (gamepadManager.isGamepadConnected(i))
             {
-                auto componentBounds = gamepadArea.removeFromTop(heightPerGamepad).reduced(10);
+                // Modern spacing between gamepads
+                auto componentBounds = gamepadArea.removeFromTop(heightPerGamepad).reduced(0, 8);
                 gamepadComponents[i]->setBounds(componentBounds);
                 gamepadComponents[i]->setVisible(true);
-                visibleCount++;
             }
             else
             {
@@ -75,12 +120,6 @@ void StandaloneApp::resized()
             }
         }
     }
-
-    // Position logo at the bottom
-    auto bottomArea = getLocalBounds();
-    bottomArea.removeFromTop(getHeight() - logoHeight);
-    bottomArea.reduce(5, 0); // 5px padding on left and right
-    logoComponent.setBounds(bottomArea);
 }
 
 void StandaloneApp::timerCallback()
@@ -177,26 +216,3 @@ void StandaloneApp::setupMidiMappings()
         }
     }
 }
-
-void StandaloneApp::refreshMidiDevices()
-{
-    midiDeviceSelector.clear();
-    
-    auto devices = midiOutput.getAvailableDevices();
-    int index = 1;
-    
-    for (const auto& device : devices)
-    {
-        midiDeviceSelector.addItem(device.name, index++);
-    }
-}
-
-void StandaloneApp::midiDeviceChanged()
-{
-    if (midiDeviceSelector.getSelectedId() > 0)
-    {
-        auto devices = midiOutput.getAvailableDevices();
-        auto selectedDevice = devices[midiDeviceSelector.getSelectedItemIndex()];
-        midiOutput.setOutputDevice(selectedDevice.identifier);
-    }
-} 
