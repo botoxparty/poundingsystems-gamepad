@@ -1,20 +1,8 @@
 #include "StandaloneApp.h"
 
 StandaloneApp::StandaloneApp()
+    : statusBar(midiOutput)
 {
-    // Set up status label
-    statusLabel.setText("No gamepads connected", juce::dontSendNotification);
-    statusLabel.setFont(juce::Font(14.0f));
-    statusLabel.setJustificationType(juce::Justification::centredLeft);
-    addAndMakeVisible(statusLabel);
-    
-    // Set up MIDI device selector
-    midiDeviceSelector.setTextWhenNothingSelected("Select MIDI Output Device");
-    addAndMakeVisible(midiDeviceSelector);
-    refreshMidiDevices();
-    
-    midiDeviceSelector.onChange = [this] { midiDeviceChanged(); };
-    
     // Create gamepad components
     for (int i = 0; i < GamepadManager::MAX_GAMEPADS; ++i)
     {
@@ -27,6 +15,9 @@ StandaloneApp::StandaloneApp()
     auto logoImage = juce::ImageCache::getFromMemory(BinaryData::PoundingSystemsLogo_png, BinaryData::PoundingSystemsLogo_pngSize);
     logoComponent.setImage(logoImage);
     logoComponent.setImagePlacement(juce::RectanglePlacement::centred | juce::RectanglePlacement::onlyReduceInSize);
+    
+    // Add components
+    addAndMakeVisible(statusBar);
     addAndMakeVisible(logoComponent);
     
     // Set up MIDI mappings
@@ -55,14 +46,9 @@ void StandaloneApp::resized()
 {
     auto area = getLocalBounds().reduced(20);
     
-    // Create status bar at the top
+    // Position status bar at the top
     auto statusBarHeight = 25;
-    auto statusBar = area.removeFromTop(statusBarHeight);
-    
-    // Layout status bar: connection status on left, MIDI selector on right
-    auto statusWidth = 200;
-    statusLabel.setBounds(statusBar.removeFromLeft(statusWidth));
-    midiDeviceSelector.setBounds(statusBar.withSizeKeepingCentre(300, statusBarHeight));
+    statusBar.setBounds(area.removeFromTop(statusBarHeight));
     
     // Position gamepad components - use all remaining space except logo height
     auto logoHeight = 23;
@@ -108,12 +94,8 @@ void StandaloneApp::timerCallback()
         }
     }
     
-    // Update status label
-    int numGamepads = gamepadManager.getNumConnectedGamepads();
-    statusLabel.setText(numGamepads > 0 
-        ? juce::String(numGamepads) + " gamepad" + (numGamepads > 1 ? "s" : "") + " connected"
-        : "No gamepads connected",
-        juce::dontSendNotification);
+    // Update status bar
+    statusBar.setNumGamepads(gamepadManager.getNumConnectedGamepads());
 }
 
 void StandaloneApp::handleGamepadStateChange()
