@@ -2,6 +2,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "GamepadManager.h"
+#include "MidiOutputManager.h"
 
 /**
  * Component that visualizes a gamepad's state with classic Windows 98/2000 style
@@ -27,11 +28,18 @@ private:
     void drawClassicInsetPanel(juce::Graphics& g, const juce::Rectangle<float>& bounds);
     void drawClassicGroupBox(juce::Graphics& g, const juce::Rectangle<float>& bounds, const juce::String& text);
     
+    // Send MIDI CC messages for gyroscope and touchpad
+    void sendGyroscopeMidiCC(const GamepadManager::GamepadState::GyroscopeState& gyro);
+    void sendTouchpadMidiCC(const GamepadManager::GamepadState::TouchpadState& touchpad);
+    
     // Reference to the gamepad state to visualize
     const GamepadManager::GamepadState& gamepadState;
     
     // Cached gamepad state for UI updates
     GamepadManager::GamepadState cachedState;
+    
+    // MIDI output manager
+    MidiOutputManager midiOutput;
     
     // UI elements for button visualization
     struct ButtonVisual

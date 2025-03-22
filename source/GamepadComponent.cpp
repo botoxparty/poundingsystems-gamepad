@@ -5,6 +5,17 @@ GamepadComponent::GamepadComponent(const GamepadManager::GamepadState& state)
 {
     setupVisuals();
     startTimer(33); // ~30fps refresh rate
+    
+    // Try to create a virtual MIDI device if no physical device is available
+    if (midiOutput.getAvailableDevices().isEmpty())
+    {
+        midiOutput.createVirtualDevice("Gamepad MIDI Controller");
+    }
+    else
+    {
+        // Use the first available device
+        midiOutput.setOutputDevice(midiOutput.getAvailableDevices()[0].identifier);
+    }
 }
 
 GamepadComponent::~GamepadComponent()
@@ -509,8 +520,68 @@ void GamepadComponent::resized()
 
 void GamepadComponent::updateState(const GamepadManager::GamepadState& newState)
 {
+    // Send MIDI CC messages if gyroscope or touchpad state has changed
+    if (newState.gyroscope.enabled && 
+        (newState.gyroscope.x != cachedState.gyroscope.x ||
+         newState.gyroscope.y != cachedState.gyroscope.y ||
+         newState.gyroscope.z != cachedState.gyroscope.z))
+    {
+        sendGyroscopeMidiCC(newState.gyroscope);
+    }
+    
+    if (newState.touchpad.touched &&
+        (newState.touchpad.x != cachedState.touchpad.x ||
+         newState.touchpad.y != cachedState.touchpad.y ||
+         newState.touchpad.pressure != cachedState.touchpad.pressure))
+    {
+        sendTouchpadMidiCC(newState.touchpad);
+    }
+    
     cachedState = newState;
     repaint();
+}
+
+void GamepadComponent::sendGyroscopeMidiCC(const GamepadManager::GamepadState::GyroscopeState& gyro)
+{
+    // Use MIDI channel 1
+    const int channel = 1;
+    
+    // Map gyroscope values (-10 to 10 rad/s) to MIDI CC values (0-127)
+    // Using CC numbers:
+    // 20: X-axis
+    // 21: Y-axis
+    // 22: Z-axis
+    
+    auto mapGyroToCC = [](float value) {
+        // Clamp value between -10 and 10 rad/s
+        value = std::clamp(value, -10.0f, 10.0f);
+        // Map to 0-127 range
+        return static_cast<int>((value + 10.0f) * 127.0f / 20.0f);
+    };
+    
+    midiOutput.sendControlChange(channel, 20, mapGyroToCC(gyro.x));
+    midiOutput.sendControlChange(channel, 21, mapGyroToCC(gyro.y));
+    midiOutput.sendControlChange(channel, 22, mapGyroToCC(gyro.z));
+}
+
+void GamepadComponent::sendTouchpadMidiCC(const GamepadManager::GamepadState::TouchpadState& touchpad)
+{
+    // Use MIDI channel 1 (same as gyroscope)
+    const int channel = 1;
+    
+    // Map touchpad values (0-1) to MIDI CC values (0-127)
+    // Using CC numbers:
+    // 23: X position
+    // 24: Y position
+    // 25: Pressure
+    
+    auto mapTouchpadToCC = [](float value) {
+        return static_cast<int>(value * 127.0f);
+    };
+    
+    midiOutput.sendControlChange(channel, 23, mapTouchpadToCC(touchpad.x));
+    midiOutput.sendControlChange(channel, 24, mapTouchpadToCC(touchpad.y));
+    midiOutput.sendControlChange(channel, 25, mapTouchpadToCC(touchpad.pressure));
 }
 
 void GamepadComponent::timerCallback()
