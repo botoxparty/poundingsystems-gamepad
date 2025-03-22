@@ -203,9 +203,16 @@ void GamepadComponent::paint(juce::Graphics& g)
     float totalMenuWidth = (menuButtonWidth * 3) + (menuButtonSpace * 2);
     float menuStartX = centerArea.getCentreX() - totalMenuWidth/2;
     
-    // Position menu buttons with a safe margin from the touchpad
-    // but still within the visible area of the component
-    float menuY = touchpadArea.getBottom() + 30.0f;
+    // Create gyroscope area first so we can use it for menu positioning
+    auto gyroArea = juce::Rectangle<float>(
+        touchpadBounds.getX(),
+        touchpadBounds.getBottom() + 60.0f,
+        touchpadBounds.getWidth(),
+        60.0f
+    );
+    
+    // Position menu buttons centered between touchpad and gyroscope
+    float menuY = touchpadBounds.getBottom() + ((gyroArea.getY() - touchpadBounds.getBottom()) / 2) - (menuButtonHeight / 2);
     
     // Back button
     buttonVisuals[4].bounds = juce::Rectangle<float>(
@@ -362,14 +369,6 @@ void GamepadComponent::paint(juce::Graphics& g)
     // Draw gyroscope data if enabled
     if (cachedState.gyroscope.enabled)
     {
-        // Create a box for gyroscope visualization below the touchpad
-        auto gyroArea = juce::Rectangle<float>(
-            touchpadBounds.getX(),
-            touchpadBounds.getBottom() + 40.0f,
-            touchpadBounds.getWidth(),
-            60.0f
-        );
-
         // Draw gyroscope background
         g.setColour(juce::Colours::darkgrey.brighter(0.1f));
         g.fillRoundedRectangle(gyroArea, 5.0f);
