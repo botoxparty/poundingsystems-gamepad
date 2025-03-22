@@ -135,7 +135,28 @@ void MidiOutputManager::handleDevicesChanged()
 
 juce::Array<juce::MidiDeviceInfo> MidiOutputManager::getAvailableDevices() const
 {
-    return juce::MidiOutput::getAvailableDevices();
+    auto devices = juce::MidiOutput::getAvailableDevices();
+    
+    // Append the virtual device if it exists and is active
+    if (isVirtualDevice && midiOutput != nullptr)
+    {
+        // Only add if it's not already in the list
+        bool alreadyExists = false;
+        for (const auto& device : devices)
+        {
+            if (device.identifier == currentDeviceInfo.identifier || 
+                device.name == currentDeviceInfo.name)
+            {
+                alreadyExists = true;
+                break;
+            }
+        }
+        
+        if (!alreadyExists)
+            devices.add(currentDeviceInfo);
+    }
+    
+    return devices;
 }
 
 bool MidiOutputManager::setOutputDevice(const juce::String& deviceIdentifier)
