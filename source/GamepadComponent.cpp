@@ -50,24 +50,35 @@ void GamepadComponent::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
     
-    // Draw background
+    // Draw classic Windows style background with beveled edge
+    g.setColour(juce::Colour(192, 192, 192));  // System gray
+    g.fillAll();
+    
+    // Draw inset panel effect
     g.setColour(juce::Colours::darkgrey);
-    g.fillRoundedRectangle(bounds, 10.0f);
+    g.drawLine(0, 0, getWidth() - 1, 0, 1.0f);  // Top
+    g.drawLine(0, 0, 0, getHeight() - 1, 1.0f);  // Left
+    
+    g.setColour(juce::Colours::white);
+    g.drawLine(getWidth() - 1, 0, getWidth() - 1, getHeight() - 1, 1.0f);  // Right
+    g.drawLine(0, getHeight() - 1, getWidth() - 1, getHeight() - 1, 1.0f);  // Bottom
     
     // Draw connection status
-    g.setColour(juce::Colours::white);
-    g.setFont(18.0f);
+    g.setColour(juce::Colours::black);
+    g.setFont(juce::Font("MS Sans Serif", 12.0f, juce::Font::plain));
     
     juce::String statusText = cachedState.connected
         ? "Connected: " + cachedState.name
         : "Disconnected";
     
-    g.drawText(statusText, bounds.removeFromTop(30.0f), juce::Justification::centred, false);
+    // Draw status text in a classic Windows style group box
+    auto statusBounds = bounds.removeFromTop(30.0f).reduced(5);
+    drawClassicGroupBox(g, statusBounds, statusText);
     
     if (!cachedState.connected)
         return;
     
-    // Draw buttons
+    // Draw buttons with classic Windows style
     float buttonSize = 30.0f;
     
     // Face buttons (right side)
@@ -116,18 +127,19 @@ void GamepadComponent::paint(juce::Graphics& g)
     float stickSize = 60.0f;
     float thumbstickBorderSize = 80.0f;
     
-    // Left stick (now below D-pad)
+    // Left stick (now below D-pad, with space for label)
+    float labelSpacing = 25.0f;  // Space for label below stick
     axisVisuals[0].bounds = juce::Rectangle<float>(
         dpadBottomArea.getCentreX() - thumbstickBorderSize/2,
-        dpadBottomArea.getCentreY() - thumbstickBorderSize/2,
+        dpadBottomArea.getCentreY() - thumbstickBorderSize/2 - labelSpacing/2,  // Move up to make room for label
         thumbstickBorderSize,
         thumbstickBorderSize
     );
     
-    // Right stick (now below face buttons)
+    // Right stick (now below face buttons, with space for label)
     axisVisuals[1].bounds = juce::Rectangle<float>(
         faceButtonBottomArea.getCentreX() - thumbstickBorderSize/2,
-        faceButtonBottomArea.getCentreY() - thumbstickBorderSize/2,
+        faceButtonBottomArea.getCentreY() - thumbstickBorderSize/2 - labelSpacing/2,  // Move up to make room for label
         thumbstickBorderSize,
         thumbstickBorderSize
     );
@@ -219,14 +231,13 @@ void GamepadComponent::paint(juce::Graphics& g)
         menuButtonHeight
     );
     
-    // Draw analog sticks
+    // Draw analog sticks with classic Windows style
     for (const auto& axisVisual : axisVisuals)
     {
         if (axisVisual.isStick)
         {
-            // Draw stick border
-            g.setColour(juce::Colours::darkgrey.brighter(0.2f));
-            g.drawEllipse(axisVisual.bounds, 2.0f);
+            // Draw stick border (inset effect)
+            drawClassicInsetPanel(g, axisVisual.bounds);
             
             // Get stick position
             float x = 0.0f;
@@ -234,16 +245,16 @@ void GamepadComponent::paint(juce::Graphics& g)
             
             if (axisVisual.axisIndex == 0) // Left stick
             {
-                x = cachedState.axes[0]; // X-axis
-                y = cachedState.axes[1]; // Y-axis
+                x = cachedState.axes[0];
+                y = cachedState.axes[1];
             }
             else if (axisVisual.axisIndex == 2) // Right stick
             {
-                x = cachedState.axes[2]; // X-axis
-                y = cachedState.axes[3]; // Y-axis
+                x = cachedState.axes[2];
+                y = cachedState.axes[3];
             }
             
-            // Calculate stick position within the border
+            // Calculate stick position
             float centerX = axisVisual.bounds.getCentreX();
             float centerY = axisVisual.bounds.getCentreY();
             float radius = axisVisual.bounds.getWidth() * 0.35f;
@@ -251,86 +262,59 @@ void GamepadComponent::paint(juce::Graphics& g)
             float stickX = centerX + (x * radius);
             float stickY = centerY + (y * radius);
             
-            // Draw stick
-            g.setColour(juce::Colours::lightgrey);
-            g.fillEllipse(stickX - stickSize/2, stickY - stickSize/2, stickSize, stickSize);
+            // Draw stick with classic button style
+            auto stickBounds = juce::Rectangle<float>(stickX - buttonSize/2, stickY - buttonSize/2, buttonSize, buttonSize);
+            drawClassicButton(g, stickBounds, true);
             
-            // Draw stick name
-            g.setColour(juce::Colours::white);
-            g.setFont(12.0f);
+            // Draw stick name below the stick
+            g.setColour(juce::Colours::black);
+            g.setFont(juce::Font("MS Sans Serif", 11.0f, juce::Font::plain));
             g.drawText(axisVisual.name, 
-                       axisVisual.bounds.getX(), 
-                       axisVisual.bounds.getBottom() + 5.0f, 
-                       axisVisual.bounds.getWidth(), 
-                       20.0f, 
-                       juce::Justification::centred, 
-                       false);
-                       
-            // Display X/Y values
-            juce::String xyText;
-            if (axisVisual.axisIndex == 0) {
-                xyText = juce::String("X: ") + juce::String(cachedState.axes[0], 2) + 
-                         juce::String(" Y: ") + juce::String(cachedState.axes[1], 2);
-            } else if (axisVisual.axisIndex == 2) {
-                xyText = juce::String("X: ") + juce::String(cachedState.axes[2], 2) + 
-                         juce::String(" Y: ") + juce::String(cachedState.axes[3], 2);
-            }
-            
-            g.setColour(juce::Colours::white);
-            g.setFont(11.0f);
-            g.drawText(xyText, 
-                       axisVisual.bounds.getX(), 
-                       axisVisual.bounds.getBottom() + 25.0f, 
-                       axisVisual.bounds.getWidth(), 
-                       15.0f, 
-                       juce::Justification::centred, 
-                       false);
+                      axisVisual.bounds.getX(), 
+                      axisVisual.bounds.getBottom() + 5.0f, 
+                      axisVisual.bounds.getWidth(), 
+                      15.0f, 
+                      juce::Justification::centred, 
+                      false);
         }
         else // Triggers
         {
-            // Get trigger value (0.0 to 1.0)
+            // Draw trigger background with inset effect
+            drawClassicInsetPanel(g, axisVisual.bounds);
+            
+            // Get trigger value
             float value = (cachedState.axes[axisVisual.axisIndex] + 1.0f) * 0.5f;
             
-            // Draw trigger background
-            g.setColour(juce::Colours::darkgrey.brighter(0.1f));
-            g.fillRoundedRectangle(axisVisual.bounds, 3.0f);
-            
-            // Draw trigger value
-            juce::Rectangle<float> valueBounds = axisVisual.bounds.withWidth(axisVisual.bounds.getWidth() * value);
-            
-            g.setColour(juce::Colours::orange.withAlpha(0.8f));
-            g.fillRoundedRectangle(valueBounds, 3.0f);
+            // Draw trigger value with classic progress bar style
+            auto valueBounds = axisVisual.bounds.withWidth(axisVisual.bounds.getWidth() * value);
+            g.setColour(juce::Colour(0, 0, 128));  // Classic Windows blue
+            g.fillRect(valueBounds.reduced(2));
             
             // Draw trigger name
-            g.setColour(juce::Colours::white);
-            g.setFont(12.0f);
+            g.setColour(juce::Colours::black);
+            g.setFont(juce::Font("MS Sans Serif", 11.0f, juce::Font::plain));
             g.drawText(axisVisual.name, 
-                       axisVisual.bounds.getX(), 
-                       axisVisual.bounds.getY() - 15.0f, 
-                       axisVisual.bounds.getWidth(), 
-                       15.0f, 
-                       juce::Justification::centred, 
-                       false);
+                      axisVisual.bounds.getX(), 
+                      axisVisual.bounds.getY() - 15.0f, 
+                      axisVisual.bounds.getWidth(), 
+                      15.0f, 
+                      juce::Justification::centred, 
+                      false);
         }
     }
     
-    // Draw buttons
+    // Draw buttons with classic Windows style
     for (const auto& buttonVisual : buttonVisuals)
     {
         bool isPressed = cachedState.buttons[buttonVisual.buttonIndex];
+        drawClassicButton(g, buttonVisual.bounds, isPressed);
         
-        g.setColour(isPressed ? juce::Colours::green.withAlpha(0.8f) : juce::Colours::darkgrey.brighter(0.1f));
-        g.fillRoundedRectangle(buttonVisual.bounds, 5.0f);
-        
-        g.setColour(juce::Colours::white);
-        g.setFont(12.0f);
+        g.setColour(juce::Colours::black);
+        g.setFont(juce::Font("MS Sans Serif", 11.0f, juce::Font::plain));
         g.drawText(buttonVisual.name, 
-                   buttonVisual.bounds, 
-                   juce::Justification::centred, 
-                   false);
-        
-        g.setColour(juce::Colours::lightgrey);
-        g.drawRoundedRectangle(buttonVisual.bounds, 5.0f, 1.0f);
+                  buttonVisual.bounds, 
+                  juce::Justification::centred, 
+                  false);
     }
     
     // Draw touchpad
@@ -434,6 +418,64 @@ void GamepadComponent::paint(juce::Graphics& g)
         g.fillRect(gyroArea.getX() + indicatorWidth * 2.0f, gyroArea.getCentreY() - 2.0f,
                   indicatorWidth * (zNormalized + 1.0f) / 2.0f, 4.0f);
     }
+}
+
+// Helper method to draw classic Windows style button
+void GamepadComponent::drawClassicButton(juce::Graphics& g, const juce::Rectangle<float>& bounds, bool isPressed)
+{
+    g.setColour(juce::Colour(192, 192, 192));  // System gray
+    g.fillRect(bounds);
+    
+    if (isPressed)
+    {
+        // Pressed state - inset effect
+        g.setColour(juce::Colours::darkgrey);
+        g.drawLine(bounds.getX(), bounds.getY(), bounds.getRight(), bounds.getY(), 1.0f);  // Top
+        g.drawLine(bounds.getX(), bounds.getY(), bounds.getX(), bounds.getBottom(), 1.0f);  // Left
+        
+        g.setColour(juce::Colours::white);
+        g.drawLine(bounds.getRight(), bounds.getY(), bounds.getRight(), bounds.getBottom(), 1.0f);  // Right
+        g.drawLine(bounds.getX(), bounds.getBottom(), bounds.getRight(), bounds.getBottom(), 1.0f);  // Bottom
+    }
+    else
+    {
+        // Normal state - raised effect
+        g.setColour(juce::Colours::white);
+        g.drawLine(bounds.getX(), bounds.getY(), bounds.getRight(), bounds.getY(), 1.0f);  // Top
+        g.drawLine(bounds.getX(), bounds.getY(), bounds.getX(), bounds.getBottom(), 1.0f);  // Left
+        
+        g.setColour(juce::Colours::darkgrey);
+        g.drawLine(bounds.getRight(), bounds.getY(), bounds.getRight(), bounds.getBottom(), 1.0f);  // Right
+        g.drawLine(bounds.getX(), bounds.getBottom(), bounds.getRight(), bounds.getBottom(), 1.0f);  // Bottom
+    }
+}
+
+// Helper method to draw classic Windows style inset panel
+void GamepadComponent::drawClassicInsetPanel(juce::Graphics& g, const juce::Rectangle<float>& bounds)
+{
+    g.setColour(juce::Colours::white);
+    g.fillRect(bounds);
+    
+    g.setColour(juce::Colours::darkgrey);
+    g.drawLine(bounds.getX(), bounds.getY(), bounds.getRight(), bounds.getY(), 1.0f);  // Top
+    g.drawLine(bounds.getX(), bounds.getY(), bounds.getX(), bounds.getBottom(), 1.0f);  // Left
+    
+    g.setColour(juce::Colours::white);
+    g.drawLine(bounds.getRight(), bounds.getY(), bounds.getRight(), bounds.getBottom(), 1.0f);  // Right
+    g.drawLine(bounds.getX(), bounds.getBottom(), bounds.getRight(), bounds.getBottom(), 1.0f);  // Bottom
+}
+
+// Helper method to draw classic Windows style group box
+void GamepadComponent::drawClassicGroupBox(juce::Graphics& g, const juce::Rectangle<float>& bounds, const juce::String& text)
+{
+    // Draw the group box border with classic Windows style
+    g.setColour(juce::Colours::darkgrey);
+    g.drawRect(bounds, 1.0f);
+    
+    // Draw the text
+    g.setColour(juce::Colours::black);
+    g.setFont(juce::Font("MS Sans Serif", 11.0f, juce::Font::plain));
+    g.drawText(text, bounds.reduced(5), juce::Justification::centredLeft, false);
 }
 
 void GamepadComponent::resized()

@@ -41,40 +41,22 @@ void StandaloneApp::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
     
-    // Create a sophisticated dark background
-    g.fillAll(juce::Colour(22, 22, 26));
+    // Classic Windows 98/2000 style background color
+    g.fillAll(juce::Colour(192, 192, 192));  // Classic Windows gray
     
-    // Create a multi-layer gradient effect for depth
+    // Draw beveled edge around the window (classic Windows style)
+    g.setColour(juce::Colours::white);
+    g.drawLine(0, 0, getWidth() - 1, 0, 1.0f);  // Top
+    g.drawLine(0, 0, 0, getHeight() - 1, 1.0f);  // Left
     
-    // Layer 1: Base radial gradient from center
-    juce::ColourGradient baseGradient(
-        juce::Colour(28, 28, 32).withAlpha(0.7f),
-        bounds.getCentreX(), bounds.getCentreY(),
-        juce::Colour(22, 22, 26),
-        bounds.getRight(), bounds.getBottom(),
-        true);  // Make it radial
-    g.setGradientFill(baseGradient);
-    g.fillAll();
+    g.setColour(juce::Colours::darkgrey);
+    g.drawLine(getWidth() - 1, 0, getWidth() - 1, getHeight() - 1, 1.0f);  // Right
+    g.drawLine(0, getHeight() - 1, getWidth() - 1, getHeight() - 1, 1.0f);  // Bottom
     
-    // Layer 2: Subtle top-to-bottom gradient overlay
-    juce::ColourGradient overlayGradient(
-        juce::Colour(30, 30, 34).withAlpha(0.2f),
-        0.0f, 0.0f,
-        juce::Colour(25, 25, 29).withAlpha(0.2f),
-        0.0f, bounds.getHeight(),
-        false);
-    g.setGradientFill(overlayGradient);
-    g.fillAll();
-    
-    // Layer 3: Very subtle edge lighting effect
-    juce::ColourGradient edgeGlow(
-        juce::Colours::white.withAlpha(0.02f),
-        bounds.getX(), bounds.getY(),
-        juce::Colours::transparentWhite,
-        bounds.getX() + 50.0f, bounds.getY() + 50.0f,
-        true);
-    g.setGradientFill(edgeGlow);
-    g.fillRect(bounds.removeFromTop(100.0f));
+    // Add subtle inset effect for depth (common in Windows 98/2000)
+    g.setColour(juce::Colours::darkgrey.darker());
+    g.drawLine(1, getHeight() - 2, getWidth() - 2, getHeight() - 2, 1.0f);  // Bottom inner
+    g.drawLine(getWidth() - 2, 1, getWidth() - 2, getHeight() - 2, 1.0f);  // Right inner
 }
 
 void StandaloneApp::resized()

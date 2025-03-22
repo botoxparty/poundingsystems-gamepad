@@ -4,7 +4,7 @@
 #include "GamepadManager.h"
 
 /**
- * Component that visualizes a gamepad's state
+ * Component that visualizes a gamepad's state with classic Windows 98/2000 style
  */
 class GamepadComponent : public juce::Component, 
                          private juce::Timer
@@ -21,6 +21,11 @@ public:
     
 private:
     void timerCallback() override;
+    
+    // Helper methods for drawing classic Windows style UI elements
+    void drawClassicButton(juce::Graphics& g, const juce::Rectangle<float>& bounds, bool isPressed);
+    void drawClassicInsetPanel(juce::Graphics& g, const juce::Rectangle<float>& bounds);
+    void drawClassicGroupBox(juce::Graphics& g, const juce::Rectangle<float>& bounds, const juce::String& text);
     
     // Reference to the gamepad state to visualize
     const GamepadManager::GamepadState& gamepadState;
