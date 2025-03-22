@@ -30,6 +30,16 @@ public:
         std::array<float, MAX_AXES> axes = {0};       // Values from -1.0 to 1.0
         std::array<bool, MAX_BUTTONS> buttons = {false};
         juce::String name;
+        
+        // Touchpad support
+        struct TouchpadState {
+            bool touched = false;
+            bool pressed = false;  // Touchpad button press state
+            float x = 0.0f; // Normalized position (0.0 to 1.0)
+            float y = 0.0f; // Normalized position (0.0 to 1.0)
+            float pressure = 0.0f; // 0.0 to 1.0
+        };
+        TouchpadState touchpad;
     };
     
     GamepadManager();

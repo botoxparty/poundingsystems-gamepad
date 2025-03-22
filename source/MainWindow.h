@@ -14,8 +14,8 @@ public:
         setUsingNativeTitleBar(true);
         setContentOwned(new StandaloneApp(), true);
         
-        setResizable(true, true);
-        centreWithSize(getWidth(), getHeight());
+        setResizable(false, false);
+        centreWithSize(600, 500);
         setVisible(true);
     }
     

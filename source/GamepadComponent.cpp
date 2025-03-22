@@ -141,6 +141,15 @@ void GamepadComponent::paint(juce::Graphics& g)
     auto topArea = middleArea.removeFromTop(middleArea.getHeight() * 0.3f);
     auto centerArea = middleArea.removeFromTop(middleArea.getHeight() * 0.5f);
     
+    // Add touchpad in a higher position of the center area
+    auto touchpadArea = centerArea.removeFromTop(centerArea.getHeight() * 0.5f); // Adjusted for higher placement
+    juce::Rectangle<float> touchpadBounds(
+        touchpadArea.getCentreX() - 100.0f,
+        touchpadArea.getCentreY() - 15.0f, // Move up by subtracting 15 pixels instead of adding
+        200.0f,    // width
+        60.0f      // height
+    );
+    
     // Shoulder buttons (L1, R1)
     float shoulderWidth = 60.0f;
     float shoulderHeight = 25.0f;
@@ -175,17 +184,21 @@ void GamepadComponent::paint(juce::Graphics& g)
         triggerHeight
     );
     
-    // Menu buttons (Back, Guide, Start)
+    // Menu buttons (Back, Guide, Start) - moved lower
     float menuButtonWidth = 40.0f;
     float menuButtonHeight = 20.0f;
     float menuButtonSpace = 10.0f;
     float totalMenuWidth = (menuButtonWidth * 3) + (menuButtonSpace * 2);
     float menuStartX = centerArea.getCentreX() - totalMenuWidth/2;
     
+    // Position menu buttons with a safe margin from the touchpad
+    // but still within the visible area of the component
+    float menuY = touchpadArea.getBottom() + 30.0f;
+    
     // Back button
     buttonVisuals[4].bounds = juce::Rectangle<float>(
         menuStartX,
-        centerArea.getCentreY() - menuButtonHeight/2,
+        menuY,
         menuButtonWidth,
         menuButtonHeight
     );
@@ -193,7 +206,7 @@ void GamepadComponent::paint(juce::Graphics& g)
     // Guide button
     buttonVisuals[5].bounds = juce::Rectangle<float>(
         menuStartX + menuButtonWidth + menuButtonSpace,
-        centerArea.getCentreY() - menuButtonHeight/2,
+        menuY,
         menuButtonWidth,
         menuButtonHeight
     );
@@ -201,7 +214,7 @@ void GamepadComponent::paint(juce::Graphics& g)
     // Start button
     buttonVisuals[6].bounds = juce::Rectangle<float>(
         menuStartX + (menuButtonWidth + menuButtonSpace) * 2,
-        centerArea.getCentreY() - menuButtonHeight/2,
+        menuY,
         menuButtonWidth,
         menuButtonHeight
     );
@@ -252,6 +265,26 @@ void GamepadComponent::paint(juce::Graphics& g)
                        20.0f, 
                        juce::Justification::centred, 
                        false);
+                       
+            // Display X/Y values
+            juce::String xyText;
+            if (axisVisual.axisIndex == 0) {
+                xyText = juce::String("X: ") + juce::String(cachedState.axes[0], 2) + 
+                         juce::String(" Y: ") + juce::String(cachedState.axes[1], 2);
+            } else if (axisVisual.axisIndex == 2) {
+                xyText = juce::String("X: ") + juce::String(cachedState.axes[2], 2) + 
+                         juce::String(" Y: ") + juce::String(cachedState.axes[3], 2);
+            }
+            
+            g.setColour(juce::Colours::white);
+            g.setFont(11.0f);
+            g.drawText(xyText, 
+                       axisVisual.bounds.getX(), 
+                       axisVisual.bounds.getBottom() + 25.0f, 
+                       axisVisual.bounds.getWidth(), 
+                       15.0f, 
+                       juce::Justification::centred, 
+                       false);
         }
         else // Triggers
         {
@@ -298,6 +331,48 @@ void GamepadComponent::paint(juce::Graphics& g)
         
         g.setColour(juce::Colours::lightgrey);
         g.drawRoundedRectangle(buttonVisual.bounds, 5.0f, 1.0f);
+    }
+    
+    // Draw touchpad
+    g.setColour(cachedState.touchpad.pressed ? juce::Colours::orange.withAlpha(0.8f) : juce::Colours::darkgrey.brighter(0.15f));
+    g.fillRoundedRectangle(touchpadBounds, 5.0f);
+    g.setColour(juce::Colours::lightgrey);
+    g.drawRoundedRectangle(touchpadBounds, 5.0f, 1.0f);
+    
+    // Draw touchpad label
+    g.setColour(juce::Colours::white);
+    g.setFont(14.0f);
+    g.drawText("Touchpad", 
+               touchpadBounds, 
+               juce::Justification::centred, 
+               false);
+               
+    // Show touchpad interaction if active
+    if (cachedState.touchpad.touched)
+    {
+        // Calculate touch position within the touchpad bounds
+        float touchX = touchpadBounds.getX() + (cachedState.touchpad.x * touchpadBounds.getWidth());
+        float touchY = touchpadBounds.getY() + (cachedState.touchpad.y * touchpadBounds.getHeight());
+        
+        // Draw touch indicator
+        float touchSize = 15.0f + (cachedState.touchpad.pressure * 10.0f); // Size varies with pressure
+        g.setColour(juce::Colours::orange.withAlpha(0.7f));
+        g.fillEllipse(touchX - touchSize/2, touchY - touchSize/2, touchSize, touchSize);
+        
+        // Display touch coordinates
+        juce::String touchText = juce::String::formatted("X: %.2f Y: %.2f P: %.2f", 
+                                                       cachedState.touchpad.x,
+                                                       cachedState.touchpad.y,
+                                                       cachedState.touchpad.pressure);
+        g.setColour(juce::Colours::white);
+        g.setFont(12.0f);
+        g.drawText(touchText, 
+                   touchpadBounds.getX(), 
+                   touchpadBounds.getBottom() + 5.0f, 
+                   touchpadBounds.getWidth(), 
+                   20.0f, 
+                   juce::Justification::centred, 
+                   false);
     }
 }
 

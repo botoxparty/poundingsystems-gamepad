@@ -169,6 +169,14 @@ void GamepadManager::updateGamepadStates()
                     }
                 }
             }
+            
+            // Check touchpad button (it's a separate button in SDL)
+            bool touchpadPressed = SDL_GetGamepadButton(sdlGamepads[i], SDL_GAMEPAD_BUTTON_TOUCHPAD) == 1;
+            if (gamepadStates[i].touchpad.pressed != touchpadPressed)
+            {
+                gamepadStates[i].touchpad.pressed = touchpadPressed;
+                stateChanged = true;
+            }
         }
     }
     
@@ -209,9 +217,62 @@ void GamepadManager::handleSDLEvents()
                     for (auto& button : gamepadStates[i].buttons)
                         button = false;
                     
+                    // Reset touchpad state
+                    gamepadStates[i].touchpad.touched = false;
+                    gamepadStates[i].touchpad.pressed = false;
+                    gamepadStates[i].touchpad.x = 0.0f;
+                    gamepadStates[i].touchpad.y = 0.0f;
+                    gamepadStates[i].touchpad.pressure = 0.0f;
+                    
                     // Notify callbacks
                     for (auto& callback : stateChangeCallbacks)
                         callback();
+                    
+                    break;
+                }
+            }
+        }
+        // Handle touchpad events for supported controllers (e.g. PlayStation DualSense)
+        else if (event.type == SDL_EVENT_GAMEPAD_TOUCHPAD_DOWN || 
+                 event.type == SDL_EVENT_GAMEPAD_TOUCHPAD_MOTION ||
+                 event.type == SDL_EVENT_GAMEPAD_TOUCHPAD_UP)
+        {
+            // Find which gamepad this touchpad event belongs to
+            for (size_t i = 0; i < MAX_GAMEPADS; ++i)
+            {
+                if (sdlGamepads[i] != nullptr && SDL_GetGamepadID(sdlGamepads[i]) == event.gtouchpad.which)
+                {
+                    bool stateChanged = false;
+                    
+                    // Update touchpad state based on event type
+                    if (event.type == SDL_EVENT_GAMEPAD_TOUCHPAD_DOWN)
+                    {
+                        gamepadStates[i].touchpad.touched = true;
+                        gamepadStates[i].touchpad.x = event.gtouchpad.x;
+                        gamepadStates[i].touchpad.y = event.gtouchpad.y;
+                        gamepadStates[i].touchpad.pressure = event.gtouchpad.pressure;
+                        stateChanged = true;
+                    }
+                    else if (event.type == SDL_EVENT_GAMEPAD_TOUCHPAD_MOTION)
+                    {
+                        gamepadStates[i].touchpad.x = event.gtouchpad.x;
+                        gamepadStates[i].touchpad.y = event.gtouchpad.y;
+                        gamepadStates[i].touchpad.pressure = event.gtouchpad.pressure;
+                        stateChanged = true;
+                    }
+                    else if (event.type == SDL_EVENT_GAMEPAD_TOUCHPAD_UP)
+                    {
+                        gamepadStates[i].touchpad.touched = false;
+                        gamepadStates[i].touchpad.pressure = 0.0f;
+                        stateChanged = true;
+                    }
+                    
+                    // Notify callbacks if state changed
+                    if (stateChanged)
+                    {
+                        for (auto& callback : stateChangeCallbacks)
+                            callback();
+                    }
                     
                     break;
                 }
