@@ -72,10 +72,17 @@ void GamepadComponent::paint(juce::Graphics& g)
     
     // Face buttons (right side)
     auto faceButtonsArea = bounds.removeFromRight(bounds.getWidth() * 0.25f).reduced(10.0f);
+    auto faceButtonTopArea = faceButtonsArea.removeFromTop(faceButtonsArea.getHeight() * 0.4f);
+    auto faceButtonBottomArea = faceButtonsArea;
+    
+    // D-Pad (left side)
+    auto dpadArea = bounds.removeFromLeft(bounds.getWidth() * 0.33f).reduced(10.0f);
+    auto dpadTopArea = dpadArea.removeFromTop(dpadArea.getHeight() * 0.4f);
+    auto dpadBottomArea = dpadArea;
     
     // A, B, X, Y buttons in a diamond pattern (exactly matching D-pad pattern)
-    float fbCenterX = faceButtonsArea.getCentreX();
-    float fbCenterY = faceButtonsArea.getCentreY();
+    float fbCenterX = faceButtonTopArea.getCentreX();
+    float fbCenterY = faceButtonTopArea.getCentreY();
     
     // Y button (top) - matches D-pad Up
     buttonVisuals[3].bounds = juce::Rectangle<float>(fbCenterX - buttonSize/2, fbCenterY - buttonSize*1.5f, buttonSize, buttonSize);
@@ -89,10 +96,9 @@ void GamepadComponent::paint(juce::Graphics& g)
     // B button (right) - matches D-pad Right
     buttonVisuals[1].bounds = juce::Rectangle<float>(fbCenterX + buttonSize/2, fbCenterY - buttonSize/2, buttonSize, buttonSize);
     
-    // D-Pad (left side)
-    auto dpadArea = bounds.removeFromLeft(bounds.getWidth() * 0.33f).reduced(10.0f);
-    float dpCenterX = dpadArea.getCentreX();
-    float dpCenterY = dpadArea.getCentreY() + 50.0f; // Move D-pad a bit lower
+    // D-pad positioning
+    float dpCenterX = dpadTopArea.getCentreX();
+    float dpCenterY = dpadTopArea.getCentreY();
     
     // D-pad Up
     buttonVisuals[11].bounds = juce::Rectangle<float>(dpCenterX - buttonSize/2, dpCenterY - buttonSize*1.5f, buttonSize, buttonSize);
@@ -110,20 +116,18 @@ void GamepadComponent::paint(juce::Graphics& g)
     float stickSize = 60.0f;
     float thumbstickBorderSize = 80.0f;
     
-    // Left stick
-    auto leftStickArea = dpadArea.withTrimmedBottom(dpadArea.getHeight() * 0.6f);
+    // Left stick (now below D-pad)
     axisVisuals[0].bounds = juce::Rectangle<float>(
-        leftStickArea.getCentreX() - thumbstickBorderSize/2,
-        leftStickArea.getCentreY() - thumbstickBorderSize/2,
+        dpadBottomArea.getCentreX() - thumbstickBorderSize/2,
+        dpadBottomArea.getCentreY() - thumbstickBorderSize/2,
         thumbstickBorderSize,
         thumbstickBorderSize
     );
     
-    // Right stick
-    auto rightStickArea = faceButtonsArea.withTrimmedBottom(faceButtonsArea.getHeight() * 0.6f);
+    // Right stick (now below face buttons)
     axisVisuals[1].bounds = juce::Rectangle<float>(
-        rightStickArea.getCentreX() - thumbstickBorderSize/2,
-        rightStickArea.getCentreY() - thumbstickBorderSize/2,
+        faceButtonBottomArea.getCentreX() - thumbstickBorderSize/2,
+        faceButtonBottomArea.getCentreY() - thumbstickBorderSize/2,
         thumbstickBorderSize,
         thumbstickBorderSize
     );
@@ -159,14 +163,14 @@ void GamepadComponent::paint(juce::Graphics& g)
     float triggerHeight = 20.0f;
     axisVisuals[2].bounds = juce::Rectangle<float>(
         topArea.getX() + 20.0f,
-        topArea.getY() + shoulderHeight + 15.0f,
+        topArea.getY() + shoulderHeight + 30.0f,
         triggerWidth,
         triggerHeight
     );
     
     axisVisuals[3].bounds = juce::Rectangle<float>(
         topArea.getRight() - triggerWidth - 20.0f,
-        topArea.getY() + shoulderHeight + 15.0f,
+        topArea.getY() + shoulderHeight + 30.0f,
         triggerWidth,
         triggerHeight
     );
