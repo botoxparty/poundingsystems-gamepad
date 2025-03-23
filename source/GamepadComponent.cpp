@@ -4,6 +4,7 @@ GamepadComponent::GamepadComponent(const GamepadManager::GamepadState& state)
     : gamepadState(state), cachedState(state)
 {
     setupVisuals();
+    setupMidiLearnControls();
     startTimer(33); // ~30fps refresh rate
     
     // Try to create a virtual MIDI device if no physical device is available
@@ -57,6 +58,94 @@ void GamepadComponent::setupVisuals()
     axisVisuals.push_back({"R2", {}, 5, false});
 }
 
+void GamepadComponent::setupMidiLearnControls()
+{
+    // Starting CC number for controls
+    int nextCC = 20;
+    
+    // Add gyroscope controls
+    midiLearnControls.push_back({"Gyro X", {}, nextCC++, true, -1, 0});
+    midiLearnControls.push_back({"Gyro Y", {}, nextCC++, true, -1, 1});
+    midiLearnControls.push_back({"Gyro Z", {}, nextCC++, true, -1, 2});
+    
+    // Add touchpad controls
+    midiLearnControls.push_back({"Touch X", {}, nextCC++, true, -1, 3});
+    midiLearnControls.push_back({"Touch Y", {}, nextCC++, true, -1, 4});
+    midiLearnControls.push_back({"Touch Pressure", {}, nextCC++, true, -1, 5});
+    
+    // Add stick controls
+    midiLearnControls.push_back({"Left Stick X", {}, nextCC++, true, 0, 0});
+    midiLearnControls.push_back({"Left Stick Y", {}, nextCC++, true, 0, 1});
+    midiLearnControls.push_back({"Right Stick X", {}, nextCC++, true, 2, 0});
+    midiLearnControls.push_back({"Right Stick Y", {}, nextCC++, true, 2, 1});
+    
+    // Add trigger controls
+    midiLearnControls.push_back({"L2", {}, nextCC++, true, 4, 0});
+    midiLearnControls.push_back({"R2", {}, nextCC++, true, 5, 0});
+    
+    // Add button controls
+    for (const auto& buttonVisual : buttonVisuals)
+    {
+        midiLearnControls.push_back({
+            buttonVisual.name,
+            buttonVisual.bounds,
+            nextCC++,
+            false,
+            buttonVisual.buttonIndex,
+            0
+        });
+    }
+}
+
+void GamepadComponent::setMidiLearnMode(bool enabled)
+{
+    if (midiLearnMode != enabled)
+    {
+        midiLearnMode = enabled;
+        repaint();
+    }
+}
+
+void GamepadComponent::mouseDown(const juce::MouseEvent& event)
+{
+    auto point = event.position.toFloat();
+    
+    // Check if MIDI Learn button was clicked
+    if (midiLearnButtonBounds.contains(point))
+    {
+        setMidiLearnMode(!midiLearnMode);
+        return;
+    }
+    
+    // Handle MIDI Learn control clicks
+    if (midiLearnMode)
+    {
+        auto* control = findMidiLearnControlAt(point);
+        if (control != nullptr)
+        {
+            // Send a MIDI CC message with max value to indicate the control
+            sendMidiLearnCC(control->ccNumber, 1.0f);
+        }
+    }
+}
+
+GamepadComponent::MidiLearnControl* GamepadComponent::findMidiLearnControlAt(juce::Point<float> point)
+{
+    for (auto& control : midiLearnControls)
+    {
+        if (control.bounds.contains(point))
+            return &control;
+    }
+    return nullptr;
+}
+
+void GamepadComponent::sendMidiLearnCC(int ccNumber, float value)
+{
+    // Map value from 0.0-1.0 to 0-127
+    int midiValue = static_cast<int>(value * 127.0f);
+    midiOutput.sendControlChange(1, ccNumber, midiValue);
+}
+
 void GamepadComponent::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
@@ -74,17 +163,27 @@ void GamepadComponent::paint(juce::Graphics& g)
     g.drawLine(getWidth() - 1, 0, getWidth() - 1, getHeight() - 1, 1.0f);  // Right
     g.drawLine(0, getHeight() - 1, getWidth() - 1, getHeight() - 1, 1.0f);  // Bottom
     
-    // Draw connection status
+    // Draw connection status and MIDI Learn button
     g.setColour(juce::Colours::black);
     g.setFont(juce::Font("MS Sans Serif", 12.0f, juce::Font::plain));
     
+    auto statusArea = bounds.removeFromTop(30.0f).reduced(5);
+    auto midiLearnButtonArea = statusArea.removeFromRight(100.0f).reduced(2);
+    
+    // Draw MIDI Learn button
+    drawClassicButton(g, midiLearnButtonArea, midiLearnMode);
+    g.setColour(juce::Colours::black);
+    g.drawText("MIDI Learn", midiLearnButtonArea, juce::Justification::centred, false);
+    
+    // Store button bounds for click handling
+    midiLearnButtonBounds = midiLearnButtonArea;
+    
     juce::String statusText = cachedState.connected
-        ? "Connected: " + cachedState.name
+        ? "Connected: " + cachedState.name + (midiLearnMode ? " (MIDI Learn Mode)" : "")
         : "Disconnected";
     
     // Draw status text in a classic Windows style group box
-    auto statusBounds = bounds.removeFromTop(30.0f).reduced(5);
-    drawClassicGroupBox(g, statusBounds, statusText);
+    drawClassicGroupBox(g, statusArea, statusText);
     
     if (!cachedState.connected)
         return;
@@ -453,6 +552,74 @@ void GamepadComponent::paint(juce::Graphics& g)
         // Draw Z bar
         g.fillRect(zBarArea.withWidth(zBarArea.getWidth() * (zNormalized + 1.0f) / 2.0f));
     }
+
+    // Update MIDI Learn control positions to match their corresponding controls
+    for (auto& control : midiLearnControls)
+    {
+        if (control.isAxis)
+        {
+            // Find corresponding axis visual
+            for (const auto& axis : axisVisuals)
+            {
+                if (axis.axisIndex == control.index)
+                {
+                    // For sticks, create two buttons side by side
+                    if (axis.isStick)
+                    {
+                        float buttonWidth = axis.bounds.getWidth() * 0.4f;
+                        float buttonHeight = 20.0f;
+                        float y = axis.bounds.getBottom() + 5.0f;
+                        
+                        if (control.subIndex == 0) // X axis
+                            control.bounds = juce::Rectangle<float>(axis.bounds.getX(), y, buttonWidth, buttonHeight);
+                        else // Y axis
+                            control.bounds = juce::Rectangle<float>(axis.bounds.getRight() - buttonWidth, y, buttonWidth, buttonHeight);
+                    }
+                    else // Triggers
+                    {
+                        control.bounds = axis.bounds;
+                    }
+                    break;
+                }
+            }
+        }
+        else
+        {
+            // For buttons, use the same bounds as the button visual
+            for (const auto& button : buttonVisuals)
+            {
+                if (button.buttonIndex == control.index)
+                {
+                    control.bounds = button.bounds;
+                    break;
+                }
+            }
+        }
+    }
+
+    // In MIDI Learn mode, draw the learn buttons
+    if (midiLearnMode)
+    {
+        for (const auto& control : midiLearnControls)
+        {
+            // Skip controls without valid bounds
+            if (control.bounds.isEmpty())
+                continue;
+
+            // Draw the MIDI learn button
+            g.setColour(juce::Colours::blue.withAlpha(0.7f));
+            g.fillRect(control.bounds);
+            g.setColour(juce::Colours::white);
+            g.drawRect(control.bounds, 1.0f);
+            
+            // Draw the control name and CC number
+            g.setFont(11.0f);
+            g.drawText(control.name + " (CC" + juce::String(control.ccNumber) + ")",
+                      control.bounds,
+                      juce::Justification::centred,
+                      true);
+        }
+    }
 }
 
 // Helper method to draw classic Windows style button
@@ -520,21 +687,24 @@ void GamepadComponent::resized()
 
 void GamepadComponent::updateState(const GamepadManager::GamepadState& newState)
 {
-    // Send MIDI CC messages if gyroscope or touchpad state has changed
-    if (newState.gyroscope.enabled && 
-        (newState.gyroscope.x != cachedState.gyroscope.x ||
-         newState.gyroscope.y != cachedState.gyroscope.y ||
-         newState.gyroscope.z != cachedState.gyroscope.z))
+    // Only send MIDI messages if not in learn mode
+    if (!midiLearnMode)
     {
-        sendGyroscopeMidiCC(newState.gyroscope);
-    }
-    
-    if (newState.touchpad.touched &&
-        (newState.touchpad.x != cachedState.touchpad.x ||
-         newState.touchpad.y != cachedState.touchpad.y ||
-         newState.touchpad.pressure != cachedState.touchpad.pressure))
-    {
-        sendTouchpadMidiCC(newState.touchpad);
+        if (newState.gyroscope.enabled && 
+            (newState.gyroscope.x != cachedState.gyroscope.x ||
+             newState.gyroscope.y != cachedState.gyroscope.y ||
+             newState.gyroscope.z != cachedState.gyroscope.z))
+        {
+            sendGyroscopeMidiCC(newState.gyroscope);
+        }
+        
+        if (newState.touchpad.touched &&
+            (newState.touchpad.x != cachedState.touchpad.x ||
+             newState.touchpad.y != cachedState.touchpad.y ||
+             newState.touchpad.pressure != cachedState.touchpad.pressure))
+        {
+            sendTouchpadMidiCC(newState.touchpad);
+        }
     }
     
     cachedState = newState;
