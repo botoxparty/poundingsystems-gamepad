@@ -37,7 +37,6 @@ private:
     
     // Managers
     GamepadManager gamepadManager;
-    MidiOutputManager midiOutput;
     
     // MIDI mapping configuration
     struct MidiMapping {

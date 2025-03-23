@@ -8,6 +8,7 @@ GamepadComponent::GamepadComponent(const GamepadManager::GamepadState& state)
     startTimer(33); // ~30fps refresh rate
     
     // Try to create a virtual MIDI device if no physical device is available
+    auto& midiOutput = MidiOutputManager::getInstance();
     if (midiOutput.getAvailableDevices().isEmpty())
     {
         midiOutput.createVirtualDevice("Gamepad MIDI Controller");
@@ -143,7 +144,7 @@ void GamepadComponent::sendMidiLearnCC(int ccNumber, float value)
 {
     // Map value from 0.0-1.0 to 0-127
     int midiValue = static_cast<int>(value * 127.0f);
-    midiOutput.sendControlChange(1, ccNumber, midiValue);
+    MidiOutputManager::getInstance().sendControlChange(1, ccNumber, midiValue);
 }
 
 void GamepadComponent::paint(juce::Graphics& g)
@@ -729,6 +730,7 @@ void GamepadComponent::sendGyroscopeMidiCC(const GamepadManager::GamepadState::G
         return static_cast<int>((value + 10.0f) * 127.0f / 20.0f);
     };
     
+    auto& midiOutput = MidiOutputManager::getInstance();
     midiOutput.sendControlChange(channel, 20, mapGyroToCC(gyro.x));
     midiOutput.sendControlChange(channel, 21, mapGyroToCC(gyro.y));
     midiOutput.sendControlChange(channel, 22, mapGyroToCC(gyro.z));
@@ -749,6 +751,7 @@ void GamepadComponent::sendTouchpadMidiCC(const GamepadManager::GamepadState::To
         return static_cast<int>(value * 127.0f);
     };
     
+    auto& midiOutput = MidiOutputManager::getInstance();
     midiOutput.sendControlChange(channel, 23, mapTouchpadToCC(touchpad.x));
     midiOutput.sendControlChange(channel, 24, mapTouchpadToCC(touchpad.y));
     midiOutput.sendControlChange(channel, 25, mapTouchpadToCC(touchpad.pressure));

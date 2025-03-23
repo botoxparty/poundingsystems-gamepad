@@ -44,9 +44,6 @@ private:
     // Cached gamepad state for UI updates
     GamepadManager::GamepadState cachedState;
     
-    // MIDI output manager
-    MidiOutputManager midiOutput;
-    
     // MIDI Learn mode state
     bool midiLearnMode = false;
     juce::Rectangle<float> midiLearnButtonBounds;

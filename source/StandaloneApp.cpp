@@ -1,7 +1,7 @@
 #include "StandaloneApp.h"
 
 StandaloneApp::StandaloneApp()
-    : statusBar(midiOutput)
+    : statusBar(MidiOutputManager::getInstance())
 {
     // Create gamepad components
     for (int i = 0; i < GamepadManager::MAX_GAMEPADS; ++i)
@@ -140,7 +140,7 @@ void StandaloneApp::handleGamepadStateChange()
                                              static_cast<float>(mapping.minValue), 
                                              static_cast<float>(mapping.maxValue));
                     
-                    midiOutput.sendControlChange(mapping.channel, mapping.ccNumber, midiValue);
+                    MidiOutputManager::getInstance().sendControlChange(mapping.channel, mapping.ccNumber, midiValue);
                     
                     // Update previous state
                     previousState.axes[axisIndex] = currentState.axes[axisIndex];
@@ -155,7 +155,7 @@ void StandaloneApp::handleGamepadStateChange()
                     const auto& mapping = buttonMappings[gamepadIndex][buttonIndex];
                     int midiValue = currentState.buttons[buttonIndex] ? mapping.maxValue : mapping.minValue;
                     
-                    midiOutput.sendControlChange(mapping.channel, mapping.ccNumber, midiValue);
+                    MidiOutputManager::getInstance().sendControlChange(mapping.channel, mapping.ccNumber, midiValue);
                     
                     // Update previous state
                     previousState.buttons[buttonIndex] = currentState.buttons[buttonIndex];
