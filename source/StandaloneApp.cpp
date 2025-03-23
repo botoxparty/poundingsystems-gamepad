@@ -1,7 +1,6 @@
 #include "StandaloneApp.h"
 
 StandaloneApp::StandaloneApp()
-    : statusBar(MidiOutputManager::getInstance())
 {
     // Create gamepad components
     for (int i = 0; i < GamepadManager::MAX_GAMEPADS; ++i)
@@ -17,7 +16,6 @@ StandaloneApp::StandaloneApp()
     logoComponent.setImagePlacement(juce::RectanglePlacement::centred | juce::RectanglePlacement::onlyReduceInSize);
     
     // Add components
-    addAndMakeVisible(statusBar);
     addAndMakeVisible(logoComponent);
     
     // Set up MIDI mappings
@@ -63,14 +61,6 @@ void StandaloneApp::resized()
 {
     auto area = getLocalBounds();
     
-    // Status bar at the top
-    auto statusBarHeight = 45;  // Slightly taller for more presence
-    auto statusBarArea = area.removeFromTop(statusBarHeight);
-    statusBar.setBounds(statusBarArea);
-    
-    // Add padding after status bar
-    area.removeFromTop(15);
-    
     // Footer with logo
     auto logoHeight = 35;  // Taller logo area
     auto footerArea = area.removeFromBottom(logoHeight + 25);  // More padding for footer
@@ -114,9 +104,6 @@ void StandaloneApp::timerCallback()
             gamepadComponents[i]->updateState(gamepadManager.getGamepadState(i));
         }
     }
-    
-    // Update status bar
-    statusBar.setNumGamepads(gamepadManager.getNumConnectedGamepads());
 }
 
 void StandaloneApp::handleGamepadStateChange()

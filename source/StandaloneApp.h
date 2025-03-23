@@ -4,7 +4,6 @@
 #include "GamepadManager.h"
 #include "MidiOutputManager.h"
 #include "GamepadComponent.h"
-#include "StatusBar.h"
 #include "BinaryData.h"
 
 class StandaloneApp : public juce::Component,
@@ -31,7 +30,6 @@ private:
     std::array<GamepadState, GamepadManager::MAX_GAMEPADS> previousGamepadStates;
     
     // UI Components
-    StatusBar statusBar;
     std::array<std::unique_ptr<GamepadComponent>, GamepadManager::MAX_GAMEPADS> gamepadComponents;
     juce::ImageComponent logoComponent;
     
