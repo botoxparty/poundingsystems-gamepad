@@ -10,6 +10,8 @@ StandaloneApp::StandaloneApp()
     auto logoImage = juce::ImageCache::getFromMemory(BinaryData::PoundingSystemsLogo_png, BinaryData::PoundingSystemsLogo_pngSize);
     logoComponent.setImage(logoImage);
     logoComponent.setImagePlacement(juce::RectanglePlacement::centred | juce::RectanglePlacement::onlyReduceInSize);
+    logoComponent.setMouseCursor(juce::MouseCursor::PointingHandCursor);
+    logoComponent.addMouseListener(this, false);
     
     // Add components
     addAndMakeVisible(logoComponent);
@@ -140,5 +142,19 @@ void StandaloneApp::setupMidiMappings()
             127, // max value
             true // is a button
         };
+    }
+}
+
+void StandaloneApp::handleLogoClick()
+{
+    auto* aboutWindow = new AboutWindow();
+    aboutWindow->enterModalState(true, nullptr, true);
+}
+
+void StandaloneApp::mouseUp(const juce::MouseEvent& event)
+{
+    if (event.eventComponent == &logoComponent)
+    {
+        handleLogoClick();
     }
 }
