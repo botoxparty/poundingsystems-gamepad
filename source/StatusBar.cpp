@@ -3,27 +3,27 @@
 StatusBar::StatusBar(MidiOutputManager& midiOutputManager)
     : midiOutput(midiOutputManager)
 {
-    // Set up status label with classic Windows style
+    // Set up status label with modern style
     statusLabel.setText("No gamepads connected", juce::dontSendNotification);
-    statusLabel.setFont(juce::Font("MS Sans Serif", 12.0f, juce::Font::plain));
+    statusLabel.setFont(juce::Font(12.0f));
     statusLabel.setJustificationType(juce::Justification::centredLeft);
     statusLabel.setColour(juce::Label::textColourId, juce::Colours::black);
     addAndMakeVisible(statusLabel);
     
-    // Set up MIDI device selector with classic Windows style
+    // Set up MIDI device selector with modern style
     midiDeviceSelector.setTextWhenNothingSelected("Select MIDI Output Device");
     
-    // Classic Windows colors for combo box
+    // Modern colors for combo box
     midiDeviceSelector.setColour(juce::ComboBox::backgroundColourId, juce::Colours::white);
-    midiDeviceSelector.setColour(juce::ComboBox::outlineColourId, juce::Colours::black);
+    midiDeviceSelector.setColour(juce::ComboBox::outlineColourId, juce::Colours::darkgrey);
     midiDeviceSelector.setColour(juce::ComboBox::textColourId, juce::Colours::black);
     midiDeviceSelector.setColour(juce::ComboBox::arrowColourId, juce::Colours::black);
     
-    // Classic Windows popup menu colors
+    // Modern popup menu colors
     midiDeviceSelector.setColour(juce::PopupMenu::backgroundColourId, juce::Colours::white);
     midiDeviceSelector.setColour(juce::PopupMenu::textColourId, juce::Colours::black);
-    midiDeviceSelector.setColour(juce::PopupMenu::highlightedBackgroundColourId, juce::Colour(0, 0, 128));  // Classic Windows highlight blue
-    midiDeviceSelector.setColour(juce::PopupMenu::highlightedTextColourId, juce::Colours::white);
+    midiDeviceSelector.setColour(juce::PopupMenu::highlightedBackgroundColourId, juce::Colours::lightgrey);
+    midiDeviceSelector.setColour(juce::PopupMenu::highlightedTextColourId, juce::Colours::black);
     
     addAndMakeVisible(midiDeviceSelector);
     refreshMidiDevices();
@@ -37,17 +37,12 @@ void StatusBar::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
     
-    // Classic Windows 98/2000 toolbar style background
-    g.fillAll(juce::Colour(192, 192, 192));  // System gray
+    // Light gray background
+    g.fillAll(juce::Colour(240, 240, 240));
     
-    // Draw beveled edges (classic Windows style)
-    g.setColour(juce::Colours::white);
-    g.drawLine(0, 0, getWidth() - 1, 0, 1.0f);  // Top
-    g.drawLine(0, 0, 0, getHeight() - 1, 1.0f);  // Left
-    
+    // Simple border
     g.setColour(juce::Colours::darkgrey);
-    g.drawLine(getWidth() - 1, 0, getWidth() - 1, getHeight() - 1, 1.0f);  // Right
-    g.drawLine(0, getHeight() - 1, getWidth() - 1, getHeight() - 1, 1.0f);  // Bottom
+    g.drawRect(bounds, 1.0f);
 }
 
 void StatusBar::resized()

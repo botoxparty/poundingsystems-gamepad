@@ -37,24 +37,12 @@ StandaloneApp::~StandaloneApp()
 
 void StandaloneApp::paint(juce::Graphics& g)
 {
-    auto bounds = getLocalBounds().toFloat();
+    // Light gray background
+    g.fillAll(juce::Colour(230, 230, 230));  // Slightly darker gray for better contrast
     
-    // Classic Windows 98/2000 style background color
-    g.fillAll(juce::Colour(192, 192, 192));  // Classic Windows gray
-    
-    // Draw beveled edge around the window (classic Windows style)
-    g.setColour(juce::Colours::white);
-    g.drawLine(0, 0, getWidth() - 1, 0, 1.0f);  // Top
-    g.drawLine(0, 0, 0, getHeight() - 1, 1.0f);  // Left
-    
+    // Simple border
     g.setColour(juce::Colours::darkgrey);
-    g.drawLine(getWidth() - 1, 0, getWidth() - 1, getHeight() - 1, 1.0f);  // Right
-    g.drawLine(0, getHeight() - 1, getWidth() - 1, getHeight() - 1, 1.0f);  // Bottom
-    
-    // Add subtle inset effect for depth (common in Windows 98/2000)
-    g.setColour(juce::Colours::darkgrey.darker());
-    g.drawLine(1, getHeight() - 2, getWidth() - 2, getHeight() - 2, 1.0f);  // Bottom inner
-    g.drawLine(getWidth() - 2, 1, getWidth() - 2, getHeight() - 2, 1.0f);  // Right inner
+    g.drawRect(getLocalBounds().toFloat(), 1.0f);
 }
 
 void StandaloneApp::resized()
@@ -62,29 +50,32 @@ void StandaloneApp::resized()
     auto area = getLocalBounds();
     
     // Footer with logo
-    auto logoHeight = 35;  // Taller logo area
-    auto footerArea = area.removeFromBottom(logoHeight + 25);  // More padding for footer
-    
-    // Create a sleek container for the logo
+    auto logoHeight = 35;
+    auto footerArea = area.removeFromBottom(logoHeight + 25);
     auto logoArea = footerArea.reduced(20, 5);
     logoComponent.setBounds(logoArea);
     
-    // Gamepad area with modern spacing
-    auto gamepadArea = area.reduced(25, 0);  // More horizontal padding for better framing
+    // Gamepad area with padding
+    auto gamepadArea = area.reduced(25, 15);  // Add vertical padding
     int connectedGamepads = gamepadManager.getNumConnectedGamepads();
     
     if (connectedGamepads > 0)
     {
-        int heightPerGamepad = gamepadArea.getHeight() / connectedGamepads;
+        int heightPerGamepad = (gamepadArea.getHeight() - (connectedGamepads - 1) * 10) / connectedGamepads;
+        int visibleCount = 0;
         
         for (int i = 0; i < GamepadManager::MAX_GAMEPADS; ++i)
         {
             if (gamepadManager.isGamepadConnected(i))
             {
-                // Modern spacing between gamepads
-                auto componentBounds = gamepadArea.removeFromTop(heightPerGamepad).reduced(0, 8);
+                // Add spacing between gamepads
+                if (visibleCount > 0)
+                    gamepadArea.removeFromTop(10);
+                
+                auto componentBounds = gamepadArea.removeFromTop(heightPerGamepad);
                 gamepadComponents[i]->setBounds(componentBounds);
                 gamepadComponents[i]->setVisible(true);
+                visibleCount++;
             }
             else
             {

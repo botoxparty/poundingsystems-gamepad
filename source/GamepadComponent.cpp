@@ -99,14 +99,14 @@ void GamepadComponent::mouseDown(const juce::MouseEvent& event)
 {
     auto point = event.position.toFloat();
     
-    // Check if MIDI Learn button was clicked
+    // Check if Learn Mode button was clicked
     if (midiLearnButtonBounds.contains(point))
     {
         setMidiLearnMode(!midiLearnMode);
         return;
     }
     
-    // Handle MIDI Learn control clicks
+    // Handle Learn Mode control clicks
     if (midiLearnMode)
     {
         auto* control = findMidiLearnControlAt(point);
@@ -139,36 +139,31 @@ void GamepadComponent::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
     
-    // Draw classic Windows style background with beveled edge
-    g.setColour(juce::Colour(192, 192, 192));  // System gray
+    // White background to contrast with parent's light gray
+    g.setColour(juce::Colours::white);
     g.fillAll();
     
-    // Draw inset panel effect
+    // Simple border
     g.setColour(juce::Colours::darkgrey);
-    g.drawLine(0, 0, getWidth() - 1, 0, 1.0f);  // Top
-    g.drawLine(0, 0, 0, getHeight() - 1, 1.0f);  // Left
+    g.drawRect(getLocalBounds().toFloat(), 1.0f);
     
-    g.setColour(juce::Colours::white);
-    g.drawLine(getWidth() - 1, 0, getWidth() - 1, getHeight() - 1, 1.0f);  // Right
-    g.drawLine(0, getHeight() - 1, getWidth() - 1, getHeight() - 1, 1.0f);  // Bottom
-    
-    // Draw connection status and MIDI Learn button
+    // Draw connection status and Learn Mode button
     g.setColour(juce::Colours::black);
     g.setFont(juce::Font("MS Sans Serif", 12.0f, juce::Font::plain));
     
     auto statusArea = bounds.removeFromTop(30.0f).reduced(5);
-    auto midiLearnButtonArea = statusArea.removeFromRight(100.0f).reduced(2);
+    auto midiLearnButtonArea = statusArea.removeFromRight(100.0f);
     
-    // Draw MIDI Learn button
+    // Draw Learn Mode button
     drawClassicButton(g, midiLearnButtonArea, midiLearnMode);
     g.setColour(juce::Colours::black);
-    g.drawText("MIDI Learn", midiLearnButtonArea, juce::Justification::centred, false);
+    g.drawText("Learn Mode", midiLearnButtonArea, juce::Justification::centred, false);
     
     // Store button bounds for click handling
     midiLearnButtonBounds = midiLearnButtonArea;
     
     juce::String statusText = cachedState.connected
-        ? "Connected: " + cachedState.name + (midiLearnMode ? " (MIDI Learn Mode)" : "")
+        ? "Connected: " + cachedState.name + (midiLearnMode ? " (Learn Mode)" : "")
         : "Disconnected";
     
     // Draw status text in a classic Windows style group box
@@ -542,7 +537,7 @@ void GamepadComponent::paint(juce::Graphics& g)
         g.fillRect(zBarArea.withWidth(zBarArea.getWidth() * (zNormalized + 1.0f) / 2.0f));
     }
 
-    // Update MIDI Learn control positions to match their corresponding controls
+    // Update Learn Mode control positions to match their corresponding controls
     for (auto& control : midiLearnControls)
     {
         if (control.isAxis)
@@ -586,7 +581,7 @@ void GamepadComponent::paint(juce::Graphics& g)
         }
     }
 
-    // In MIDI Learn mode, draw the learn buttons
+    // In Learn Mode mode, draw the learn buttons
     if (midiLearnMode)
     {
         for (const auto& control : midiLearnControls)
@@ -595,7 +590,7 @@ void GamepadComponent::paint(juce::Graphics& g)
             if (control.bounds.isEmpty())
                 continue;
 
-            // Draw the MIDI learn button
+            // Draw the Learn Mode button
             g.setColour(juce::Colours::blue.withAlpha(0.7f));
             g.fillRect(control.bounds);
             g.setColour(juce::Colours::white);
@@ -614,58 +609,37 @@ void GamepadComponent::paint(juce::Graphics& g)
 // Helper method to draw classic Windows style button
 void GamepadComponent::drawClassicButton(juce::Graphics& g, const juce::Rectangle<float>& bounds, bool isPressed)
 {
-    g.setColour(juce::Colour(192, 192, 192));  // System gray
+    // Fill with lighter gray when pressed
+    g.setColour(isPressed ? juce::Colours::grey : juce::Colour(220, 220, 220));
     g.fillRect(bounds);
     
-    if (isPressed)
-    {
-        // Pressed state - inset effect
-        g.setColour(juce::Colours::darkgrey);
-        g.drawLine(bounds.getX(), bounds.getY(), bounds.getRight(), bounds.getY(), 1.0f);  // Top
-        g.drawLine(bounds.getX(), bounds.getY(), bounds.getX(), bounds.getBottom(), 1.0f);  // Left
-        
-        g.setColour(juce::Colours::white);
-        g.drawLine(bounds.getRight(), bounds.getY(), bounds.getRight(), bounds.getBottom(), 1.0f);  // Right
-        g.drawLine(bounds.getX(), bounds.getBottom(), bounds.getRight(), bounds.getBottom(), 1.0f);  // Bottom
-    }
-    else
-    {
-        // Normal state - raised effect
-        g.setColour(juce::Colours::white);
-        g.drawLine(bounds.getX(), bounds.getY(), bounds.getRight(), bounds.getY(), 1.0f);  // Top
-        g.drawLine(bounds.getX(), bounds.getY(), bounds.getX(), bounds.getBottom(), 1.0f);  // Left
-        
-        g.setColour(juce::Colours::darkgrey);
-        g.drawLine(bounds.getRight(), bounds.getY(), bounds.getRight(), bounds.getBottom(), 1.0f);  // Right
-        g.drawLine(bounds.getX(), bounds.getBottom(), bounds.getRight(), bounds.getBottom(), 1.0f);  // Bottom
-    }
+    // Simple border
+    g.setColour(juce::Colours::darkgrey);
+    g.drawRect(bounds, 1.0f);
 }
 
 // Helper method to draw classic Windows style inset panel
 void GamepadComponent::drawClassicInsetPanel(juce::Graphics& g, const juce::Rectangle<float>& bounds)
 {
+    // White background
     g.setColour(juce::Colours::white);
     g.fillRect(bounds);
     
+    // Simple border
     g.setColour(juce::Colours::darkgrey);
-    g.drawLine(bounds.getX(), bounds.getY(), bounds.getRight(), bounds.getY(), 1.0f);  // Top
-    g.drawLine(bounds.getX(), bounds.getY(), bounds.getX(), bounds.getBottom(), 1.0f);  // Left
-    
-    g.setColour(juce::Colours::white);
-    g.drawLine(bounds.getRight(), bounds.getY(), bounds.getRight(), bounds.getBottom(), 1.0f);  // Right
-    g.drawLine(bounds.getX(), bounds.getBottom(), bounds.getRight(), bounds.getBottom(), 1.0f);  // Bottom
+    g.drawRect(bounds, 1.0f);
 }
 
 // Helper method to draw classic Windows style group box
 void GamepadComponent::drawClassicGroupBox(juce::Graphics& g, const juce::Rectangle<float>& bounds, const juce::String& text)
 {
-    // Draw the group box border with classic Windows style
+    // Simple border
     g.setColour(juce::Colours::darkgrey);
     g.drawRect(bounds, 1.0f);
     
     // Draw the text
     g.setColour(juce::Colours::black);
-    g.setFont(juce::Font("MS Sans Serif", 11.0f, juce::Font::plain));
+    g.setFont(juce::Font(11.0f));
     g.drawText(text, bounds.reduced(5), juce::Justification::centredLeft, false);
 }
 
