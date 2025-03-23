@@ -171,7 +171,16 @@ void GamepadComponent::paint(juce::Graphics& g)
     drawClassicGroupBox(g, statusArea, statusText);
     
     if (!cachedState.connected)
+    {
+        // Draw connection message in the center
+        g.setColour(juce::Colours::black);
+        g.setFont(juce::Font("MS Sans Serif", 14.0f, juce::Font::plain));
+        g.drawText("Connect your game controller via USB or Bluetooth",
+                  bounds,
+                  juce::Justification::centred,
+                  true);
         return;
+    }
     
     // Draw buttons with classic Windows style
     float buttonSize = 30.0f;
