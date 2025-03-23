@@ -73,93 +73,17 @@ void GamepadManager::timerCallback()
 void GamepadManager::updateGamepadStates()
 {
     if (!sdlInitialized)
+    {
+        juce::Logger::writeToLog("DEBUG: SDL not initialized in updateGamepadStates");
         return;
+    }
     
     // Process SDL events (important for device hot-plugging)
     handleSDLEvents();
     
-    // Check for new gamepads
-    for (size_t i = 0; i < MAX_GAMEPADS; ++i)
-    {
-        if (sdlGamepads[i] == nullptr)
-        {
-            // Try to open the gamepad using device index
-            if (SDL_IsGamepad(static_cast<int>(i)))
-            {
-                sdlGamepads[i] = SDL_OpenGamepad(static_cast<int>(i));
-                if (sdlGamepads[i] != nullptr)
-                {
-                    gamepadStates[i].connected = true;
-                    gamepadStates[i].name = SDL_GetGamepadName(sdlGamepads[i]);
-                    gamepadStates[i].deviceId = SDL_GetGamepadID(sdlGamepads[i]);
-                    SDL_Joystick* joystick = SDL_GetGamepadJoystick(sdlGamepads[i]);
-                    
-                    // Add detailed joystick information
-                    if (joystick != nullptr)
-                    {
-                        SDL_JoystickID joyId = SDL_GetJoystickID(joystick);
-                        // Make sure we're using the joystick ID as the device ID
-                        gamepadStates[i].deviceId = joyId;
-                        juce::Logger::writeToLog("Detailed joystick info:");
-                        juce::Logger::writeToLog(" - Joystick instance ID: " + juce::String(joyId));
-                        juce::Logger::writeToLog(" - Is game gamepad: " + juce::String((int)SDL_IsGamepad(joyId)));
-                    }
-                    
-                    
-                    juce::Logger::writeToLog("Gamepad details:");
-                    juce::Logger::writeToLog(" - Name: " + gamepadStates[i].name);
-                    juce::Logger::writeToLog(" - Gamepad ID: " + juce::String(gamepadStates[i].deviceId));
-                    juce::Logger::writeToLog(" - Index used: " + juce::String(i));
-                    
-                    // Enable gyroscope if available
-                    bool hasSensor = SDL_GamepadHasSensor(sdlGamepads[i], SDL_SENSOR_GYRO);
-                    juce::Logger::writeToLog("Gyroscope support check for " + gamepadStates[i].name + ": " + (hasSensor ? "Supported" : "Not supported"));
-                    
-                    if (hasSensor)
-                    {
-                        // Log sensor capabilities
-                        float data_rate = SDL_GetGamepadSensorDataRate(sdlGamepads[i], SDL_SENSOR_GYRO);
-                        juce::Logger::writeToLog("Gyroscope data rate: " + juce::String(data_rate) + " Hz");
-                        
-                        // Try to enable the sensor
-                        int result = SDL_SetGamepadSensorEnabled(sdlGamepads[i], SDL_SENSOR_GYRO, true);
-                        juce::Logger::writeToLog("Enable sensor result: " + juce::String(result));
-                        
-                        // Check if sensor is actually enabled
-                        if (SDL_GamepadSensorEnabled(sdlGamepads[i], SDL_SENSOR_GYRO))
-                        {
-                            gamepadStates[i].gyroscope.enabled = true;
-                            juce::Logger::writeToLog("Gyroscope confirmed enabled for: " + gamepadStates[i].name);
-                            
-                            // Update device ID to match joystick ID for more reliable event matching
-                            SDL_Joystick* joystick = SDL_GetGamepadJoystick(sdlGamepads[i]);
-                            if (joystick != nullptr)
-                            {
-                                SDL_JoystickID joyId = SDL_GetJoystickID(joystick);
-                                gamepadStates[i].deviceId = joyId;
-                                juce::Logger::writeToLog("Updated device ID to joystick ID: " + juce::String(joyId));
-                            }
-                            
-                            // Log that we're now using event-driven gyroscope data
-                            juce::Logger::writeToLog("Using event-driven gyroscope updates for " + gamepadStates[i].name);
-                        }
-                        else
-                        {
-                            juce::Logger::writeToLog("Failed to enable gyroscope (state check failed): " + juce::String(SDL_GetError()));
-                        }
-                    }
-                    
-                    // Notify callbacks
-                    for (auto& callback : stateChangeCallbacks)
-                        callback();
-                }
-            }
-        }
-    }
-    
-    // Update states of connected gamepads
     bool stateChanged = false;
     
+    // Update states of connected gamepads
     for (size_t i = 0; i < MAX_GAMEPADS; ++i)
     {
         if (sdlGamepads[i] != nullptr)
@@ -192,9 +116,6 @@ void GamepadManager::updateGamepadStates()
                         juce::Logger::writeToLog("Re-enabled gyroscope on polling check");
                     }
                 }
-                
-                // Note: We no longer manually poll for gyroscope data here
-                // Gyroscope data is now handled by SDL_EVENT_GAMEPAD_SENSOR_UPDATE events
             }
             
             // Update axes
@@ -296,7 +217,95 @@ void GamepadManager::handleSDLEvents()
     {
         if (event.type == SDL_EVENT_GAMEPAD_ADDED)
         {
-            // A new gamepad was connected, this will be handled in updateGamepadStates
+            // Immediately handle the new gamepad connection
+            SDL_JoystickID deviceId = event.gdevice.which;
+            juce::Logger::writeToLog("DEBUG: Gamepad ADDED event received - event ID: " + juce::String(deviceId));
+            
+            // Log currently connected gamepads
+            for (size_t j = 0; j < MAX_GAMEPADS; ++j) {
+                if (sdlGamepads[j] != nullptr) {
+                    juce::Logger::writeToLog("DEBUG: Existing gamepad at slot " + juce::String(j) + 
+                                           ": " + gamepadStates[j].name + 
+                                           " (ID: " + juce::String(gamepadStates[j].deviceId) + ")");
+                }
+            }
+            
+            // Find an empty slot for the new gamepad
+            for (size_t i = 0; i < MAX_GAMEPADS; ++i)
+            {
+                if (sdlGamepads[i] == nullptr)
+                {
+                    juce::Logger::writeToLog("DEBUG: Found empty slot at index " + juce::String(i));
+                    
+                    // Check if it's actually a gamepad
+                    bool isGamepad = SDL_IsGamepad(deviceId);
+                    juce::Logger::writeToLog("DEBUG: Is device a gamepad? " + juce::String(isGamepad ? "Yes" : "No"));
+                    
+                    if (isGamepad)
+                    {
+                        sdlGamepads[i] = SDL_OpenGamepad(deviceId);
+                        if (sdlGamepads[i] != nullptr)
+                        {
+                            gamepadStates[i].connected = true;
+                            gamepadStates[i].name = SDL_GetGamepadName(sdlGamepads[i]);
+                            gamepadStates[i].deviceId = deviceId;
+                            
+                            juce::Logger::writeToLog("DEBUG: Successfully opened gamepad at slot " + juce::String(i) + 
+                                                   "\n - Name: " + gamepadStates[i].name + 
+                                                   "\n - Device ID: " + juce::String(gamepadStates[i].deviceId) +
+                                                   "\n - SDL Instance ID: " + juce::String(SDL_GetGamepadID(sdlGamepads[i])));
+
+                            // Enable gyroscope if available
+                            bool hasSensor = SDL_GamepadHasSensor(sdlGamepads[i], SDL_SENSOR_GYRO);
+                            juce::Logger::writeToLog("Gyroscope support check for " + gamepadStates[i].name + ": " + (hasSensor ? "Supported" : "Not supported"));
+                            
+                            if (hasSensor)
+                            {
+                                // Log sensor capabilities
+                                float data_rate = SDL_GetGamepadSensorDataRate(sdlGamepads[i], SDL_SENSOR_GYRO);
+                                juce::Logger::writeToLog("Gyroscope data rate: " + juce::String(data_rate) + " Hz");
+                                
+                                // Try to enable the sensor
+                                int result = SDL_SetGamepadSensorEnabled(sdlGamepads[i], SDL_SENSOR_GYRO, true);
+                                juce::Logger::writeToLog("Enable sensor result: " + juce::String(result));
+                                
+                                // Check if sensor is actually enabled
+                                if (SDL_GamepadSensorEnabled(sdlGamepads[i], SDL_SENSOR_GYRO))
+                                {
+                                    gamepadStates[i].gyroscope.enabled = true;
+                                    juce::Logger::writeToLog("Gyroscope confirmed enabled for: " + gamepadStates[i].name);
+                                    
+                                    // Update device ID to match joystick ID for more reliable event matching
+                                    SDL_Joystick* joystick = SDL_GetGamepadJoystick(sdlGamepads[i]);
+                                    if (joystick != nullptr)
+                                    {
+                                        SDL_JoystickID joyId = SDL_GetJoystickID(joystick);
+                                        gamepadStates[i].deviceId = joyId;
+                                        juce::Logger::writeToLog("Updated device ID to joystick ID: " + juce::String(joyId));
+                                    }
+                                    
+                                    // Log that we're using event-driven gyroscope data
+                                    juce::Logger::writeToLog("Using event-driven gyroscope updates for " + gamepadStates[i].name);
+                                }
+                                else
+                                {
+                                    juce::Logger::writeToLog("Failed to enable gyroscope (state check failed): " + juce::String(SDL_GetError()));
+                                }
+                            }
+                            
+                            // Notify callbacks of the new connection
+                            for (auto& callback : stateChangeCallbacks)
+                                callback();
+                            
+                            break;
+                        }
+                        else
+                        {
+                            juce::Logger::writeToLog("DEBUG: Failed to open gamepad: " + juce::String(SDL_GetError()));
+                        }
+                    }
+                }
+            }
         }
         else if (event.type == SDL_EVENT_GAMEPAD_REMOVED)
         {
