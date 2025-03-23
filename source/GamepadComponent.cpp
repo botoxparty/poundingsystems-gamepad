@@ -50,7 +50,7 @@ void GamepadComponent::setupVisuals()
 void GamepadComponent::setupMidiLearnControls()
 {
     // Starting CC number for controls
-    int nextCC = 20;
+    int nextCC = 35; // Start after the button CCs (20-34)
     
     // Add gyroscope controls
     midiLearnControls.push_back({"Gyro X", {}, nextCC++, true, -1, 0});
@@ -62,23 +62,23 @@ void GamepadComponent::setupMidiLearnControls()
     midiLearnControls.push_back({"Touch Y", {}, nextCC++, true, -1, 4});
     midiLearnControls.push_back({"Touch Pressure", {}, nextCC++, true, -1, 5});
     
-    // Add stick controls
-    midiLearnControls.push_back({"Left Stick X", {}, nextCC++, true, 0, 0});
-    midiLearnControls.push_back({"Left Stick Y", {}, nextCC++, true, 0, 1});
-    midiLearnControls.push_back({"Right Stick X", {}, nextCC++, true, 2, 0});
-    midiLearnControls.push_back({"Right Stick Y", {}, nextCC++, true, 2, 1});
+    // Add stick controls - using CC 1-4 for sticks
+    midiLearnControls.push_back({"Left Stick X", {}, 1, true, 0, 0});
+    midiLearnControls.push_back({"Left Stick Y", {}, 2, true, 0, 1});
+    midiLearnControls.push_back({"Right Stick X", {}, 3, true, 2, 0});
+    midiLearnControls.push_back({"Right Stick Y", {}, 4, true, 2, 1});
     
-    // Add trigger controls
-    midiLearnControls.push_back({"L2", {}, nextCC++, true, 4, 0});
-    midiLearnControls.push_back({"R2", {}, nextCC++, true, 5, 0});
+    // Add trigger controls - using CC 5-6 for triggers
+    midiLearnControls.push_back({"L2", {}, 5, true, 4, 0});
+    midiLearnControls.push_back({"R2", {}, 6, true, 5, 0});
     
-    // Add button controls
+    // Add button controls - using CC 20-34 for buttons
     for (const auto& buttonVisual : buttonVisuals)
     {
         midiLearnControls.push_back({
             buttonVisual.name,
             buttonVisual.bounds,
-            nextCC++,
+            buttonVisual.buttonIndex + 20, // CC numbers start at 20
             false,
             buttonVisual.buttonIndex,
             0
@@ -377,6 +377,18 @@ void GamepadComponent::paint(juce::Graphics& g)
             auto stickBounds = juce::Rectangle<float>(stickX - buttonSize/2, stickY - buttonSize/2, buttonSize, buttonSize);
             drawClassicButton(g, stickBounds, true);
             
+            // Display X/Y values above the stick
+            g.setColour(juce::Colours::black);
+            g.setFont(juce::Font("MS Sans Serif", 11.0f, juce::Font::plain));
+            juce::String valueText = juce::String::formatted("X: %.2f Y: %.2f", x, y);
+            g.drawText(valueText,
+                      axisVisual.bounds.getX(),
+                      axisVisual.bounds.getY() - 20.0f,
+                      axisVisual.bounds.getWidth(),
+                      15.0f,
+                      juce::Justification::centred,
+                      false);
+            
             // Draw stick name below the stick
             g.setColour(juce::Colours::black);
             g.setFont(juce::Font("MS Sans Serif", 11.0f, juce::Font::plain));
@@ -557,12 +569,12 @@ void GamepadComponent::paint(juce::Graphics& g)
             {
                 if (axis.axisIndex == control.index)
                 {
-                    // For sticks, create two buttons side by side
+                    // For sticks, create two buttons above the stick
                     if (axis.isStick)
                     {
                         float buttonWidth = axis.bounds.getWidth() * 0.4f;
                         float buttonHeight = 20.0f;
-                        float y = axis.bounds.getBottom() + 5.0f;
+                        float y = axis.bounds.getY() - buttonHeight - 5.0f; // Position above the stick
                         
                         if (control.subIndex == 0) // X axis
                             control.bounds = juce::Rectangle<float>(axis.bounds.getX(), y, buttonWidth, buttonHeight);
@@ -600,15 +612,28 @@ void GamepadComponent::paint(juce::Graphics& g)
             if (control.bounds.isEmpty())
                 continue;
 
-            // Draw the Learn Mode button
+            // Draw the Learn Mode button with a more visible style
             g.setColour(juce::Colours::blue.withAlpha(0.7f));
             g.fillRect(control.bounds);
             g.setColour(juce::Colours::white);
             g.drawRect(control.bounds, 1.0f);
             
-            // Draw the control name and CC number
+            // Draw the control name and CC number with better formatting
             g.setFont(11.0f);
-            g.drawText(control.name + " (CC" + juce::String(control.ccNumber) + ")",
+            juce::String buttonText;
+            
+            // For stick axes, show X/Y indicator
+            if ((control.name.contains("Left Stick") || control.name.contains("Right Stick")))
+            {
+                buttonText = control.name.contains("X") ? "X (CC" : "Y (CC";
+                buttonText += juce::String(control.ccNumber) + ")";
+            }
+            else
+            {
+                buttonText = control.name + " (CC" + juce::String(control.ccNumber) + ")";
+            }
+            
+            g.drawText(buttonText,
                       control.bounds,
                       juce::Justification::centred,
                       true);
