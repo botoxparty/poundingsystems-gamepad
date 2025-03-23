@@ -9,34 +9,16 @@ MidiOutputManager::MidiOutputManager()
     for (const auto& device : devices)
         juce::Logger::writeToLog(" - " + device.name + " (" + device.identifier + ")");
     
-    // Create a virtual MIDI device
+    // Always create a virtual MIDI device
     if (!createVirtualDevice("Gamepad MIDI Controller"))
     {
         juce::Logger::writeToLog("Failed to create virtual MIDI device");
-        
-        // If we couldn't create a virtual device, let's check for the IAC Driver
-        bool foundIAC = false;
-        for (const auto& device : devices)
-        {
-            if (device.name.contains("IAC"))
-            {
-                juce::Logger::writeToLog("Found IAC Driver: " + device.name);
-                juce::Logger::writeToLog("Consider using this instead of creating a virtual device");
-                foundIAC = true;
-                break;
-            }
-        }
-        
-        if (!foundIAC)
-        {
-            juce::Logger::writeToLog("No IAC Driver found.");
-            juce::Logger::writeToLog("On macOS, you may need to enable the IAC Driver in Audio MIDI Setup.");
-        }
+        juce::Logger::writeToLog("This is likely a permissions or entitlements issue.");
+        juce::Logger::writeToLog("Make sure your app is not sandboxed and has proper entitlements.");
     }
     else
     {
         juce::Logger::writeToLog("Successfully created virtual MIDI device");
-        
         if (waitForDeviceToAppear())
         {
             juce::Logger::writeToLog("Virtual device successfully registered in system");
@@ -161,7 +143,20 @@ juce::Array<juce::MidiDeviceInfo> MidiOutputManager::getAvailableDevices() const
 
 bool MidiOutputManager::setOutputDevice(const juce::String& deviceIdentifier)
 {
-    midiOutput.reset();
+    // Don't reopen the same device
+    if (midiOutput != nullptr && currentDeviceInfo.identifier == deviceIdentifier)
+    {
+        juce::Logger::writeToLog("Device already open: " + currentDeviceInfo.name);
+        return true;
+    }
+    
+    // Close existing device if any
+    if (midiOutput != nullptr)
+    {
+        midiOutput->stopBackgroundThread();
+        midiOutput.reset();
+    }
+    
     isVirtualDevice = false;
     
     if (deviceIdentifier.isEmpty())
