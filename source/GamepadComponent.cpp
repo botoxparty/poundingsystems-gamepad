@@ -6,18 +6,6 @@ GamepadComponent::GamepadComponent(const GamepadManager::GamepadState& state)
     setupVisuals();
     setupMidiLearnControls();
     startTimer(33); // ~30fps refresh rate
-    
-    // Try to create a virtual MIDI device if no physical device is available
-    auto& midiOutput = MidiOutputManager::getInstance();
-    if (midiOutput.getAvailableDevices().isEmpty())
-    {
-        midiOutput.createVirtualDevice("Gamepad MIDI Controller");
-    }
-    else
-    {
-        // Use the first available device
-        midiOutput.setOutputDevice(midiOutput.getAvailableDevices()[0].identifier);
-    }
 }
 
 GamepadComponent::~GamepadComponent()

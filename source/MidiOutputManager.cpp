@@ -1,210 +1,91 @@
 #include "MidiOutputManager.h"
 
 MidiOutputManager::MidiOutputManager()
-    : deviceListConnection(juce::MidiDeviceListConnection::make([this] { handleDevicesChanged(); }))
 {
     // Log available devices before creating virtual device
-    auto devices = getAvailableDevices();
+    auto devices = juce::MidiOutput::getAvailableDevices();
     juce::Logger::writeToLog("Available MIDI devices before creating virtual device:");
     for (const auto& device : devices)
         juce::Logger::writeToLog(" - " + device.name + " (" + device.identifier + ")");
     
-    // Always create a virtual MIDI device
-    if (!createVirtualDevice("Gamepad MIDI Controller"))
+    // Try to use first available device, if none available create virtual device
+    if (devices.isEmpty())
+        createInitialVirtualDevice();
+    else
+        setOutputDevice(devices[0].identifier);
+}
+
+void MidiOutputManager::createInitialVirtualDevice()
+{
+    // Create virtual MIDI device
+    midiOutput = juce::MidiOutput::createNewDevice("Gamepad MIDI Controller");
+    
+    if (midiOutput != nullptr)
+    {
+        currentDeviceInfo = midiOutput->getDeviceInfo();
+        midiOutput->startBackgroundThread();
+        
+        juce::Logger::writeToLog("Virtual MIDI device created successfully");
+        juce::Logger::writeToLog("Device name: " + currentDeviceInfo.name);
+        juce::Logger::writeToLog("Device identifier: " + currentDeviceInfo.identifier);
+    }
+    else
     {
         juce::Logger::writeToLog("Failed to create virtual MIDI device");
         juce::Logger::writeToLog("This is likely a permissions or entitlements issue.");
         juce::Logger::writeToLog("Make sure your app is not sandboxed and has proper entitlements.");
     }
-    else
-    {
-        juce::Logger::writeToLog("Successfully created virtual MIDI device");
-        if (waitForDeviceToAppear())
-        {
-            juce::Logger::writeToLog("Virtual device successfully registered in system");
-        }
-        else
-        {
-            juce::Logger::writeToLog("Virtual device failed to appear in system");
-            juce::Logger::writeToLog("This is likely a permissions or entitlements issue.");
-        }
-    }
-    
-    isInitializing = false;
-}
-
-bool MidiOutputManager::waitForDeviceToAppear()
-{
-    // Try for up to 3 seconds (6 attempts, 500ms each)
-    for (int attempt = 0; attempt < 6; ++attempt)
-    {
-        juce::Thread::sleep(500);
-        
-        auto devices = getAvailableDevices();
-        juce::Logger::writeToLog("Checking for virtual device (attempt " + juce::String(attempt + 1) + "):");
-        
-        for (const auto& device : devices)
-        {
-            juce::Logger::writeToLog(" - " + device.name + " (" + device.identifier + ")");
-            
-            // Check by identifier (most reliable)
-            if (device.identifier == currentDeviceInfo.identifier)
-            {
-                juce::Logger::writeToLog("Found device by identifier match");
-                return true;
-            }
-            
-            // Alternative: check by name
-            if (device.name == currentDeviceInfo.name)
-            {
-                juce::Logger::writeToLog("Found device by name match");
-                // Update the identifier since it might have changed
-                currentDeviceInfo = device;
-                return true;
-            }
-        }
-    }
-    
-    juce::Logger::writeToLog("Virtual device not found after multiple attempts");
-    juce::Logger::writeToLog("Current device info: " + currentDeviceInfo.name + " (" + currentDeviceInfo.identifier + ")");
-    return false;
 }
 
 MidiOutputManager::~MidiOutputManager()
 {
+    closeCurrentDevice();
+}
+
+void MidiOutputManager::closeCurrentDevice()
+{
     if (midiOutput != nullptr)
     {
-        if (isVirtualDevice)
-        {
-            juce::Logger::writeToLog("Cleaning up virtual MIDI device");
-            midiOutput->stopBackgroundThread();
-        }
+        juce::Logger::writeToLog("Closing MIDI device: " + currentDeviceInfo.name);
+        midiOutput->stopBackgroundThread();
         midiOutput.reset();
+        currentDeviceInfo = juce::MidiDeviceInfo();
     }
 }
 
-void MidiOutputManager::handleDevicesChanged()
+bool MidiOutputManager::openDevice(const juce::String& identifier)
 {
-    // Ignore device changes during initialization
-    if (isInitializing)
-        return;
-        
-    auto devices = getAvailableDevices();
-    juce::Logger::writeToLog("MIDI devices changed, current devices:");
-    for (const auto& device : devices)
-        juce::Logger::writeToLog(" - " + device.name + " (" + device.identifier + ")");
-        
-    // If we have a virtual device, check if it's still in the list
-    if (isVirtualDevice && midiOutput != nullptr)
+    // First close any existing device
+    closeCurrentDevice();
+    
+    // Try to open the new device
+    midiOutput = juce::MidiOutput::openDevice(identifier);
+    
+    if (midiOutput != nullptr)
     {
-        bool found = false;
-        for (const auto& device : devices)
-        {
-            if (device.identifier == currentDeviceInfo.identifier)
-            {
-                found = true;
-                break;
-            }
-        }
+        currentDeviceInfo = midiOutput->getDeviceInfo();
+        midiOutput->startBackgroundThread();
         
-        if (!found)
-        {
-            juce::Logger::writeToLog("Virtual device was removed, attempting to recreate");
-            createVirtualDevice("Gamepad MIDI Controller");
-        }
+        juce::Logger::writeToLog("Opened MIDI device: " + currentDeviceInfo.name);
+        return true;
     }
+    
+    juce::Logger::writeToLog("Failed to open MIDI device with identifier: " + identifier);
+    return false;
+}
+
+bool MidiOutputManager::setOutputDevice(const juce::String& identifier)
+{
+    // If we're already using this device, do nothing
+    if (currentDeviceInfo.identifier == identifier)
+        return true;
+        
+    return openDevice(identifier);
 }
 
 juce::Array<juce::MidiDeviceInfo> MidiOutputManager::getAvailableDevices() const
 {
-    auto devices = juce::MidiOutput::getAvailableDevices();
-    
-    // Append the virtual device if it exists and is active
-    if (isVirtualDevice && midiOutput != nullptr)
-    {
-        // Only add if it's not already in the list
-        bool alreadyExists = false;
-        for (const auto& device : devices)
-        {
-            if (device.identifier == currentDeviceInfo.identifier || 
-                device.name == currentDeviceInfo.name)
-            {
-                alreadyExists = true;
-                break;
-            }
-        }
-        
-        if (!alreadyExists)
-            devices.add(currentDeviceInfo);
-    }
-    
-    return devices;
-}
-
-bool MidiOutputManager::setOutputDevice(const juce::String& deviceIdentifier)
-{
-    // Don't reopen the same device
-    if (midiOutput != nullptr && currentDeviceInfo.identifier == deviceIdentifier)
-    {
-        juce::Logger::writeToLog("Device already open: " + currentDeviceInfo.name);
-        return true;
-    }
-    
-    // Close existing device if any
-    if (midiOutput != nullptr)
-    {
-        midiOutput->stopBackgroundThread();
-        midiOutput.reset();
-    }
-    
-    isVirtualDevice = false;
-    
-    if (deviceIdentifier.isEmpty())
-        return false;
-    
-    midiOutput = juce::MidiOutput::openDevice(deviceIdentifier);
-    
-    if (midiOutput != nullptr)
-    {
-        currentDeviceInfo = midiOutput->getDeviceInfo();
-        midiOutput->startBackgroundThread();
-        juce::Logger::writeToLog("Successfully opened MIDI device: " + currentDeviceInfo.name);
-        return true;
-    }
-    
-    juce::Logger::writeToLog("Failed to open MIDI device with identifier: " + deviceIdentifier);
-    return false;
-}
-
-bool MidiOutputManager::createVirtualDevice(const juce::String& deviceName)
-{
-    midiOutput.reset();
-    
-    juce::Logger::writeToLog("Attempting to create virtual MIDI device: " + deviceName);
-    
-    // On macOS, we need proper permissions and entitlements
-    // The app should NOT be sandboxed
-    midiOutput = juce::MidiOutput::createNewDevice(deviceName);
-    
-    if (midiOutput != nullptr)
-    {
-        isVirtualDevice = true;
-        currentDeviceInfo = midiOutput->getDeviceInfo();
-        midiOutput->startBackgroundThread();
-        juce::Logger::writeToLog("Virtual MIDI device created with identifier: " + currentDeviceInfo.identifier);
-        
-        // Log device info
-        juce::Logger::writeToLog("Device name: " + currentDeviceInfo.name);
-        juce::Logger::writeToLog("Device identifier: " + currentDeviceInfo.identifier);
-        
-        return true;
-    }
-    
-    juce::Logger::writeToLog("Failed to create virtual MIDI device");
-    juce::Logger::writeToLog("On macOS, this usually happens because of permissions or a sandboxed app.");
-    juce::Logger::writeToLog("Make sure your app is not sandboxed and has proper entitlements.");
-    
-    return false;
+    return juce::MidiOutput::getAvailableDevices();
 }
 
 void MidiOutputManager::sendControlChange(int channel, int controller, int value)
@@ -242,15 +123,6 @@ void MidiOutputManager::sendNoteOn(int channel, int noteNumber, float velocity)
     if (midiOutput != nullptr)
     {
         auto message = juce::MidiMessage::noteOn(channel, noteNumber, velocity);
-        midiOutput->sendMessageNow(message);
-    }
-}
-
-void MidiOutputManager::sendNoteOff(int channel, int noteNumber)
-{
-    if (midiOutput != nullptr)
-    {
-        juce::MidiMessage message = juce::MidiMessage::noteOff(channel, noteNumber);
         midiOutput->sendMessageNow(message);
     }
 } 
