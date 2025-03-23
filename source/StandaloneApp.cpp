@@ -37,8 +37,8 @@ StandaloneApp::~StandaloneApp()
 
 void StandaloneApp::paint(juce::Graphics& g)
 {
-    // Light gray background
-    g.fillAll(juce::Colour(230, 230, 230));  // Slightly darker gray for better contrast
+    // Medium gray background (#C0C0C0)
+    g.fillAll(juce::Colour(192, 192, 192));
     
     // Simple border
     g.setColour(juce::Colours::darkgrey);
@@ -50,13 +50,13 @@ void StandaloneApp::resized()
     auto area = getLocalBounds();
     
     // Footer with logo
-    auto logoHeight = 35;
-    auto footerArea = area.removeFromBottom(logoHeight + 25);
-    auto logoArea = footerArea.reduced(20, 5);
+    auto logoHeight = 25;
+    auto footerArea = area.removeFromBottom(logoHeight);
+    auto logoArea = footerArea.reduced(20, 0);
     logoComponent.setBounds(logoArea);
     
     // Gamepad area with padding
-    auto gamepadArea = area.reduced(25, 15);  // Add vertical padding
+    auto gamepadArea = area.reduced(20, 0);
     int connectedGamepads = gamepadManager.getNumConnectedGamepads();
     
     if (connectedGamepads > 0)

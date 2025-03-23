@@ -15,7 +15,7 @@ public:
         setContentOwned(new StandaloneApp(), true);
         
         setResizable(false, false);
-        centreWithSize(600, 500);
+        centreWithSize(600, 370);
         setVisible(true);
     }
     
