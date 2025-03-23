@@ -21,16 +21,16 @@ private:
     void handleGamepadStateChange();
     void setupMidiMappings();
     
-    // State tracking
+    // State tracking for single gamepad
     struct GamepadState {
         float axes[GamepadManager::MAX_AXES] = {};
         bool buttons[GamepadManager::MAX_BUTTONS] = {};
         bool connected = false;
     };
-    std::array<GamepadState, GamepadManager::MAX_GAMEPADS> previousGamepadStates;
+    GamepadState previousGamepadState;
     
     // UI Components
-    std::array<std::unique_ptr<GamepadComponent>, GamepadManager::MAX_GAMEPADS> gamepadComponents;
+    std::unique_ptr<GamepadComponent> gamepadComponent;
     juce::ImageComponent logoComponent;
     
     // Managers
@@ -45,8 +45,8 @@ private:
         bool isButton;
     };
     
-    std::array<std::array<MidiMapping, GamepadManager::MAX_AXES>, GamepadManager::MAX_GAMEPADS> axisMappings;
-    std::array<std::array<MidiMapping, GamepadManager::MAX_BUTTONS>, GamepadManager::MAX_GAMEPADS> buttonMappings;
+    std::array<MidiMapping, GamepadManager::MAX_AXES> axisMappings;
+    std::array<MidiMapping, GamepadManager::MAX_BUTTONS> buttonMappings;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(StandaloneApp)
 }; 

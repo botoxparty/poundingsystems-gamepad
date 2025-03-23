@@ -50,7 +50,7 @@ This repository covers a _lot_ of ground. JUCE itself has a lot of surface area.
 
 If something isn't just working out of the box — *it's probably not just you* — others are running into the problem, too, I promise. Check out [the official docs](https://melatonin.dev/manuals/pamplejuce), then please do [open an issue](https://github.com/sudara/pamplejuce/issues/new)!
 
-# Gamepad MIDI Controller
+# Gamepad MIDI
 
 A standalone application that converts gamepad inputs to MIDI control messages, allowing you to use your gamepad as a MIDI controller in any DAW.
 

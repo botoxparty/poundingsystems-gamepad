@@ -2,7 +2,7 @@
 # Script to check entitlements of a built application
 
 # Set the app path - adjust this to your build location
-APP_PATH="./build/GamepadMIDI_artefacts/Release/Gamepad MIDI Controller.app"
+APP_PATH="./build/GamepadMIDI_artefacts/Release/Gamepad MIDI.app"
 
 echo "==== Checking code signing for $APP_PATH ===="
 codesign -dvv "$APP_PATH" 2>&1

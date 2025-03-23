@@ -4,7 +4,7 @@
 
 // Define application name and version if not already defined
 #ifndef JUCE_APPLICATION_NAME_STRING
-#define JUCE_APPLICATION_NAME_STRING "Gamepad MIDI Controller"
+#define JUCE_APPLICATION_NAME_STRING "Gamepad MIDI"
 #endif
 
 #ifndef JUCE_APPLICATION_VERSION_STRING

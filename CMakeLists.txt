@@ -27,7 +27,7 @@ include(JUCEDefaults)
 
 # Project name and details
 set(PROJECT_NAME "GamepadMIDI")
-set(PRODUCT_NAME "Gamepad MIDI Controller")
+set(PRODUCT_NAME "Gamepad MIDI")
 set(COMPANY_NAME "PoundingSystems")
 set(BUNDLE_ID "com.poundingSystems.gamepadmidi")
 

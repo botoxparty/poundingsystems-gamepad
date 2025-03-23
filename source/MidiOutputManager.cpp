@@ -18,7 +18,7 @@ MidiOutputManager::MidiOutputManager()
 void MidiOutputManager::createInitialVirtualDevice()
 {
     // Create virtual MIDI device
-    midiOutput = juce::MidiOutput::createNewDevice("Gamepad MIDI Controller");
+    midiOutput = juce::MidiOutput::createNewDevice("Gamepad MIDI");
     
     if (midiOutput != nullptr)
     {

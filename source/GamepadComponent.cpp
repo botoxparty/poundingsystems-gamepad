@@ -153,6 +153,7 @@ void GamepadComponent::paint(juce::Graphics& g)
     
     auto statusArea = bounds.removeFromTop(30.0f).reduced(5);
     auto midiLearnButtonArea = statusArea.removeFromRight(100.0f);
+    midiLearnButtonArea.removeFromLeft(5.0f); // Add 5px space between button and status
     
     // Draw Learn Mode button
     drawClassicButton(g, midiLearnButtonArea, midiLearnMode);
