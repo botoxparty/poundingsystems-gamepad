@@ -144,6 +144,22 @@ jobs:
           # Each plugin must be code signed
           codesign --force -s "${{ secrets.DEVELOPER_ID_APPLICATION}}" -v "${{ env.STANDALONE_PATH }}" --deep --strict --options=runtime --timestamp
 
+      - name: Notarize App Bundle (macOS)
+        if: ${{ matrix.name == 'macOS' }}
+        run: |
+          # Create a zip for notarization
+          ditto -c -k --keepParent "${{ env.STANDALONE_PATH }}" "app.zip"
+          
+          # Submit for notarization
+          xcrun notarytool submit "app.zip" \
+            --apple-id ${{ secrets.NOTARIZATION_USERNAME }} \
+            --password ${{ secrets.NOTARIZATION_PASSWORD }} \
+            --team-id ${{ secrets.TEAM_ID }} \
+            --wait
+          
+          # Staple the notarization ticket to the app
+          xcrun stapler staple "${{ env.STANDALONE_PATH }}"
+
       - name: Create DMG (macOS)
         if: ${{ matrix.name == 'macOS' }}
         run: |
@@ -166,6 +182,16 @@ jobs:
           codesign --force -s "${{ secrets.DEVELOPER_ID_APPLICATION }}" \
                    -v "packaging/${{ env.ARTIFACT_NAME }}.dmg" \
                    --deep --strict --options=runtime --timestamp
+
+          # Notarize the DMG
+          xcrun notarytool submit "packaging/${{ env.ARTIFACT_NAME }}.dmg" \
+            --apple-id ${{ secrets.NOTARIZATION_USERNAME }} \
+            --password ${{ secrets.NOTARIZATION_PASSWORD }} \
+            --team-id ${{ secrets.TEAM_ID }} \
+            --wait
+          
+          # Staple the DMG
+          xcrun stapler staple "packaging/${{ env.ARTIFACT_NAME }}.dmg"
 
       - name: Upload DMG (macOS)
         if: ${{ matrix.name == 'macOS' }}
