@@ -31,10 +31,18 @@ void ModernGamepadComponent::setupComponents()
     addAndMakeVisible(learnModeButton);
     learnModeButton.setButtonText("Learn Mode");
     learnModeButton.onClick = [this] { setMidiLearnMode(!midiLearnMode); };
+    learnModeButton.setColour(juce::TextButton::buttonColourId, juce::Colours::darkgrey);
+    learnModeButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+    learnModeButton.setColour(juce::TextButton::buttonOnColourId, juce::Colours::blue);
     
     // Setup status label
     addAndMakeVisible(statusLabel);
     statusLabel.setJustificationType(juce::Justification::centredLeft);
+    statusLabel.setColour(juce::Label::textColourId, juce::Colours::black);
+    statusLabel.setColour(juce::Label::backgroundColourId, juce::Colours::white);
+    statusLabel.setColour(juce::Label::outlineColourId, juce::Colours::darkgrey);
+    statusLabel.setFont(juce::Font(14.0f));
+    statusLabel.setBorderSize(juce::BorderSize<int>(10, 1, 1, 1)); // Left: 10px, Others: 1px
 }
 
 void ModernGamepadComponent::setupLayout()
@@ -43,12 +51,13 @@ void ModernGamepadComponent::setupLayout()
     
     // Setup status area at the top
     auto statusArea = bounds.removeFromTop(40);
-    statusLabel.setBounds(statusArea.reduced(5).removeFromLeft(statusArea.getWidth() - 110));
-    learnModeButton.setBounds(statusArea.reduced(5).removeFromRight(100));
+    auto buttonArea = statusArea.reduced(5).removeFromRight(100);
+    statusLabel.setBounds(statusArea.reduced(5).removeFromLeft(statusArea.getWidth() - 115)); // Extra 5px for gap
+    learnModeButton.setBounds(buttonArea);
     
     // Configure main layout
     mainLayout.flexDirection = juce::FlexBox::Direction::column;
-    mainLayout.justifyContent = juce::FlexBox::JustifyContent::spaceBetween;
+    mainLayout.justifyContent = juce::FlexBox::JustifyContent::flexStart;
     mainLayout.alignItems = juce::FlexBox::AlignItems::stretch;
     
     // Configure row layouts
@@ -70,26 +79,56 @@ void ModernGamepadComponent::setupLayout()
     bottomRow.items.clear();
     mainLayout.items.clear();
     
+    // Calculate component sizes
+    float remainingHeight = bounds.getHeight() - 20; // -20 for padding
+    float shoulderSectionHeight = 40; // Fixed height instead of relative
+    float mainRowHeight = (remainingHeight - shoulderSectionHeight) / 2.0f; // Split remaining space between middle and bottom
+    float shoulderSectionWidth = bounds.getWidth() - 20; // -20 for padding
+    float dpadWidth = 200;
+    float touchpadWidth = 300;
+    float faceButtonsWidth = 200;
+    float stickWidth = 150;
+    float gyroscopeWidth = 300;
+    
     // Add items to top row (shoulder buttons and triggers)
-    topRow.items.add(juce::FlexItem(shoulderSection).withFlex(1.0f).withMargin(5.0f));
+    topRow.items.add(juce::FlexItem(shoulderSection).withWidth(shoulderSectionWidth).withHeight(shoulderSectionHeight).withMargin(2.0f));
     
     // Add items to middle row (d-pad, touchpad, face buttons)
-    middleRow.items.add(juce::FlexItem(dPad).withWidth(200).withMargin(5.0f));
-    middleRow.items.add(juce::FlexItem(touchPad).withWidth(300).withMargin(5.0f));
-    middleRow.items.add(juce::FlexItem(faceButtons).withWidth(200).withMargin(5.0f));
+    middleRow.items.add(juce::FlexItem(dPad).withWidth(dpadWidth).withHeight(mainRowHeight).withMargin(5.0f));
+    middleRow.items.add(juce::FlexItem(touchPad).withWidth(touchpadWidth).withHeight(mainRowHeight).withMargin(5.0f));
+    middleRow.items.add(juce::FlexItem(faceButtons).withWidth(faceButtonsWidth).withHeight(mainRowHeight).withMargin(5.0f));
     
     // Add items to bottom row (left stick, gyroscope, right stick)
-    bottomRow.items.add(juce::FlexItem(leftStick).withWidth(150).withMargin(5.0f));
-    bottomRow.items.add(juce::FlexItem(gyroscope).withWidth(300).withMargin(5.0f));
-    bottomRow.items.add(juce::FlexItem(rightStick).withWidth(150).withMargin(5.0f));
+    bottomRow.items.add(juce::FlexItem(leftStick).withWidth(stickWidth).withHeight(mainRowHeight).withMargin(5.0f));
+    bottomRow.items.add(juce::FlexItem(gyroscope).withWidth(gyroscopeWidth).withHeight(mainRowHeight).withMargin(5.0f));
+    bottomRow.items.add(juce::FlexItem(rightStick).withWidth(stickWidth).withHeight(mainRowHeight).withMargin(5.0f));
     
-    // Add rows to main layout
-    mainLayout.items.add(juce::FlexItem(topRow).withFlex(1.0f));
-    mainLayout.items.add(juce::FlexItem(middleRow).withFlex(1.5f));
-    mainLayout.items.add(juce::FlexItem(bottomRow).withFlex(1.0f));
+    // Add rows to main layout - top row doesn't use flex, others split remaining space
+    mainLayout.items.add(juce::FlexItem(topRow).withHeight(shoulderSectionHeight).withMargin(2.0f));  // Fixed height, no flex
+    mainLayout.items.add(juce::FlexItem(middleRow).withFlex(1.0f).withMargin(2.0f));
+    mainLayout.items.add(juce::FlexItem(bottomRow).withFlex(1.0f).withMargin(2.0f));
     
     // Perform layout
     mainLayout.performLayout(bounds.toFloat());
+    
+    // Now set the actual bounds for each component based on their FlexItem positions
+    for (const auto& item : topRow.items)
+    {
+        if (auto* comp = dynamic_cast<juce::Component*>(item.associatedComponent))
+            comp->setBounds(item.currentBounds.toNearestInt());
+    }
+    
+    for (const auto& item : middleRow.items)
+    {
+        if (auto* comp = dynamic_cast<juce::Component*>(item.associatedComponent))
+            comp->setBounds(item.currentBounds.toNearestInt());
+    }
+    
+    for (const auto& item : bottomRow.items)
+    {
+        if (auto* comp = dynamic_cast<juce::Component*>(item.associatedComponent))
+            comp->setBounds(item.currentBounds.toNearestInt());
+    }
 }
 
 void ModernGamepadComponent::setupCallbacks()

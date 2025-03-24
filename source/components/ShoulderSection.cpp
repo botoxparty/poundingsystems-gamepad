@@ -57,15 +57,18 @@ void ShoulderSection::resized()
     layout.justifyContent = juce::FlexBox::JustifyContent::spaceAround;
     layout.alignItems = juce::FlexBox::AlignItems::center;
 
-    // Add items with equal flex
-    layout.items.clear();
-    layout.items.add(juce::FlexItem(l1Button).withFlex(1.0f));
-    layout.items.add(juce::FlexItem(l2Trigger).withFlex(1.0f));
-    layout.items.add(juce::FlexItem(r1Button).withFlex(1.0f));
-    layout.items.add(juce::FlexItem(r2Trigger).withFlex(1.0f));
+    // Calculate component heights - use 80% of the available height
+    float componentHeight = bounds.getHeight() * 0.8f;
 
-    // Apply layout
-    layout.performLayout(bounds);
+    // Add items with equal flex and fixed height
+    layout.items.clear();
+    layout.items.add(juce::FlexItem(l1Button).withFlex(1.0f).withHeight(componentHeight));
+    layout.items.add(juce::FlexItem(l2Trigger).withFlex(1.0f).withHeight(componentHeight));
+    layout.items.add(juce::FlexItem(r1Button).withFlex(1.0f).withHeight(componentHeight));
+    layout.items.add(juce::FlexItem(r2Trigger).withFlex(1.0f).withHeight(componentHeight));
+
+    // Apply layout with some horizontal margin
+    layout.performLayout(bounds.reduced(10, 0).toFloat());
 }
 
 void ShoulderSection::setupCallbacks()

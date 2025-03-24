@@ -64,7 +64,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 
 # JUCE is setup as a submodule in the /JUCE folder
 add_subdirectory(JUCE)
-
+add_subdirectory(modules/melatonin_inspector)
 # Add SDL3 for gamepad support
 FetchContent_Declare(
     SDL3
@@ -146,6 +146,7 @@ target_link_libraries(SharedCode
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags
+        melatonin_inspector
         Assets
 )
 
@@ -153,6 +154,7 @@ target_link_libraries(SharedCode
 target_link_libraries(${PROJECT_NAME} 
     PRIVATE 
         SharedCode
+        melatonin_inspector
         Assets
 )
 
