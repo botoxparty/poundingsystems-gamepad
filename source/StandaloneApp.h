@@ -76,6 +76,12 @@ private:
             float y = 0.0f;
             float pressure = 0.0f;
         } touchpad;
+        struct GyroscopeState {
+            bool enabled = false;
+            float x = 0.0f;
+            float y = 0.0f;
+            float z = 0.0f;
+        } gyroscope;
     };
     GamepadState previousGamepadState;
     

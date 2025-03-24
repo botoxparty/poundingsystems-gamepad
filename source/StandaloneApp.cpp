@@ -159,6 +159,37 @@ void StandaloneApp::handleGamepadStateChange()
                 currentState.touchpad.pressed ? 127 : 0);
             previousState.touchpad.pressed = currentState.touchpad.pressed;
         }
+
+        // Process gyroscope state if enabled and not in learn mode
+        if (currentState.gyroscope.enabled && !gamepadComponent->isMidiLearnMode())
+        {
+            // Send X axis if changed
+            if (currentState.gyroscope.x != previousState.gyroscope.x)
+            {
+                float normalizedX = (currentState.gyroscope.x + 10.0f) * 0.5f * 127.0f / 10.0f;
+                MidiOutputManager::getInstance().sendControlChange(1, MidiCC::GYRO_X, 
+                    static_cast<int>(juce::jlimit(0.0f, 127.0f, normalizedX)));
+                previousState.gyroscope.x = currentState.gyroscope.x;
+            }
+
+            // Send Y axis if changed
+            if (currentState.gyroscope.y != previousState.gyroscope.y)
+            {
+                float normalizedY = (currentState.gyroscope.y + 10.0f) * 0.5f * 127.0f / 10.0f;
+                MidiOutputManager::getInstance().sendControlChange(1, MidiCC::GYRO_Y, 
+                    static_cast<int>(juce::jlimit(0.0f, 127.0f, normalizedY)));
+                previousState.gyroscope.y = currentState.gyroscope.y;
+            }
+
+            // Send Z axis if changed
+            if (currentState.gyroscope.z != previousState.gyroscope.z)
+            {
+                float normalizedZ = (currentState.gyroscope.z + 10.0f) * 0.5f * 127.0f / 10.0f;
+                MidiOutputManager::getInstance().sendControlChange(1, MidiCC::GYRO_Z, 
+                    static_cast<int>(juce::jlimit(0.0f, 127.0f, normalizedZ)));
+                previousState.gyroscope.z = currentState.gyroscope.z;
+            }
+        }
     }
     
     // Update connection state

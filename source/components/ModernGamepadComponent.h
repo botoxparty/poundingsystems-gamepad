@@ -23,6 +23,7 @@ public:
     void paint(juce::Graphics& g) override;
     void resized() override;
     void updateState(const GamepadManager::GamepadState& newState);
+    bool isMidiLearnMode() const { return midiLearnMode; }
 
 private:
     // Reference to gamepad state

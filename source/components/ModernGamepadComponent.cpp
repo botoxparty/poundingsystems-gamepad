@@ -247,9 +247,11 @@ void ModernGamepadComponent::setupCallbacks()
     
     // Gyroscope callbacks
     gyroscope.onValueChange = [this](float x, float y, float z) {
-        sendMidiCC(MidiCC::GYRO_X, (x + 1.0f) * 0.5f);
-        sendMidiCC(MidiCC::GYRO_Y, (y + 1.0f) * 0.5f);
-        sendMidiCC(MidiCC::GYRO_Z, (z + 1.0f) * 0.5f);
+        if (!midiLearnMode) {
+            sendMidiCC(MidiCC::GYRO_X, (x + 1.0f) * 0.5f);
+            sendMidiCC(MidiCC::GYRO_Y, (y + 1.0f) * 0.5f);
+            sendMidiCC(MidiCC::GYRO_Z, (z + 1.0f) * 0.5f);
+        }
     };
 
     gyroscope.onLearnClick = [this](const juce::String& axis) {
@@ -259,9 +261,11 @@ void ModernGamepadComponent::setupCallbacks()
     };
 
     gyroscope.onButtonClick = [this](const juce::String& axis) {
-        if (axis == "X") sendMidiCC(MidiCC::GYRO_X, (gamepadState.gyroscope.x + 1.0f) * 0.5f);
-        else if (axis == "Y") sendMidiCC(MidiCC::GYRO_Y, (gamepadState.gyroscope.y + 1.0f) * 0.5f);
-        else if (axis == "Z") sendMidiCC(MidiCC::GYRO_Z, (gamepadState.gyroscope.z + 1.0f) * 0.5f);
+        if (!midiLearnMode) {
+            if (axis == "X") sendMidiCC(MidiCC::GYRO_X, (gamepadState.gyroscope.x + 1.0f) * 0.5f);
+            else if (axis == "Y") sendMidiCC(MidiCC::GYRO_Y, (gamepadState.gyroscope.y + 1.0f) * 0.5f);
+            else if (axis == "Z") sendMidiCC(MidiCC::GYRO_Z, (gamepadState.gyroscope.z + 1.0f) * 0.5f);
+        }
     };
 }
 
