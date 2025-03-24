@@ -5,7 +5,6 @@ AnalogStick::AnalogStick()
     // Add child components
     addAndMakeVisible(xButton);
     addAndMakeVisible(yButton);
-    addAndMakeVisible(pressButton);
 
     setupCallbacks();
 }
@@ -15,7 +14,6 @@ AnalogStick::AnalogStick(const juce::String& name, bool isStick)
     // Add child components
     addAndMakeVisible(xButton);
     addAndMakeVisible(yButton);
-    addAndMakeVisible(pressButton);
 
     // Set initial state
     state.name = name;
@@ -28,27 +26,19 @@ void AnalogStick::setState(const State& newState)
 {
     state = newState;
 
-    // Update X axis button
+    // Update X axis button with current value
     xButton.setProperties({
-        "X",
+        "X: " + juce::String(state.xValue, 2),
         state.xCC,
         false,  // We don't show pressed state for axis
         state.isLearnMode
     });
 
-    // Update Y axis button
+    // Update Y axis button with current value
     yButton.setProperties({
-        "Y",
+        "Y: " + juce::String(state.yValue, 2),
         state.yCC,
         false,  // We don't show pressed state for axis
-        state.isLearnMode
-    });
-
-    // Update press button
-    pressButton.setProperties({
-        "Press",
-        state.pressCC,
-        state.isPressed,
         state.isLearnMode
     });
 
@@ -59,18 +49,17 @@ void AnalogStick::setState(const State& newState)
 void AnalogStick::resized()
 {
     auto bounds = getLocalBounds();
-    auto buttonHeight = bounds.getHeight() / 8;
+    auto buttonHeight = bounds.getHeight() / 4;
 
     // Configure button layout
     buttonLayout.flexDirection = juce::FlexBox::Direction::row;
     buttonLayout.justifyContent = juce::FlexBox::JustifyContent::spaceBetween;
     buttonLayout.alignItems = juce::FlexBox::AlignItems::center;
 
-    // Add buttons to layout
+    // Add buttons to layout (removed press button)
     buttonLayout.items.clear();
-    buttonLayout.items.add(juce::FlexItem(xButton).withHeight(buttonHeight).withWidth(bounds.getWidth() / 4));
-    buttonLayout.items.add(juce::FlexItem(yButton).withHeight(buttonHeight).withWidth(bounds.getWidth() / 4));
-    buttonLayout.items.add(juce::FlexItem(pressButton).withHeight(buttonHeight).withWidth(bounds.getWidth() / 4));
+    buttonLayout.items.add(juce::FlexItem(xButton).withHeight(buttonHeight).withWidth(bounds.getWidth() * 0.45f));
+    buttonLayout.items.add(juce::FlexItem(yButton).withHeight(buttonHeight).withWidth(bounds.getWidth() * 0.45f));
 
     // Configure main layout
     layout.flexDirection = juce::FlexBox::Direction::column;
@@ -135,17 +124,6 @@ void AnalogStick::setupCallbacks()
         if (onLearnClick)
             onLearnClick("Y");
     };
-
-    // Press button callbacks
-    pressButton.onClick = [this]() {
-        if (onButtonClick)
-            onButtonClick("Press");
-    };
-    
-    pressButton.onLearnClick = [this]() {
-        if (onLearnClick)
-            onLearnClick("Press");
-    };
 }
 
 void AnalogStick::updateStickPosition()
@@ -163,10 +141,33 @@ void AnalogStick::updateStickPosition()
 
 void AnalogStick::drawStick(juce::Graphics& g)
 {
-    // Draw stick
-    g.setColour(state.isPressed ? juce::Colours::red : juce::Colours::white);
+    // Draw stick background
+    g.setColour(state.isLearnMode ? juce::Colour(0, 0, 139) : juce::Colours::darkgrey); // Dark blue in learn mode
     g.fillEllipse(stickPosition.x - stickRadius, stickPosition.y - stickRadius,
                   stickRadius * 2, stickRadius * 2);
+
+    // Draw stick highlight/pressed state
+    if (state.isLearnMode) {
+        g.setColour(state.isPressed ? juce::Colours::red : juce::Colour(0, 0, 139));  // Dark blue when not pressed
+    } else {
+        g.setColour(state.isPressed ? juce::Colours::red : juce::Colours::white);
+    }
+    g.fillEllipse(stickPosition.x - (stickRadius * 0.8f), stickPosition.y - (stickRadius * 0.8f),
+                  stickRadius * 1.6f, stickRadius * 1.6f);
+
+    // Draw CC number in learn mode
+    if (state.isLearnMode)
+    {
+        g.setColour(juce::Colours::white);
+        g.setFont(12.0f);
+        juce::String ccText = "CC" + juce::String(state.pressCC);
+        g.drawText(ccText, 
+                  stickPosition.x - stickRadius,
+                  stickPosition.y - 6.0f,
+                  stickRadius * 2,
+                  12.0f,
+                  juce::Justification::centred);
+    }
 }
 
 void AnalogStick::drawLabels(juce::Graphics& g)
@@ -190,4 +191,45 @@ void AnalogStick::drawLabels(juce::Graphics& g)
                juce::Justification::centred);
     g.drawText("-1", centerX - 10, centerY + radius, 20, 20,
                juce::Justification::centred);
+}
+
+void AnalogStick::mouseDown(const juce::MouseEvent& e)
+{
+    if (isPointOverStick(e.position.toFloat()))
+    {
+        state.isPressed = true;
+        
+        if (state.isLearnMode)
+        {
+            if (onLearnClick)
+                onLearnClick("Press");
+        }
+        else
+        {
+            if (onButtonClick)
+                onButtonClick("Press");
+        }
+        
+        repaint();
+    }
+}
+
+void AnalogStick::mouseUp(const juce::MouseEvent& e)
+{
+    if (state.isPressed)
+    {
+        state.isPressed = false;
+        repaint();
+    }
+}
+
+bool AnalogStick::isPointOverStick(juce::Point<float> point) const
+{
+    auto stickRect = juce::Rectangle<float>(
+        stickPosition.x - stickRadius,
+        stickPosition.y - stickRadius,
+        stickRadius * 2,
+        stickRadius * 2
+    );
+    return stickRect.contains(point);
 } 

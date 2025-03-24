@@ -44,25 +44,30 @@ void TriggerButton::drawClassicStyle(juce::Graphics& g)
     g.setColour(props.progressColor);
     g.fillRect(valueBounds);
 
-    // Draw text above the trigger
+    // Draw text
     if (props.text.isNotEmpty())
     {
         g.setColour(props.textColor);
         g.setFont(juce::Font("MS Sans Serif", 11.0f, juce::Font::plain));
-        juce::String labelText = props.text;
+        auto textBounds = bounds.reduced(2);
         
+        // Draw main text
+        juce::String labelText = props.text;
+        labelText += ": " + juce::String(static_cast<int>(props.value * 127));
+        g.drawText(labelText, textBounds, juce::Justification::centred, false);
+        
+        // Draw CC number if in learn mode
         if (props.isLearnMode && props.ccNumber >= 0)
         {
-            labelText += " (CC" + juce::String(props.ccNumber) + ")";
+            g.setFont(juce::Font("MS Sans Serif", 9.0f, juce::Font::plain));
+            g.drawText("CC" + juce::String(props.ccNumber), 
+                      bounds.getX(), 
+                      bounds.getBottom() + 2.0f, 
+                      bounds.getWidth(), 
+                      12.0f, 
+                      juce::Justification::centred, 
+                      false);
         }
-        
-        g.drawText(labelText, 
-                  bounds.getX(), 
-                  bounds.getY() - 15.0f, 
-                  bounds.getWidth(), 
-                  15.0f, 
-                  juce::Justification::centred, 
-                  false);
     }
 }
 
@@ -85,9 +90,13 @@ void TriggerButton::drawLearnStyle(juce::Graphics& g)
         g.setFont(juce::Font("MS Sans Serif", 11.0f, juce::Font::plain));
         auto textBounds = bounds.reduced(2);
         
-        g.drawText(props.text, textBounds.removeFromTop(textBounds.getHeight() * 0.6f), 
+        // Draw main text
+        juce::String labelText = props.text;
+        labelText += ": " + juce::String(static_cast<int>(props.value * 127));
+        g.drawText(labelText, textBounds.removeFromTop(textBounds.getHeight() * 0.6f), 
                   juce::Justification::centred, false);
         
+        // Draw CC number if assigned
         if (props.ccNumber >= 0)
         {
             g.setFont(juce::Font("MS Sans Serif", 9.0f, juce::Font::plain));

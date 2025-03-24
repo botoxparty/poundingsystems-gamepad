@@ -5,6 +5,7 @@
 #include "MidiOutputManager.h"
 #include "components/ModernGamepadComponent.h"
 #include "BinaryData.h"
+#include "MidiCCMapping.h"
 
 class StandaloneApp : public juce::Component,
                       private juce::Timer
@@ -68,6 +69,13 @@ private:
         float axes[GamepadManager::MAX_AXES] = {};
         bool buttons[GamepadManager::MAX_BUTTONS] = {};
         bool connected = false;
+        struct TouchpadState {
+            bool touched = false;
+            bool pressed = false;
+            float x = 0.0f;
+            float y = 0.0f;
+            float pressure = 0.0f;
+        } touchpad;
     };
     GamepadState previousGamepadState;
     

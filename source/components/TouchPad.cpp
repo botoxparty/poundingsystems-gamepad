@@ -6,6 +6,7 @@ TouchPad::TouchPad()
     addAndMakeVisible(xButton);
     addAndMakeVisible(yButton);
     addAndMakeVisible(pressureButton);
+    addAndMakeVisible(buttonPressButton);
 
     setupCallbacks();
 }
@@ -14,17 +15,17 @@ void TouchPad::setState(const State& newState)
 {
     state = newState;
 
-    // Update X axis button
+    // Update X axis button with value
     xButton.setProperties({
-        "X",
+        "X: " + juce::String(state.xValue, 2),
         state.xCC,
         false,  // We don't show pressed state for axis
         state.isLearnMode
     });
 
-    // Update Y axis button
+    // Update Y axis button with value
     yButton.setProperties({
-        "Y",
+        "Y: " + juce::String(state.yValue, 2),
         state.yCC,
         false,  // We don't show pressed state for axis
         state.isLearnMode
@@ -32,9 +33,17 @@ void TouchPad::setState(const State& newState)
 
     // Update pressure button
     pressureButton.setProperties({
-        "Pressure",
+        "P: " + juce::String(state.pressure, 2),
         state.pressureCC,
         false,  // We don't show pressed state for pressure
+        state.isLearnMode
+    });
+
+    // Update button press button
+    buttonPressButton.setProperties({
+        "Button: " + juce::String(state.isPressed ? "On" : "Off"),
+        state.buttonCC,
+        state.isPressed,  // Show pressed state for button
         state.isLearnMode
     });
 
@@ -45,35 +54,35 @@ void TouchPad::setState(const State& newState)
 void TouchPad::resized()
 {
     auto bounds = getLocalBounds();
-    auto buttonHeight = bounds.getHeight() / 8;
+    auto buttonHeight = bounds.getHeight() / 6;
 
     // Configure button layout
     buttonLayout.flexDirection = juce::FlexBox::Direction::row;
-    buttonLayout.justifyContent = juce::FlexBox::JustifyContent::spaceBetween;
+    buttonLayout.justifyContent = juce::FlexBox::JustifyContent::center;
     buttonLayout.alignItems = juce::FlexBox::AlignItems::center;
 
-    // Add buttons to layout
+    // Add buttons to layout with no margins
     buttonLayout.items.clear();
-    buttonLayout.items.add(juce::FlexItem(xButton).withHeight(buttonHeight).withWidth(bounds.getWidth() / 4));
-    buttonLayout.items.add(juce::FlexItem(yButton).withHeight(buttonHeight).withWidth(bounds.getWidth() / 4));
-    buttonLayout.items.add(juce::FlexItem(pressureButton).withHeight(buttonHeight).withWidth(bounds.getWidth() / 4));
+    auto buttonWidth = bounds.getWidth() / 4;
+    buttonLayout.items.add(juce::FlexItem(xButton).withHeight(buttonHeight).withWidth(buttonWidth).withMargin(0));
+    buttonLayout.items.add(juce::FlexItem(yButton).withHeight(buttonHeight).withWidth(buttonWidth).withMargin(0));
+    buttonLayout.items.add(juce::FlexItem(pressureButton).withHeight(buttonHeight).withWidth(buttonWidth).withMargin(0));
+    buttonLayout.items.add(juce::FlexItem(buttonPressButton).withHeight(buttonHeight).withWidth(buttonWidth).withMargin(0));
 
     // Configure main layout
     layout.flexDirection = juce::FlexBox::Direction::column;
-    layout.justifyContent = juce::FlexBox::JustifyContent::spaceBetween;
-    layout.alignItems = juce::FlexBox::AlignItems::center;
+    layout.justifyContent = juce::FlexBox::JustifyContent::flexStart;
+    layout.alignItems = juce::FlexBox::AlignItems::stretch;
 
-    // Calculate touch area
-    auto area = bounds.reduced(10);
-    area.removeFromBottom(buttonHeight + 10);  // Space for buttons
-    area.removeFromBottom(pressureBarHeight + 5);  // Space for pressure bar
+    // Calculate touch area - only reduce sides, not top/bottom
+    auto area = bounds;
+    area.removeFromBottom(buttonHeight);  // Remove exact space for buttons
     touchArea = area.toFloat();
 
-    // Add items to main layout
+    // Add items to main layout with no margins
     layout.items.clear();
-    layout.items.add(juce::FlexItem().withHeight(area.getHeight()));
-    layout.items.add(juce::FlexItem().withHeight(pressureBarHeight));
-    layout.items.add(juce::FlexItem(buttonLayout).withWidth(bounds.getWidth()).withHeight(buttonHeight));
+    layout.items.add(juce::FlexItem().withHeight(area.getHeight()).withMargin(0));
+    layout.items.add(juce::FlexItem(buttonLayout).withWidth(bounds.getWidth()).withHeight(buttonHeight).withMargin(0));
 
     // Apply layouts
     layout.performLayout(bounds);
@@ -86,7 +95,6 @@ void TouchPad::paint(juce::Graphics& g)
     if (!state.isEnabled) return;
 
     drawTouchArea(g);
-    drawPressureBar(g);
     drawLabels(g);
 }
 
@@ -124,6 +132,17 @@ void TouchPad::setupCallbacks()
         if (onLearnClick)
             onLearnClick("Pressure");
     };
+
+    // Button press button callbacks
+    buttonPressButton.onClick = [this]() {
+        if (onButtonClick)
+            onButtonClick("Button");
+    };
+    
+    buttonPressButton.onLearnClick = [this]() {
+        if (onLearnClick)
+            onLearnClick("Button");
+    };
 }
 
 void TouchPad::updateTouchPosition()
@@ -159,41 +178,73 @@ void TouchPad::drawTouchArea(juce::Graphics& g)
     }
 }
 
-void TouchPad::drawPressureBar(juce::Graphics& g)
-{
-    auto bounds = getLocalBounds().reduced(10);
-    auto barBounds = bounds.removeFromBottom(pressureBarHeight + 5)
-                          .removeFromTop(pressureBarHeight)
-                          .toFloat();
-
-    // Draw background
-    g.setColour(juce::Colours::darkgrey);
-    g.fillRect(barBounds);
-
-    // Draw pressure level
-    g.setColour(juce::Colours::red);
-    auto pressureWidth = barBounds.getWidth() * state.pressure;
-    g.fillRect(barBounds.withWidth(pressureWidth));
-
-    // Draw border
-    g.setColour(juce::Colours::grey);
-    g.drawRect(barBounds, 1.0f);
-}
-
 void TouchPad::drawLabels(juce::Graphics& g)
 {
-    g.setColour(juce::Colours::white);
-    g.setFont(12.0f);
+    // Labels are now shown in the buttons instead
+}
 
-    // Draw coordinate values
-    juce::String coords = juce::String(state.xValue, 2) + ", " + 
-                         juce::String(state.yValue, 2);
-    g.drawText(coords, touchArea, juce::Justification::topLeft);
+void TouchPad::mouseDown(const juce::MouseEvent& e)
+{
+    if (!state.isEnabled) return;
 
-    // Draw pressure value
-    juce::String pressure = "Pressure: " + juce::String(state.pressure, 2);
-    auto bounds = getLocalBounds().reduced(10);
-    auto textBounds = bounds.removeFromBottom(pressureBarHeight + 5)
-                           .removeFromTop(pressureBarHeight);
-    g.drawText(pressure, textBounds, juce::Justification::centredRight);
+    if (touchArea.contains(e.position)) {
+        state.isPressed = true;
+        updateTouchValuesFromMouse(e);
+        repaint();
+    }
+}
+
+void TouchPad::mouseDrag(const juce::MouseEvent& e)
+{
+    if (!state.isEnabled || !state.isPressed) return;
+
+    if (touchArea.contains(e.position)) {
+        updateTouchValuesFromMouse(e);
+        repaint();
+    }
+}
+
+void TouchPad::mouseUp(const juce::MouseEvent& e)
+{
+    if (!state.isEnabled) return;
+
+    state.isPressed = false;
+    
+    // Send button release if not in learn mode
+    if (!state.isLearnMode && onButtonValueChange) {
+        onButtonValueChange(0.0f);  // Button released
+    }
+    
+    repaint();
+}
+
+void TouchPad::updateTouchValuesFromMouse(const juce::MouseEvent& e)
+{
+    // Calculate normalized values (0.0 to 1.0)
+    float x = (e.position.x - touchArea.getX()) / touchArea.getWidth();
+    float y = (e.position.y - touchArea.getY()) / touchArea.getHeight();
+    
+    // Clamp values between 0 and 1
+    x = juce::jlimit(0.0f, 1.0f, x);
+    y = juce::jlimit(0.0f, 1.0f, y);
+    
+    // Get pressure from the mouse event if available, otherwise use 1.0
+    float pressure = e.pressure > 0.0f ? e.pressure : 1.0f;
+    
+    // Send MIDI if not in learn mode
+    if (!state.isLearnMode) {
+        if (onXValueChange) onXValueChange(x);
+        if (onYValueChange) onYValueChange(y);
+        if (onPressureValueChange) onPressureValueChange(pressure);
+        if (onButtonValueChange) onButtonValueChange(1.0f);  // Button pressed
+    }
+    
+    // Update state
+    state.xValue = x;
+    state.yValue = y;
+    state.pressure = pressure;
+    state.isPressed = true;
+    
+    // Update the visual position
+    updateTouchPosition();
 } 

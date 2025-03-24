@@ -16,6 +16,7 @@ public:
         int xCC = 0;
         int yCC = 0;
         int pressureCC = 0;
+        int buttonCC = 0;  // Added for button press
         bool isLearnMode = false;
     };
 
@@ -26,10 +27,20 @@ public:
     void resized() override;
     void paint(juce::Graphics& g) override;
 
+    // Mouse event handlers
+    void mouseDown(const juce::MouseEvent& e) override;
+    void mouseDrag(const juce::MouseEvent& e) override;
+    void mouseUp(const juce::MouseEvent& e) override;
+
     // Callbacks for button interactions
     std::function<void(const juce::String&)> onButtonClick;
     std::function<void(const juce::String&)> onLearnClick;
-    std::function<void(float, float, float)> onValueChange;
+    
+    // Separate callbacks for each value change
+    std::function<void(float)> onXValueChange;
+    std::function<void(float)> onYValueChange;
+    std::function<void(float)> onPressureValueChange;
+    std::function<void(float)> onButtonValueChange;  // Added for button press
 
     void setLearnMode(bool enabled) {
         state.isLearnMode = enabled;
@@ -45,6 +56,10 @@ public:
         pressureProps.isLearnMode = enabled;
         pressureButton.setProperties(pressureProps);
         
+        auto buttonProps = buttonPressButton.getProperties();
+        buttonProps.isLearnMode = enabled;
+        buttonPressButton.setProperties(buttonProps);
+        
         repaint();
     }
 
@@ -55,6 +70,7 @@ private:
     ClassicButton xButton{ClassicButton::Properties{"X"}};
     ClassicButton yButton{ClassicButton::Properties{"Y"}};
     ClassicButton pressureButton{ClassicButton::Properties{"Pressure"}};
+    ClassicButton buttonPressButton{ClassicButton::Properties{"Button"}};  // Added button press button
 
     // Layout management
     juce::FlexBox layout;
@@ -71,6 +87,7 @@ private:
     void drawTouchArea(juce::Graphics& g);
     void drawPressureBar(juce::Graphics& g);
     void drawLabels(juce::Graphics& g);
+    void updateTouchValuesFromMouse(const juce::MouseEvent& e);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TouchPad)
 }; 

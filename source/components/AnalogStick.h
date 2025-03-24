@@ -27,6 +27,8 @@ public:
     void setState(const State& newState);
     void resized() override;
     void paint(juce::Graphics& g) override;
+    void mouseDown(const juce::MouseEvent& e) override;
+    void mouseUp(const juce::MouseEvent& e) override;
 
     // Callbacks for button interactions
     std::function<void(const juce::String&)> onButtonClick;
@@ -52,7 +54,6 @@ private:
     // Buttons for MIDI learn
     ClassicButton xButton{ClassicButton::Properties{"X"}};
     ClassicButton yButton{ClassicButton::Properties{"Y"}};
-    ClassicButton pressButton{ClassicButton::Properties{"Press"}};
 
     // Layout management
     juce::FlexBox layout;
@@ -68,6 +69,7 @@ private:
     void updateStickPosition();
     void drawStick(juce::Graphics& g);
     void drawLabels(juce::Graphics& g);
+    bool isPointOverStick(juce::Point<float> point) const;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AnalogStick)
 }; 

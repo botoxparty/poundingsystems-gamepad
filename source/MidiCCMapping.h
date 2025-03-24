@@ -27,13 +27,14 @@ namespace MidiCC {
     constexpr int L2_TRIGGER = 5;
     constexpr int R2_TRIGGER = 6;
 
-    // Touchpad (35-37)
+    // Touchpad (35-38)
     constexpr int TOUCHPAD_X = 35;
     constexpr int TOUCHPAD_Y = 36;
     constexpr int TOUCHPAD_PRESSURE = 37;
+    constexpr int TOUCHPAD_BUTTON = 38;
 
-    // Gyroscope (38-40)
-    constexpr int GYRO_X = 38;
-    constexpr int GYRO_Y = 39;
-    constexpr int GYRO_Z = 40;
+    // Gyroscope (39-41)
+    constexpr int GYRO_X = 39;
+    constexpr int GYRO_Y = 40;
+    constexpr int GYRO_Z = 41;
 } 
