@@ -13,6 +13,7 @@ public:
         float yValue = 0.0f;    // 0.0 to 1.0
         float pressure = 0.0f;  // 0.0 to 1.0
         bool isPressed = false;
+        bool touched = false;    // Added for touch state
         int xCC = 0;
         int yCC = 0;
         int pressureCC = 0;
@@ -26,11 +27,6 @@ public:
     void setState(const State& newState);
     void resized() override;
     void paint(juce::Graphics& g) override;
-
-    // Mouse event handlers
-    void mouseDown(const juce::MouseEvent& e) override;
-    void mouseDrag(const juce::MouseEvent& e) override;
-    void mouseUp(const juce::MouseEvent& e) override;
 
     // Callbacks for button interactions
     std::function<void(const juce::String&)> onButtonClick;
@@ -87,7 +83,6 @@ private:
     void drawTouchArea(juce::Graphics& g);
     void drawPressureBar(juce::Graphics& g);
     void drawLabels(juce::Graphics& g);
-    void updateTouchValuesFromMouse(const juce::MouseEvent& e);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TouchPad)
 }; 

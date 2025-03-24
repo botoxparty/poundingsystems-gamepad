@@ -359,6 +359,7 @@ void ModernGamepadComponent::updateState(const GamepadManager::GamepadState& new
         padState.yValue = juce::jlimit(0.0f, 1.0f, newState.touchpad.y);
         padState.pressure = juce::jlimit(0.0f, 1.0f, newState.touchpad.pressure);
         padState.isPressed = newState.touchpad.pressed;
+        padState.touched = newState.touchpad.touched;
         padState.xCC = MidiCC::TOUCHPAD_X;
         padState.yCC = MidiCC::TOUCHPAD_Y;
         padState.pressureCC = MidiCC::TOUCHPAD_PRESSURE;

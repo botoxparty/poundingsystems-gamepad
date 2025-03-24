@@ -14,6 +14,9 @@ TouchPad::TouchPad()
 void TouchPad::setState(const State& newState)
 {
     state = newState;
+    
+    // Set touched state based on pressure
+    state.touched = state.pressure > 0.0f;
 
     // Update X axis button with value
     xButton.setProperties({
@@ -169,8 +172,8 @@ void TouchPad::drawTouchArea(juce::Graphics& g)
         g.drawHorizontalLine(static_cast<int>(y), touchArea.getX(), touchArea.getRight());
     }
 
-    // Draw touch point
-    if (state.isPressed)
+    // Draw touch point when touchpad is being touched
+    if (state.touched)
     {
         g.setColour(juce::Colours::red);
         g.fillEllipse(touchPosition.x - touchRadius, touchPosition.y - touchRadius,
@@ -181,70 +184,4 @@ void TouchPad::drawTouchArea(juce::Graphics& g)
 void TouchPad::drawLabels(juce::Graphics& g)
 {
     // Labels are now shown in the buttons instead
-}
-
-void TouchPad::mouseDown(const juce::MouseEvent& e)
-{
-    if (!state.isEnabled) return;
-
-    if (touchArea.contains(e.position)) {
-        state.isPressed = true;
-        updateTouchValuesFromMouse(e);
-        repaint();
-    }
-}
-
-void TouchPad::mouseDrag(const juce::MouseEvent& e)
-{
-    if (!state.isEnabled || !state.isPressed) return;
-
-    if (touchArea.contains(e.position)) {
-        updateTouchValuesFromMouse(e);
-        repaint();
-    }
-}
-
-void TouchPad::mouseUp(const juce::MouseEvent& e)
-{
-    if (!state.isEnabled) return;
-
-    state.isPressed = false;
-    
-    // Send button release if not in learn mode
-    if (!state.isLearnMode && onButtonValueChange) {
-        onButtonValueChange(0.0f);  // Button released
-    }
-    
-    repaint();
-}
-
-void TouchPad::updateTouchValuesFromMouse(const juce::MouseEvent& e)
-{
-    // Calculate normalized values (0.0 to 1.0)
-    float x = (e.position.x - touchArea.getX()) / touchArea.getWidth();
-    float y = (e.position.y - touchArea.getY()) / touchArea.getHeight();
-    
-    // Clamp values between 0 and 1
-    x = juce::jlimit(0.0f, 1.0f, x);
-    y = juce::jlimit(0.0f, 1.0f, y);
-    
-    // Get pressure from the mouse event if available, otherwise use 1.0
-    float pressure = e.pressure > 0.0f ? e.pressure : 1.0f;
-    
-    // Send MIDI if not in learn mode
-    if (!state.isLearnMode) {
-        if (onXValueChange) onXValueChange(x);
-        if (onYValueChange) onYValueChange(y);
-        if (onPressureValueChange) onPressureValueChange(pressure);
-        if (onButtonValueChange) onButtonValueChange(1.0f);  // Button pressed
-    }
-    
-    // Update state
-    state.xValue = x;
-    state.yValue = y;
-    state.pressure = pressure;
-    state.isPressed = true;
-    
-    // Update the visual position
-    updateTouchPosition();
 } 
