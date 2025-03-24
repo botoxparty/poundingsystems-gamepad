@@ -2,6 +2,9 @@
 
 StandaloneApp::StandaloneApp()
 {
+    // Initialize MIDI output manager early
+    MidiOutputManager::getInstance();
+    
     // Create single gamepad component
     gamepadComponent = std::make_unique<ModernGamepadComponent>(gamepadManager.getGamepadState(0));
     addAndMakeVisible(gamepadComponent.get());  // Make visible immediately

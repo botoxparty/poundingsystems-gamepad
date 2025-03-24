@@ -48,11 +48,13 @@ if(APPLE)
     set(CMAKE_XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME "YES")
     
     # Force proper code signing for MIDI functionality
-    set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Apple Development")
-    set(CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "")  # Add your team ID here if you have one
+    # For distribution, use "Developer ID Application" instead of "Apple Development"
+    set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Developer ID Application")
+    # You MUST set your development team ID here for distribution
+    set(CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "")  # Replace with your Team ID from Apple Developer Account
     set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "YES")
     set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "YES")
-    set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic")
+    set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Manual")  # Use Manual for Developer ID signing
     
     # Allow unsigned libraries for MIDI drivers
     set(CMAKE_XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS "--deep --options=runtime")
@@ -163,33 +165,32 @@ target_compile_features(SharedCode INTERFACE cxx_std_20)
 
 # Handle SDL3 dependencies for macOS
 if(APPLE)
-    find_library(SDL3_DYLIB 
-        NAMES libSDL3.0.dylib SDL3
-        PATHS 
-            "${CMAKE_BINARY_DIR}/vendor/SDL3"
-            "${CMAKE_SOURCE_DIR}/vendor/SDL3/build/install/lib"
-            "$ENV{SDL3_LIBRARY}"
-        PATH_SUFFIXES "Debug" "Release"
-        NO_DEFAULT_PATH
-    )
+    # Critical: explicitly disable App Sandbox for MIDI virtual devices
+    set(CMAKE_XCODE_ATTRIBUTE_ENABLE_APP_SANDBOX "NO")
     
-    if(SDL3_DYLIB)
-        message(STATUS "Found SDL3 library at: ${SDL3_DYLIB}")
-        get_filename_component(SDL3_LIB_NAME "${SDL3_DYLIB}" NAME)
-        
-        add_custom_command(TARGET "${PROJECT_NAME}" POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${SDL3_DYLIB}"
-            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/${SDL3_LIB_NAME}"
-            COMMENT "Copying SDL3 library to app bundle")
-            
-        add_custom_command(TARGET "${PROJECT_NAME}" POST_BUILD
-            COMMAND install_name_tool -change @rpath/${SDL3_LIB_NAME} @executable_path/${SDL3_LIB_NAME}
+    # Make sure we use the hardened runtime (required for notarization)
+    set(CMAKE_XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME "YES")
+    
+    # Force proper code signing for MIDI functionality
+    set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Developer ID Application")
+    set(CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "")  # Replace with your Team ID from Apple Developer Account
+    set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "YES")
+    set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "YES")
+    set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Manual")  # Use Manual for Developer ID signing
+    
+    # Allow unsigned libraries for MIDI drivers
+    set(CMAKE_XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS "--deep --options=runtime")
+
+    # Add post-build command to copy SDL3 into the app bundle
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PROJECT_NAME}>/../Frameworks"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE:SDL3-shared>"
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/../Frameworks/"
+        COMMAND install_name_tool -change "@rpath/libSDL3.0.dylib" 
+            "@executable_path/../Frameworks/libSDL3.0.dylib"
             "$<TARGET_FILE:${PROJECT_NAME}>"
-            COMMENT "Fixing SDL3 install name")
-    else()
-        message(WARNING "SDL3 library not found. The application may not run correctly.")
-    endif()
+    )
 endif()
 
 juce_add_binary_data(Assets 
