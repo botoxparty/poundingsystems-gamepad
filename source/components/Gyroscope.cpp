@@ -13,37 +13,36 @@ Gyroscope::Gyroscope()
 void Gyroscope::setState(const State& newState)
 {
     state = newState;
-    updateButtonTexts();
 
     // Update X button
-    xButton.setProperties({
-        "X: " + juce::String(state.x, 2),
-        state.xCC,
-        false,
-        state.isLearnMode,
-        juce::Colours::red.withAlpha(0.7f),
-        state.isLearnMode ? juce::Colours::white : juce::Colours::black
-    });
+    auto xProps = xButton.getProperties();
+    xProps.text = state.enabled ? "X: " + juce::String(state.x, 2) : "X: --";
+    xProps.ccNumber = state.xCC;
+    xProps.isPressed = false;
+    xProps.isLearnMode = state.isLearnMode;
+    xProps.backgroundColor = juce::Colours::red.withAlpha(0.7f);
+    xProps.textColor = state.isLearnMode ? juce::Colours::white : juce::Colours::black;
+    xButton.setProperties(xProps);
 
     // Update Y button
-    yButton.setProperties({
-        "Y: " + juce::String(state.y, 2),
-        state.yCC,
-        false,
-        state.isLearnMode,
-        juce::Colours::green.withAlpha(0.7f),
-        state.isLearnMode ? juce::Colours::white : juce::Colours::black
-    });
+    auto yProps = yButton.getProperties();
+    yProps.text = state.enabled ? "Y: " + juce::String(state.y, 2) : "Y: --";
+    yProps.ccNumber = state.yCC;
+    yProps.isPressed = false;
+    yProps.isLearnMode = state.isLearnMode;
+    yProps.backgroundColor = juce::Colours::green.withAlpha(0.7f);
+    yProps.textColor = state.isLearnMode ? juce::Colours::white : juce::Colours::black;
+    yButton.setProperties(yProps);
 
     // Update Z button
-    zButton.setProperties({
-        "Z: " + juce::String(state.z, 2),
-        state.zCC,
-        false,
-        state.isLearnMode,
-        juce::Colours::blue.withAlpha(0.7f),
-        state.isLearnMode ? juce::Colours::white : juce::Colours::black
-    });
+    auto zProps = zButton.getProperties();
+    zProps.text = state.enabled ? "Z: " + juce::String(state.z, 2) : "Z: --";
+    zProps.ccNumber = state.zCC;
+    zProps.isPressed = false;
+    zProps.isLearnMode = state.isLearnMode;
+    zProps.backgroundColor = juce::Colours::blue.withAlpha(0.7f);
+    zProps.textColor = state.isLearnMode ? juce::Colours::white : juce::Colours::black;
+    zButton.setProperties(zProps);
 }
 
 void Gyroscope::resized()
@@ -86,9 +85,21 @@ void Gyroscope::paint(juce::Graphics& g)
 
 void Gyroscope::setupCallbacks()
 {
+    // X button callbacks
+    xButton.onClick = [this]() {
+        if (onButtonClick)
+            onButtonClick("X");
+    };
+
     xButton.onLearnClick = [this]() {
         if (onLearnClick)
             onLearnClick("X");
+    };
+
+    // Y button callbacks
+    yButton.onClick = [this]() {
+        if (onButtonClick)
+            onButtonClick("Y");
     };
 
     yButton.onLearnClick = [this]() {
@@ -96,18 +107,14 @@ void Gyroscope::setupCallbacks()
             onLearnClick("Y");
     };
 
+    // Z button callbacks
+    zButton.onClick = [this]() {
+        if (onButtonClick)
+            onButtonClick("Z");
+    };
+
     zButton.onLearnClick = [this]() {
         if (onLearnClick)
             onLearnClick("Z");
     };
-}
-
-void Gyroscope::updateButtonTexts()
-{
-    if (!state.enabled)
-    {
-        xButton.setProperties({"X: --", state.xCC, false, state.isLearnMode});
-        yButton.setProperties({"Y: --", state.yCC, false, state.isLearnMode});
-        zButton.setProperties({"Z: --", state.zCC, false, state.isLearnMode});
-    }
 } 

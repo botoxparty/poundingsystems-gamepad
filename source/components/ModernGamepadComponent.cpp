@@ -1,4 +1,5 @@
 #include "ModernGamepadComponent.h"
+#include "MidiCCMapping.h"
 
 ModernGamepadComponent::ModernGamepadComponent(const GamepadManager::GamepadState& state)
     : gamepadState(state)
@@ -135,51 +136,84 @@ void ModernGamepadComponent::setupCallbacks()
 {
     // ShoulderSection callbacks
     shoulderSection.onButtonClick = [this](const juce::String& button) {
-        if (button == "L1") sendMidiCC(29, 1.0f);  // CC 29 for L1
-        else if (button == "R1") sendMidiCC(30, 1.0f);  // CC 30 for R1
-        else if (button == "L2") sendMidiCC(5, 1.0f);   // CC 5 for L2
-        else if (button == "R2") sendMidiCC(6, 1.0f);   // CC 6 for R2
+        if (button == "L1") sendMidiCC(MidiCC::L1_BUTTON, 1.0f);
+        else if (button == "R1") sendMidiCC(MidiCC::R1_BUTTON, 1.0f);
+        else if (button == "L2") sendMidiCC(MidiCC::L2_TRIGGER, 1.0f);
+        else if (button == "R2") sendMidiCC(MidiCC::R2_TRIGGER, 1.0f);
+    };
+    
+    shoulderSection.onLearnClick = [this](const juce::String& button) {
+        if (button == "L1") sendMidiCC(MidiCC::L1_BUTTON, 1.0f);
+        else if (button == "R1") sendMidiCC(MidiCC::R1_BUTTON, 1.0f);
+        else if (button == "L2") sendMidiCC(MidiCC::L2_TRIGGER, 1.0f);
+        else if (button == "R2") sendMidiCC(MidiCC::R2_TRIGGER, 1.0f);
     };
     
     // D-pad callbacks
     dPad.onButtonClick = [this](const juce::String& button) {
-        if (button == "Up") sendMidiCC(31, 1.0f);      // CC 31 for Up
-        else if (button == "Down") sendMidiCC(32, 1.0f);  // CC 32 for Down
-        else if (button == "Left") sendMidiCC(33, 1.0f);  // CC 33 for Left
-        else if (button == "Right") sendMidiCC(34, 1.0f); // CC 34 for Right
+        if (button == "Up") sendMidiCC(MidiCC::DPAD_UP, 1.0f);
+        else if (button == "Down") sendMidiCC(MidiCC::DPAD_DOWN, 1.0f);
+        else if (button == "Left") sendMidiCC(MidiCC::DPAD_LEFT, 1.0f);
+        else if (button == "Right") sendMidiCC(MidiCC::DPAD_RIGHT, 1.0f);
+    };
+    
+    dPad.onLearnClick = [this](const juce::String& button) {
+        if (button == "Up") sendMidiCC(MidiCC::DPAD_UP, 1.0f);
+        else if (button == "Down") sendMidiCC(MidiCC::DPAD_DOWN, 1.0f);
+        else if (button == "Left") sendMidiCC(MidiCC::DPAD_LEFT, 1.0f);
+        else if (button == "Right") sendMidiCC(MidiCC::DPAD_RIGHT, 1.0f);
     };
     
     // Face buttons callbacks
     faceButtons.onButtonClick = [this](const juce::String& button) {
-        if (button == "A") sendMidiCC(20, 1.0f);      // CC 20 for A
-        else if (button == "B") sendMidiCC(21, 1.0f);  // CC 21 for B
-        else if (button == "X") sendMidiCC(22, 1.0f);  // CC 22 for X
-        else if (button == "Y") sendMidiCC(23, 1.0f);  // CC 23 for Y
+        if (button == "A") sendMidiCC(MidiCC::A_BUTTON, 1.0f);
+        else if (button == "B") sendMidiCC(MidiCC::B_BUTTON, 1.0f);
+        else if (button == "X") sendMidiCC(MidiCC::X_BUTTON, 1.0f);
+        else if (button == "Y") sendMidiCC(MidiCC::Y_BUTTON, 1.0f);
+    };
+    
+    faceButtons.onLearnClick = [this](const juce::String& button) {
+        if (button == "A") sendMidiCC(MidiCC::A_BUTTON, 1.0f);
+        else if (button == "B") sendMidiCC(MidiCC::B_BUTTON, 1.0f);
+        else if (button == "X") sendMidiCC(MidiCC::X_BUTTON, 1.0f);
+        else if (button == "Y") sendMidiCC(MidiCC::Y_BUTTON, 1.0f);
     };
     
     // Analog sticks callbacks
     leftStick.onAxisChange = [this](const juce::String& axis, float value) {
-        if (axis == "X") sendMidiCC(1, (value + 1.0f) * 0.5f);  // CC 1 for Left X
-        else if (axis == "Y") sendMidiCC(2, (value + 1.0f) * 0.5f);  // CC 2 for Left Y
+        if (axis == "X") sendMidiCC(MidiCC::LEFT_STICK_X, (value + 1.0f) * 0.5f);
+        else if (axis == "Y") sendMidiCC(MidiCC::LEFT_STICK_Y, (value + 1.0f) * 0.5f);
     };
     
     rightStick.onAxisChange = [this](const juce::String& axis, float value) {
-        if (axis == "X") sendMidiCC(3, (value + 1.0f) * 0.5f);  // CC 3 for Right X
-        else if (axis == "Y") sendMidiCC(4, (value + 1.0f) * 0.5f);  // CC 4 for Right Y
+        if (axis == "X") sendMidiCC(MidiCC::RIGHT_STICK_X, (value + 1.0f) * 0.5f);
+        else if (axis == "Y") sendMidiCC(MidiCC::RIGHT_STICK_Y, (value + 1.0f) * 0.5f);
     };
     
     // Touchpad callbacks
     touchPad.onValueChange = [this](float x, float y, float pressure) {
-        sendMidiCC(35, x);          // CC 35 for Touch X
-        sendMidiCC(36, y);          // CC 36 for Touch Y
-        sendMidiCC(37, pressure);    // CC 37 for Touch Pressure
+        sendMidiCC(MidiCC::TOUCHPAD_X, x);
+        sendMidiCC(MidiCC::TOUCHPAD_Y, y);
+        sendMidiCC(MidiCC::TOUCHPAD_PRESSURE, pressure);
     };
     
     // Gyroscope callbacks
     gyroscope.onValueChange = [this](float x, float y, float z) {
-        sendMidiCC(38, (x + 1.0f) * 0.5f);  // CC 38 for Gyro X
-        sendMidiCC(39, (y + 1.0f) * 0.5f);  // CC 39 for Gyro Y
-        sendMidiCC(40, (z + 1.0f) * 0.5f);  // CC 40 for Gyro Z
+        sendMidiCC(MidiCC::GYRO_X, (x + 1.0f) * 0.5f);
+        sendMidiCC(MidiCC::GYRO_Y, (y + 1.0f) * 0.5f);
+        sendMidiCC(MidiCC::GYRO_Z, (z + 1.0f) * 0.5f);
+    };
+
+    gyroscope.onLearnClick = [this](const juce::String& axis) {
+        if (axis == "X") sendMidiCC(MidiCC::GYRO_X, (gamepadState.gyroscope.x + 1.0f) * 0.5f);
+        else if (axis == "Y") sendMidiCC(MidiCC::GYRO_Y, (gamepadState.gyroscope.y + 1.0f) * 0.5f);
+        else if (axis == "Z") sendMidiCC(MidiCC::GYRO_Z, (gamepadState.gyroscope.z + 1.0f) * 0.5f);
+    };
+
+    gyroscope.onButtonClick = [this](const juce::String& axis) {
+        if (axis == "X") sendMidiCC(MidiCC::GYRO_X, (gamepadState.gyroscope.x + 1.0f) * 0.5f);
+        else if (axis == "Y") sendMidiCC(MidiCC::GYRO_Y, (gamepadState.gyroscope.y + 1.0f) * 0.5f);
+        else if (axis == "Z") sendMidiCC(MidiCC::GYRO_Z, (gamepadState.gyroscope.z + 1.0f) * 0.5f);
     };
 }
 
@@ -199,90 +233,103 @@ void ModernGamepadComponent::resized()
 }
 
 void ModernGamepadComponent::updateState(const GamepadManager::GamepadState& newState) {
-    if (!midiLearnMode) {
-        // Update shoulder section
-        shoulderSection.setState({
-            newState.buttons[9],  // L1
-            newState.buttons[10], // R1
-            juce::jlimit(0.0f, 1.0f, (newState.axes[4] + 1.0f) * 0.5f),  // L2
-            juce::jlimit(0.0f, 1.0f, (newState.axes[5] + 1.0f) * 0.5f)   // R2
-        });
-        
-        // Update D-pad
-        dPad.setState({
-            newState.buttons[11], // Up
-            newState.buttons[12], // Down
-            newState.buttons[13], // Left
-            newState.buttons[14]  // Right
-        });
-        
-        // Update face buttons
-        faceButtons.setState({
-            newState.buttons[0],  // A
-            newState.buttons[1],  // B
-            newState.buttons[2],  // X
-            newState.buttons[3]   // Y
-        });
+    // Update shoulder section
+    shoulderSection.setState({
+        newState.buttons[9],  // L1
+        newState.buttons[10], // R1
+        juce::jlimit(0.0f, 1.0f, (newState.axes[4] + 1.0f) * 0.5f),  // L2
+        juce::jlimit(0.0f, 1.0f, (newState.axes[5] + 1.0f) * 0.5f),   // R2
+        midiLearnMode,
+        MidiCC::L1_BUTTON,
+        MidiCC::R1_BUTTON,
+        MidiCC::L2_TRIGGER,
+        MidiCC::R2_TRIGGER
+    });
+    
+    // Update D-pad
+    dPad.setState({
+        newState.buttons[11], // Up
+        newState.buttons[12], // Down
+        newState.buttons[13], // Left
+        newState.buttons[14], // Right
+        MidiCC::DPAD_UP,
+        MidiCC::DPAD_DOWN,
+        MidiCC::DPAD_LEFT,
+        MidiCC::DPAD_RIGHT,
+        midiLearnMode
+    });
+    
+    // Update face buttons
+    faceButtons.setState({
+        MidiCC::A_BUTTON,
+        MidiCC::B_BUTTON,
+        MidiCC::X_BUTTON,
+        MidiCC::Y_BUTTON,
+        newState.buttons[0],  // A
+        newState.buttons[1],  // B
+        newState.buttons[2],  // X
+        newState.buttons[3],  // Y
+        midiLearnMode
+    });
 
-        // Update analog sticks
-        {
-            AnalogStick::State stickState;
-            stickState.isEnabled = true;
-            stickState.xValue = juce::jlimit(-1.0f, 1.0f, newState.axes[0]);
-            stickState.yValue = juce::jlimit(-1.0f, 1.0f, newState.axes[1]);
-            stickState.isPressed = newState.buttons[7];
-            stickState.xCC = 1;
-            stickState.yCC = 2;
-            stickState.pressCC = 29;
-            stickState.isLearnMode = false;
-            stickState.name = "Left Stick";
-            stickState.isStick = true;
-            leftStick.setState(stickState);
-        }
+    // Update analog sticks
+    {
+        AnalogStick::State stickState;
+        stickState.isEnabled = true;
+        stickState.xValue = juce::jlimit(-1.0f, 1.0f, newState.axes[0]);
+        stickState.yValue = juce::jlimit(-1.0f, 1.0f, newState.axes[1]);
+        stickState.isPressed = newState.buttons[7];
+        stickState.xCC = MidiCC::LEFT_STICK_X;
+        stickState.yCC = MidiCC::LEFT_STICK_Y;
+        stickState.pressCC = MidiCC::L1_BUTTON;
+        stickState.isLearnMode = midiLearnMode;
+        stickState.name = "Left Stick";
+        stickState.isStick = true;
+        leftStick.setState(stickState);
+    }
 
-        {
-            AnalogStick::State stickState;
-            stickState.isEnabled = true;
-            stickState.xValue = juce::jlimit(-1.0f, 1.0f, newState.axes[2]);
-            stickState.yValue = juce::jlimit(-1.0f, 1.0f, newState.axes[3]);
-            stickState.isPressed = newState.buttons[8];
-            stickState.xCC = 3;
-            stickState.yCC = 4;
-            stickState.pressCC = 30;
-            stickState.isLearnMode = false;
-            stickState.name = "Right Stick";
-            stickState.isStick = true;
-            rightStick.setState(stickState);
-        }
+    {
+        AnalogStick::State stickState;
+        stickState.isEnabled = true;
+        stickState.xValue = juce::jlimit(-1.0f, 1.0f, newState.axes[2]);
+        stickState.yValue = juce::jlimit(-1.0f, 1.0f, newState.axes[3]);
+        stickState.isPressed = newState.buttons[8];
+        stickState.xCC = MidiCC::RIGHT_STICK_X;
+        stickState.yCC = MidiCC::RIGHT_STICK_Y;
+        stickState.pressCC = MidiCC::R1_BUTTON;
+        stickState.isLearnMode = midiLearnMode;
+        stickState.name = "Right Stick";
+        stickState.isStick = true;
+        rightStick.setState(stickState);
+    }
 
-        // Update touchpad
-        {
-            TouchPad::State padState;
-            padState.isEnabled = true;
-            padState.xValue = juce::jlimit(0.0f, 1.0f, newState.touchpad.x);
-            padState.yValue = juce::jlimit(0.0f, 1.0f, newState.touchpad.y);
-            padState.pressure = juce::jlimit(0.0f, 1.0f, newState.touchpad.pressure);
-            padState.isPressed = newState.touchpad.pressed;
-            padState.xCC = 35;
-            padState.yCC = 36;
-            padState.pressureCC = 37;
-            padState.isLearnMode = false;
-            touchPad.setState(padState);
-        }
+    // Update touchpad
+    {
+        TouchPad::State padState;
+        padState.isEnabled = true;
+        padState.xValue = juce::jlimit(0.0f, 1.0f, newState.touchpad.x);
+        padState.yValue = juce::jlimit(0.0f, 1.0f, newState.touchpad.y);
+        padState.pressure = juce::jlimit(0.0f, 1.0f, newState.touchpad.pressure);
+        padState.isPressed = newState.touchpad.pressed;
+        padState.xCC = MidiCC::TOUCHPAD_X;
+        padState.yCC = MidiCC::TOUCHPAD_Y;
+        padState.pressureCC = MidiCC::TOUCHPAD_PRESSURE;
+        padState.isLearnMode = midiLearnMode;
+        touchPad.setState(padState);
+    }
 
-        // Update gyroscope
-        {
-            Gyroscope::State gyroState;
-            gyroState.enabled = newState.gyroscope.enabled;
-            gyroState.x = juce::jlimit(-1.0f, 1.0f, newState.gyroscope.x);
-            gyroState.y = juce::jlimit(-1.0f, 1.0f, newState.gyroscope.y);
-            gyroState.z = juce::jlimit(-1.0f, 1.0f, newState.gyroscope.z);
-            gyroState.xCC = 40;
-            gyroState.yCC = 41;
-            gyroState.zCC = 42;
-            gyroState.isLearnMode = false;
-            gyroscope.setState(gyroState);
-        }
+    // Update gyroscope
+    {
+        Gyroscope::State gyroState;
+        gyroState.enabled = newState.gyroscope.enabled;
+        gyroState.x = juce::jlimit(-1.0f, 1.0f, newState.gyroscope.x);
+        gyroState.y = juce::jlimit(-1.0f, 1.0f, newState.gyroscope.y);
+        gyroState.z = juce::jlimit(-1.0f, 1.0f, newState.gyroscope.z);
+        gyroState.xCC = MidiCC::GYRO_X;
+        gyroState.yCC = MidiCC::GYRO_Y;
+        gyroState.zCC = MidiCC::GYRO_Z;
+        gyroState.isLearnMode = midiLearnMode;
+        gyroscope.setState(gyroState);
     }
 
     // Update status label
