@@ -135,36 +135,14 @@ jobs:
         run: |
           ARTIFACTS_PATH=${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}
           echo "ARTIFACTS_PATH=$ARTIFACTS_PATH" >> $GITHUB_ENV
-          echo "STANDALONE_PATH=$ARTIFACTS_PATH/Standalone/${{ env.PRODUCT_NAME }}.app" >> $GITHUB_ENV
+          echo "STANDALONE_PATH=$ARTIFACTS_PATH/${{ env.PRODUCT_NAME }}.app" >> $GITHUB_ENV
           echo "ARTIFACT_NAME=${{ env.PRODUCT_NAME }}-${{ env.VERSION }}-${{ matrix.name }}" >> $GITHUB_ENV
 
       - name: Codesign (macOS)
         if: ${{ matrix.name == 'macOS' }}
         run: |
-          # Debug: Show build directory structure
-          echo "Build directory contents:"
-          ls -R "${{ env.BUILD_DIR }}"
-          
-          # Debug: Show artifacts path
-          echo "Artifacts path contents:"
-          ls -R "${{ env.ARTIFACTS_PATH }}" || echo "Artifacts directory not found"
-          
-          # The app might be directly in the build directory for GUI apps
-          APP_PATH="${{ env.BUILD_DIR }}/Release/Gamepad MIDI.app"
-          if [ -d "$APP_PATH" ]; then
-            echo "Found app at: $APP_PATH"
-            codesign --force -s "${{ secrets.DEVELOPER_ID_APPLICATION}}" -v "$APP_PATH" --deep --strict --options=runtime --timestamp
-          else
-            echo "App not found at expected path: $APP_PATH"
-            echo "Trying standalone path..."
-            # Try original standalone path
-            if [ -d "${{ env.STANDALONE_PATH }}" ]; then
-              codesign --force -s "${{ secrets.DEVELOPER_ID_APPLICATION}}" -v "${{ env.STANDALONE_PATH }}" --deep --strict --options=runtime --timestamp
-            else
-              echo "App not found in standalone path either: ${{ env.STANDALONE_PATH }}"
-              exit 1
-            fi
-          fi
+          # Each plugin must be code signed
+          codesign --force -s "${{ secrets.DEVELOPER_ID_APPLICATION}}" -v "${{ env.STANDALONE_PATH }}" --deep --strict --options=runtime --timestamp
 
       # - name: Add Custom Icons (macOS)
       #   if: ${{ matrix.name == 'macOS' }}
