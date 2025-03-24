@@ -40,6 +40,9 @@ void GamepadComponent::setupVisuals()
     buttonVisuals.push_back({"Left", {}, 13});
     buttonVisuals.push_back({"Right", {}, 14});
     
+    // Touchpad (as a button)
+    buttonVisuals.push_back({"Touch", {}, 15});
+    
     // Axes
     axisVisuals.push_back({"Left Stick", {}, 0, true});  // Represents both X and Y axes
     axisVisuals.push_back({"Right Stick", {}, 2, true}); // Represents both X and Y axes
@@ -95,6 +98,20 @@ void GamepadComponent::setMidiLearnMode(bool enabled)
     }
 }
 
+juce::Rectangle<float> GamepadComponent::calculateTouchpadBounds()
+{
+    auto bounds = getLocalBounds().toFloat();
+    auto middleArea = bounds;
+    auto centerArea = middleArea.removeFromTop(middleArea.getHeight() * 0.5f);
+    auto touchpadArea = centerArea.removeFromTop(centerArea.getHeight() * 0.5f);
+    return juce::Rectangle<float>(
+        touchpadArea.getCentreX() - 100.0f,
+        touchpadArea.getCentreY() - 15.0f,
+        200.0f,    // width
+        60.0f      // height
+    );
+}
+
 void GamepadComponent::mouseDown(const juce::MouseEvent& event)
 {
     auto point = event.position.toFloat();
@@ -109,7 +126,10 @@ void GamepadComponent::mouseDown(const juce::MouseEvent& event)
     // Only handle MIDI learn clicks when in learn mode
     if (midiLearnMode)
     {
-        // First check buttons
+        // Set touchpad button bounds
+        buttonVisuals[15].bounds = calculateTouchpadBounds();
+        
+        // First check buttons (including touchpad)
         for (const auto& buttonVisual : buttonVisuals)
         {
             if (buttonVisual.bounds.contains(point))
@@ -122,6 +142,54 @@ void GamepadComponent::mouseDown(const juce::MouseEvent& event)
                         sendMidiLearnCC(control.ccNumber, 1.0f);
                         return;
                     }
+                }
+            }
+        }
+        
+        // Check touchpad X/Y/Pressure buttons
+        float labelButtonWidth = buttonVisuals[15].bounds.getWidth() / 3.0f;
+        float labelButtonHeight = 20.0f;
+        float labelY = buttonVisuals[15].bounds.getY() - labelButtonHeight - 5.0f;
+        
+        // X button (left)
+        auto xButtonBounds = juce::Rectangle<float>(buttonVisuals[15].bounds.getX(), labelY, labelButtonWidth, labelButtonHeight);
+        // Y button (middle)
+        auto yButtonBounds = juce::Rectangle<float>(buttonVisuals[15].bounds.getX() + labelButtonWidth, labelY, labelButtonWidth, labelButtonHeight);
+        // Pressure button (right)
+        auto pressureButtonBounds = juce::Rectangle<float>(buttonVisuals[15].bounds.getX() + labelButtonWidth * 2, labelY, labelButtonWidth, labelButtonHeight);
+        
+        // Check if touchpad buttons were clicked
+        for (auto& control : midiLearnControls)
+        {
+            if (control.isAxis && control.index == -1)
+            {
+                if (control.subIndex == 3 && xButtonBounds.contains(point))
+                {
+                    sendMidiLearnCC(control.ccNumber, cachedState.touchpad.x);
+                    return;
+                }
+                else if (control.subIndex == 4 && yButtonBounds.contains(point))
+                {
+                    sendMidiLearnCC(control.ccNumber, cachedState.touchpad.y);
+                    return;
+                }
+                else if (control.subIndex == 5 && pressureButtonBounds.contains(point))
+                {
+                    sendMidiLearnCC(control.ccNumber, cachedState.touchpad.pressure);
+                    return;
+                }
+            }
+        }
+        
+        // Check if touchpad itself was clicked for pressed state
+        if (buttonVisuals[15].bounds.contains(point))
+        {
+            for (auto& control : midiLearnControls)
+            {
+                if (!control.isAxis && control.index == -1 && control.subIndex == 6)
+                {
+                    sendMidiLearnCC(control.ccNumber, cachedState.touchpad.pressed ? 1.0f : 0.0f);
+                    return;
                 }
             }
         }
@@ -238,6 +306,9 @@ void GamepadComponent::paint(juce::Graphics& g)
         return;
     }
     
+    // Set touchpad button bounds
+    buttonVisuals[15].bounds = calculateTouchpadBounds();
+    
     // Draw buttons with classic Windows style
     float buttonSize = 30.0f;
     
@@ -315,7 +386,7 @@ void GamepadComponent::paint(juce::Graphics& g)
     
     // Add touchpad in a higher position of the center area
     auto touchpadArea = centerArea.removeFromTop(centerArea.getHeight() * 0.5f); // Adjusted for higher placement
-    juce::Rectangle<float> touchpadBounds(
+    buttonVisuals[15].bounds = juce::Rectangle<float>(
         touchpadArea.getCentreX() - 100.0f,
         touchpadArea.getCentreY() - 15.0f, // Move up by subtracting 15 pixels instead of adding
         200.0f,    // width
@@ -365,14 +436,14 @@ void GamepadComponent::paint(juce::Graphics& g)
     
     // Create gyroscope area first so we can use it for menu positioning
     auto gyroArea = juce::Rectangle<float>(
-        touchpadBounds.getX(),
-        touchpadBounds.getBottom() + 60.0f,
-        touchpadBounds.getWidth(),
+        buttonVisuals[15].bounds.getX(),
+        buttonVisuals[15].bounds.getBottom() + 60.0f,
+        buttonVisuals[15].bounds.getWidth(),
         60.0f
     );
     
     // Position menu buttons centered between touchpad and gyroscope
-    float menuY = touchpadBounds.getBottom() + ((gyroArea.getY() - touchpadBounds.getBottom()) / 2) - (menuButtonHeight / 2);
+    float menuY = buttonVisuals[15].bounds.getBottom() + ((gyroArea.getY() - buttonVisuals[15].bounds.getBottom()) / 2) - (menuButtonHeight / 2);
     
     // Back button
     buttonVisuals[4].bounds = juce::Rectangle<float>(
@@ -535,16 +606,91 @@ void GamepadComponent::paint(juce::Graphics& g)
     }
     
     // Draw touchpad
-    g.setColour(cachedState.touchpad.pressed ? juce::Colours::orange.withAlpha(0.8f) : juce::Colours::darkgrey.brighter(0.15f));
-    g.fillRoundedRectangle(touchpadBounds, 5.0f);
-    g.setColour(juce::Colours::lightgrey);
-    g.drawRoundedRectangle(touchpadBounds, 5.0f, 1.0f);
+    const auto& touchArea = buttonVisuals[15].bounds;
+    
+    // Find touchpad button's CC number
+    int ccNumber = -1;
+    for (const auto& control : midiLearnControls)
+    {
+        if (!control.isAxis && control.index == buttonVisuals[15].buttonIndex)
+        {
+            ccNumber = control.ccNumber;
+            break;
+        }
+    }
+    
+    // In learn mode with a CC number, use blue background
+    if (midiLearnMode && ccNumber >= 0)
+    {
+        g.setColour(juce::Colours::blue.withAlpha(0.7f));
+        g.fillRoundedRectangle(touchArea, 5.0f);
+        g.setColour(juce::Colours::white);
+        g.drawRoundedRectangle(touchArea, 5.0f, 1.0f);
+        
+        // Draw CC number
+        g.setFont(juce::Font("MS Sans Serif", 11.0f, juce::Font::plain));
+        g.drawText("CC" + juce::String(ccNumber), touchArea, juce::Justification::centred, false);
+    }
+    else
+    {
+        g.setColour(cachedState.touchpad.pressed ? juce::Colours::orange.withAlpha(0.8f) : juce::Colours::darkgrey.brighter(0.15f));
+        g.fillRoundedRectangle(touchArea, 5.0f);
+        g.setColour(juce::Colours::lightgrey);
+        g.drawRoundedRectangle(touchArea, 5.0f, 1.0f);
+    }
+    
+    // Create X/Y/Pressure label buttons above the touchpad
+    float labelButtonWidth = touchArea.getWidth() / 3.0f;
+    float labelButtonHeight = 20.0f;
+    float labelY = touchArea.getY() - labelButtonHeight - 5.0f;
+    
+    // X button (left)
+    auto xButtonBounds = juce::Rectangle<float>(touchArea.getX(), labelY, labelButtonWidth, labelButtonHeight);
+    juce::String xText = "X: " + juce::String(cachedState.touchpad.x, 2);
+    int ccNumberX = -1;
+    for (const auto& control : midiLearnControls)
+    {
+        if (control.isAxis && control.index == -1 && control.subIndex == 3)
+        {
+            ccNumberX = control.ccNumber;
+            break;
+        }
+    }
+    drawClassicButton(g, xButtonBounds, false, xText, ccNumberX);
+    
+    // Y button (middle)
+    auto yButtonBounds = juce::Rectangle<float>(touchArea.getX() + labelButtonWidth, labelY, labelButtonWidth, labelButtonHeight);
+    juce::String yText = "Y: " + juce::String(cachedState.touchpad.y, 2);
+    int ccNumberY = -1;
+    for (const auto& control : midiLearnControls)
+    {
+        if (control.isAxis && control.index == -1 && control.subIndex == 4)
+        {
+            ccNumberY = control.ccNumber;
+            break;
+        }
+    }
+    drawClassicButton(g, yButtonBounds, false, yText, ccNumberY);
+    
+    // Pressure button (right)
+    auto pressureButtonBounds = juce::Rectangle<float>(touchArea.getX() + labelButtonWidth * 2, labelY, labelButtonWidth, labelButtonHeight);
+    juce::String pressureText = "P: " + juce::String(cachedState.touchpad.pressure, 2);
+    int ccNumberPressure = -1;
+    for (const auto& control : midiLearnControls)
+    {
+        if (control.isAxis && control.index == -1 && control.subIndex == 5)
+        {
+            ccNumberPressure = control.ccNumber;
+            break;
+        }
+    }
+    drawClassicButton(g, pressureButtonBounds, false, pressureText, ccNumberPressure);
     
     // Draw touchpad label
     g.setColour(juce::Colours::white);
     g.setFont(14.0f);
     g.drawText("Touchpad", 
-               touchpadBounds, 
+               touchArea, 
                juce::Justification::centred, 
                false);
                
@@ -552,8 +698,8 @@ void GamepadComponent::paint(juce::Graphics& g)
     if (cachedState.touchpad.touched)
     {
         // Calculate touch position within the touchpad bounds
-        float touchX = touchpadBounds.getX() + (cachedState.touchpad.x * touchpadBounds.getWidth());
-        float touchY = touchpadBounds.getY() + (cachedState.touchpad.y * touchpadBounds.getHeight());
+        float touchX = touchArea.getX() + (cachedState.touchpad.x * touchArea.getWidth());
+        float touchY = touchArea.getY() + (cachedState.touchpad.y * touchArea.getHeight());
         
         // Draw touch indicator
         float touchSize = 15.0f + (cachedState.touchpad.pressure * 10.0f); // Size varies with pressure
@@ -568,9 +714,9 @@ void GamepadComponent::paint(juce::Graphics& g)
         g.setColour(juce::Colours::white);
         g.setFont(12.0f);
         g.drawText(touchText, 
-                   touchpadBounds.getX(), 
-                   touchpadBounds.getBottom() + 5.0f, 
-                   touchpadBounds.getWidth(), 
+                   touchArea.getX(), 
+                   touchArea.getBottom() + 5.0f, 
+                   touchArea.getWidth(), 
                    20.0f, 
                    juce::Justification::centred, 
                    false);

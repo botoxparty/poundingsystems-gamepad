@@ -92,5 +92,8 @@ private:
     // Helper to find MIDI learn control under point
     MidiLearnControl* findMidiLearnControlAt(juce::Point<float> point);
     
+    // Helper to calculate touchpad bounds
+    juce::Rectangle<float> calculateTouchpadBounds();
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(GamepadComponent)
 }; 
