@@ -68,6 +68,11 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 add_subdirectory(JUCE)
 add_subdirectory(modules/melatonin_inspector)
 # Add SDL3 for gamepad support
+set(SDL_FORCE_STATIC OFF)
+set(SDL_SHARED ON)
+set(SDL_STATIC OFF)
+set(SDL_OSX_ARCHITECTURES "${CMAKE_OSX_ARCHITECTURES}" CACHE STRING "Build architectures for macOS" FORCE)
+
 FetchContent_Declare(
     SDL3
     GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
@@ -85,7 +90,6 @@ juce_add_gui_app(${PROJECT_NAME}
     COMPANY_NAME "${COMPANY_NAME}"
     BUNDLE_ID "${BUNDLE_ID}"
     PRODUCT_NAME "${PRODUCT_NAME}"
-    OSX_ARCHITECTURE "arm64"
     MICROPHONE_PERMISSION_ENABLED TRUE
     MICROPHONE_PERMISSION_TEXT "This app requires microphone access to enable MIDI device creation."
     DOCUMENT_BROWSER_ENABLED FALSE
