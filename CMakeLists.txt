@@ -200,11 +200,15 @@ if(APPLE)
     )
 endif()
 
+include(GitHubENV)
+
 juce_add_binary_data(Assets 
     SOURCES
         assets/images/PoundingSystemsLogo.png
 )
 
-add_custom_command(TARGET "${PROJECT_NAME}" POST_BUILD
-    COMMAND codesign --force --sign - --entitlements "${CMAKE_CURRENT_SOURCE_DIR}/packaging/GamepadMIDI.entitlements" "$<TARGET_FILE_DIR:${PROJECT_NAME}>/../.."
-    COMMENT "Signing app with entitlements")
+if(APPLE AND NOT DEFINED ENV{CI})
+    add_custom_command(TARGET "${PROJECT_NAME}" POST_BUILD
+        COMMAND codesign --force --sign - --entitlements "${CMAKE_CURRENT_SOURCE_DIR}/packaging/GamepadMIDI.entitlements" "$<TARGET_FILE_DIR:${PROJECT_NAME}>/../.."
+        COMMENT "Development signing with entitlements")
+endif()
