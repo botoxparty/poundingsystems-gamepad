@@ -69,12 +69,12 @@ add_subdirectory(JUCE)
 add_subdirectory(modules/melatonin_inspector)
 # Add SDL3 for gamepad support
 
-set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
+set(CMAKE_OSX_ARCHITECTURES "arm64")
 
 set(SDL_FORCE_STATIC OFF)
 set(SDL_SHARED ON)
 set(SDL_STATIC OFF)
-set(SDL_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "Build architectures for macOS" FORCE)
+set(SDL_OSX_ARCHITECTURES "arm64" CACHE STRING "Build architectures for macOS" FORCE)
 
 FetchContent_Declare(
     SDL3
