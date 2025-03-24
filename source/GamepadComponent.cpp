@@ -106,14 +106,70 @@ void GamepadComponent::mouseDown(const juce::MouseEvent& event)
         return;
     }
     
-    // Handle Learn Mode control clicks
+    // Only handle MIDI learn clicks when in learn mode
     if (midiLearnMode)
     {
-        auto* control = findMidiLearnControlAt(point);
-        if (control != nullptr)
+        // First check buttons
+        for (const auto& buttonVisual : buttonVisuals)
         {
-            // Send a MIDI CC message with max value to indicate the control
-            sendMidiLearnCC(control->ccNumber, 1.0f);
+            if (buttonVisual.bounds.contains(point))
+            {
+                // Find corresponding MIDI learn control
+                for (auto& control : midiLearnControls)
+                {
+                    if (!control.isAxis && control.index == buttonVisual.buttonIndex)
+                    {
+                        sendMidiLearnCC(control.ccNumber, 1.0f);
+                        return;
+                    }
+                }
+            }
+        }
+        
+        // Then check axes and their X/Y buttons
+        for (const auto& axisVisual : axisVisuals)
+        {
+            if (axisVisual.isStick)
+            {
+                // Calculate X/Y button bounds
+                float labelButtonWidth = axisVisual.bounds.getWidth() * 0.4f;
+                float labelButtonHeight = 20.0f;
+                float labelY = axisVisual.bounds.getY() - labelButtonHeight - 5.0f;
+                
+                // X button bounds (left)
+                auto xButtonBounds = juce::Rectangle<float>(axisVisual.bounds.getX(), labelY, labelButtonWidth, labelButtonHeight);
+                // Y button bounds (right)
+                auto yButtonBounds = juce::Rectangle<float>(axisVisual.bounds.getRight() - labelButtonWidth, labelY, labelButtonWidth, labelButtonHeight);
+
+                // Check if X or Y button was clicked
+                for (auto& control : midiLearnControls)
+                {
+                    if (control.isAxis && control.index == axisVisual.axisIndex)
+                    {
+                        if (control.subIndex == 0 && xButtonBounds.contains(point))
+                        {
+                            sendMidiLearnCC(control.ccNumber, 1.0f);
+                            return;
+                        }
+                        else if (control.subIndex == 1 && yButtonBounds.contains(point))
+                        {
+                            sendMidiLearnCC(control.ccNumber, 1.0f);
+                            return;
+                        }
+                    }
+                }
+            }
+            else if (axisVisual.bounds.contains(point)) // Triggers
+            {
+                for (auto& control : midiLearnControls)
+                {
+                    if (control.isAxis && control.index == axisVisual.axisIndex)
+                    {
+                        sendMidiLearnCC(control.ccNumber, 1.0f);
+                        return;
+                    }
+                }
+            }
         }
     }
 }
@@ -373,21 +429,38 @@ void GamepadComponent::paint(juce::Graphics& g)
             float stickX = centerX + (x * radius);
             float stickY = centerY + (y * radius);
             
-            // Draw stick with classic button style
+            // Find corresponding MIDI learn controls for X and Y
+            int ccNumberX = -1;
+            int ccNumberY = -1;
+            for (const auto& control : midiLearnControls)
+            {
+                if (control.isAxis && control.index == axisVisual.axisIndex)
+                {
+                    if (control.subIndex == 0)
+                        ccNumberX = control.ccNumber;
+                    else if (control.subIndex == 1)
+                        ccNumberY = control.ccNumber;
+                }
+            }
+            
+            // Draw stick with classic button style and MIDI info
             auto stickBounds = juce::Rectangle<float>(stickX - buttonSize/2, stickY - buttonSize/2, buttonSize, buttonSize);
             drawClassicButton(g, stickBounds, true);
             
-            // Display X/Y values above the stick
-            g.setColour(juce::Colours::black);
-            g.setFont(juce::Font("MS Sans Serif", 11.0f, juce::Font::plain));
-            juce::String valueText = juce::String::formatted("X: %.2f Y: %.2f", x, y);
-            g.drawText(valueText,
-                      axisVisual.bounds.getX(),
-                      axisVisual.bounds.getY() - 20.0f,
-                      axisVisual.bounds.getWidth(),
-                      15.0f,
-                      juce::Justification::centred,
-                      false);
+            // Create X/Y label buttons above the stick
+            float labelButtonWidth = axisVisual.bounds.getWidth() * 0.4f;
+            float labelButtonHeight = 20.0f;
+            float labelY = axisVisual.bounds.getY() - labelButtonHeight - 5.0f;
+            
+            // X button (left)
+            auto xButtonBounds = juce::Rectangle<float>(axisVisual.bounds.getX(), labelY, labelButtonWidth, labelButtonHeight);
+            juce::String xText = "X: " + juce::String(x, 2);
+            drawClassicButton(g, xButtonBounds, false, xText, ccNumberX);
+            
+            // Y button (right)
+            auto yButtonBounds = juce::Rectangle<float>(axisVisual.bounds.getRight() - labelButtonWidth, labelY, labelButtonWidth, labelButtonHeight);
+            juce::String yText = "Y: " + juce::String(y, 2);
+            drawClassicButton(g, yButtonBounds, false, yText, ccNumberY);
             
             // Draw stick name below the stick
             g.setColour(juce::Colours::black);
@@ -413,10 +486,26 @@ void GamepadComponent::paint(juce::Graphics& g)
             g.setColour(juce::Colour(0, 0, 128));  // Classic Windows blue
             g.fillRect(valueBounds.reduced(2));
             
-            // Draw trigger name
+            // Find corresponding MIDI learn control
+            int ccNumber = -1;
+            for (const auto& control : midiLearnControls)
+            {
+                if (control.isAxis && control.index == axisVisual.axisIndex)
+                {
+                    ccNumber = control.ccNumber;
+                    break;
+                }
+            }
+            
+            // Draw trigger name and CC number if in learn mode
             g.setColour(juce::Colours::black);
             g.setFont(juce::Font("MS Sans Serif", 11.0f, juce::Font::plain));
-            g.drawText(axisVisual.name, 
+            juce::String labelText = axisVisual.name;
+            if (midiLearnMode && ccNumber >= 0)
+            {
+                labelText += " (CC" + juce::String(ccNumber) + ")";
+            }
+            g.drawText(labelText, 
                       axisVisual.bounds.getX(), 
                       axisVisual.bounds.getY() - 15.0f, 
                       axisVisual.bounds.getWidth(), 
@@ -430,14 +519,19 @@ void GamepadComponent::paint(juce::Graphics& g)
     for (const auto& buttonVisual : buttonVisuals)
     {
         bool isPressed = cachedState.buttons[buttonVisual.buttonIndex];
-        drawClassicButton(g, buttonVisual.bounds, isPressed);
         
-        g.setColour(juce::Colours::black);
-        g.setFont(juce::Font("MS Sans Serif", 11.0f, juce::Font::plain));
-        g.drawText(buttonVisual.name, 
-                  buttonVisual.bounds, 
-                  juce::Justification::centred, 
-                  false);
+        // Find corresponding MIDI learn control
+        int ccNumber = -1;
+        for (const auto& control : midiLearnControls)
+        {
+            if (!control.isAxis && control.index == buttonVisual.buttonIndex)
+            {
+                ccNumber = control.ccNumber;
+                break;
+            }
+        }
+        
+        drawClassicButton(g, buttonVisual.bounds, isPressed, buttonVisual.name, ccNumber);
     }
     
     // Draw touchpad
@@ -558,99 +652,50 @@ void GamepadComponent::paint(juce::Graphics& g)
         // Draw Z bar
         g.fillRect(zBarArea.withWidth(zBarArea.getWidth() * (zNormalized + 1.0f) / 2.0f));
     }
-
-    // Update Learn Mode control positions to match their corresponding controls
-    for (auto& control : midiLearnControls)
-    {
-        if (control.isAxis)
-        {
-            // Find corresponding axis visual
-            for (const auto& axis : axisVisuals)
-            {
-                if (axis.axisIndex == control.index)
-                {
-                    // For sticks, create two buttons above the stick
-                    if (axis.isStick)
-                    {
-                        float buttonWidth = axis.bounds.getWidth() * 0.4f;
-                        float buttonHeight = 20.0f;
-                        float y = axis.bounds.getY() - buttonHeight - 5.0f; // Position above the stick
-                        
-                        if (control.subIndex == 0) // X axis
-                            control.bounds = juce::Rectangle<float>(axis.bounds.getX(), y, buttonWidth, buttonHeight);
-                        else // Y axis
-                            control.bounds = juce::Rectangle<float>(axis.bounds.getRight() - buttonWidth, y, buttonWidth, buttonHeight);
-                    }
-                    else // Triggers
-                    {
-                        control.bounds = axis.bounds;
-                    }
-                    break;
-                }
-            }
-        }
-        else
-        {
-            // For buttons, use the same bounds as the button visual
-            for (const auto& button : buttonVisuals)
-            {
-                if (button.buttonIndex == control.index)
-                {
-                    control.bounds = button.bounds;
-                    break;
-                }
-            }
-        }
-    }
-
-    // In Learn Mode mode, draw the learn buttons
-    if (midiLearnMode)
-    {
-        for (const auto& control : midiLearnControls)
-        {
-            // Skip controls without valid bounds
-            if (control.bounds.isEmpty())
-                continue;
-
-            // Draw the Learn Mode button with a more visible style
-            g.setColour(juce::Colours::blue.withAlpha(0.7f));
-            g.fillRect(control.bounds);
-            g.setColour(juce::Colours::white);
-            g.drawRect(control.bounds, 1.0f);
-            
-            // Draw the control name and CC number with better formatting
-            g.setFont(11.0f);
-            juce::String buttonText;
-            
-            // For stick axes, show X/Y indicator
-            if ((control.name.contains("Left Stick") || control.name.contains("Right Stick")))
-            {
-                buttonText = control.name.contains("X") ? "X (CC" : "Y (CC";
-                buttonText += juce::String(control.ccNumber) + ")";
-            }
-            else
-            {
-                buttonText = control.name + " (CC" + juce::String(control.ccNumber) + ")";
-            }
-            
-            g.drawText(buttonText,
-                      control.bounds,
-                      juce::Justification::centred,
-                      true);
-        }
-    }
 }
 
 // Helper method to draw classic Windows style button
-void GamepadComponent::drawClassicButton(juce::Graphics& g, const juce::Rectangle<float>& bounds, bool isPressed)
+void GamepadComponent::drawClassicButton(juce::Graphics& g, const juce::Rectangle<float>& bounds, bool isPressed, const juce::String& text, int ccNumber)
 {
-    // Fill with lighter gray when pressed
-    g.setColour(isPressed ? juce::Colours::grey : juce::Colour(220, 220, 220));
-    g.fillRect(bounds);
-    
-    // Simple border
-    g.setColour(juce::Colours::darkgrey);
-    g.drawRect(bounds, 1.0f);
+    // In learn mode with a CC number, use blue background
+    if (midiLearnMode && ccNumber >= 0)
+    {
+        g.setColour(juce::Colours::blue.withAlpha(0.7f));
+        g.fillRect(bounds);
+        g.setColour(juce::Colours::white);
+        g.drawRect(bounds, 1.0f);
+    }
+    else
+    {
+        // Normal button style
+        g.setColour(isPressed ? juce::Colours::grey : juce::Colour(220, 220, 220));
+        g.fillRect(bounds);
+        g.setColour(juce::Colours::darkgrey);
+        g.drawRect(bounds, 1.0f);
+    }
+
+    // Draw text if provided
+    if (text.isNotEmpty())
+    {
+        g.setColour(midiLearnMode && ccNumber >= 0 ? juce::Colours::white : juce::Colours::black);
+        g.setFont(juce::Font("MS Sans Serif", 11.0f, juce::Font::plain));
+        
+        if (ccNumber >= 0 && midiLearnMode)
+        {
+            // In learn mode, show CC number prominently
+            auto textBounds = bounds.reduced(2);
+            g.drawText(text, textBounds.removeFromTop(textBounds.getHeight() * 0.6f), 
+                      juce::Justification::centred, false);
+            g.setFont(juce::Font("MS Sans Serif", 9.0f, juce::Font::plain));
+            g.drawText("CC" + juce::String(ccNumber), textBounds, 
+                      juce::Justification::centred, false);
+        }
+        else
+        {
+            // Normal mode, just show the button name
+            g.drawText(text, bounds, juce::Justification::centred, false);
+        }
+    }
 }
 
 // Helper method to draw classic Windows style inset panel

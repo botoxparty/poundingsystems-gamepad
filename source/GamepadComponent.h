@@ -29,7 +29,7 @@ private:
     void mouseDown(const juce::MouseEvent& event) override;
     
     // Helper methods for drawing classic Windows style UI elements
-    void drawClassicButton(juce::Graphics& g, const juce::Rectangle<float>& bounds, bool isPressed);
+    void drawClassicButton(juce::Graphics& g, const juce::Rectangle<float>& bounds, bool isPressed, const juce::String& text = "", int ccNumber = -1);
     void drawClassicInsetPanel(juce::Graphics& g, const juce::Rectangle<float>& bounds);
     void drawClassicGroupBox(juce::Graphics& g, const juce::Rectangle<float>& bounds, const juce::String& text);
     
