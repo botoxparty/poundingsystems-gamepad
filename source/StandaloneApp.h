@@ -3,7 +3,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "GamepadManager.h"
 #include "MidiOutputManager.h"
-#include "GamepadComponent.h"
+#include "components/ModernGamepadComponent.h"
 #include "BinaryData.h"
 
 class StandaloneApp : public juce::Component,
@@ -72,7 +72,7 @@ private:
     GamepadState previousGamepadState;
     
     // UI Components
-    std::unique_ptr<GamepadComponent> gamepadComponent;
+    std::unique_ptr<ModernGamepadComponent> gamepadComponent;
     juce::ImageComponent logoComponent;
     
     // Managers

@@ -3,7 +3,7 @@
 StandaloneApp::StandaloneApp()
 {
     // Create single gamepad component
-    gamepadComponent = std::make_unique<GamepadComponent>(gamepadManager.getGamepadState(0));
+    gamepadComponent = std::make_unique<ModernGamepadComponent>(gamepadManager.getGamepadState(0));
     addAndMakeVisible(gamepadComponent.get());  // Make visible immediately
     
     // Set up logo
