@@ -20,9 +20,7 @@ public:
         }
     };
 
-    explicit ClassicButton(const Properties& initialProps)
-        : props(initialProps) {}
-
+    explicit ClassicButton(const Properties& initialProps);
     ~ClassicButton() override = default;
 
     void setProperties(const Properties& newProps);

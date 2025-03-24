@@ -26,6 +26,27 @@ public:
     void setState(const State& newState);
     const State& getState() const { return state; }
 
+    void setLearnMode(bool enabled) {
+        state.isLearnMode = enabled;
+        auto upProps = upButton.getProperties();
+        upProps.isLearnMode = enabled;
+        upButton.setProperties(upProps);
+        
+        auto downProps = downButton.getProperties();
+        downProps.isLearnMode = enabled;
+        downButton.setProperties(downProps);
+        
+        auto leftProps = leftButton.getProperties();
+        leftProps.isLearnMode = enabled;
+        leftButton.setProperties(leftProps);
+        
+        auto rightProps = rightButton.getProperties();
+        rightProps.isLearnMode = enabled;
+        rightButton.setProperties(rightProps);
+        
+        repaint();
+    }
+
     // Event callbacks
     std::function<void(const juce::String&)> onLearnClick;  // Passes "Up", "Down", "Left", or "Right"
     std::function<void(const juce::String&)> onButtonClick; // Same as above

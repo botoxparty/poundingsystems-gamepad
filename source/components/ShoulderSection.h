@@ -27,6 +27,27 @@ public:
     void setState(const State& newState);
     const State& getState() const { return state; }
 
+    void setLearnMode(bool enabled) {
+        state.isLearnMode = enabled;
+        auto l1Props = l1Button.getProperties();
+        l1Props.isLearnMode = enabled;
+        l1Button.setProperties(l1Props);
+        
+        auto r1Props = r1Button.getProperties();
+        r1Props.isLearnMode = enabled;
+        r1Button.setProperties(r1Props);
+        
+        auto l2Props = l2Trigger.getProperties();
+        l2Props.isLearnMode = enabled;
+        l2Trigger.setProperties(l2Props);
+        
+        auto r2Props = r2Trigger.getProperties();
+        r2Props.isLearnMode = enabled;
+        r2Trigger.setProperties(r2Props);
+        
+        repaint();
+    }
+
     // Event callbacks
     std::function<void(const juce::String&)> onLearnClick;  // Passes "L1", "R1", "L2", or "R2"
     std::function<void(const juce::String&)> onButtonClick; // For L1/R1 clicks

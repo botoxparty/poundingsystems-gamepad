@@ -25,8 +25,27 @@ public:
     void setState(const State& newState);
     const State& getState() const { return state; }
 
-    // Event callbacks
-    std::function<void(const juce::String&)> onLearnClick;  // Passes "X", "Y", or "Z"
+    // Callbacks for button interactions
+    std::function<void(const juce::String&)> onButtonClick;
+    std::function<void(const juce::String&)> onLearnClick;
+    std::function<void(float, float, float)> onValueChange;
+
+    void setLearnMode(bool enabled) {
+        state.isLearnMode = enabled;
+        auto xProps = xButton.getProperties();
+        xProps.isLearnMode = enabled;
+        xButton.setProperties(xProps);
+        
+        auto yProps = yButton.getProperties();
+        yProps.isLearnMode = enabled;
+        yButton.setProperties(yProps);
+        
+        auto zProps = zButton.getProperties();
+        zProps.isLearnMode = enabled;
+        zButton.setProperties(zProps);
+        
+        repaint();
+    }
 
     // Component overrides
     void resized() override;

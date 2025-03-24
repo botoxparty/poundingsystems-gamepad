@@ -10,6 +10,20 @@ AnalogStick::AnalogStick()
     setupCallbacks();
 }
 
+AnalogStick::AnalogStick(const juce::String& name, bool isStick)
+{
+    // Add child components
+    addAndMakeVisible(xButton);
+    addAndMakeVisible(yButton);
+    addAndMakeVisible(pressButton);
+
+    // Set initial state
+    state.name = name;
+    state.isStick = isStick;
+
+    setupCallbacks();
+}
+
 void AnalogStick::setState(const State& newState)
 {
     state = newState;

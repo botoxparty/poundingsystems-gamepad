@@ -29,6 +29,24 @@ public:
     // Callbacks for button interactions
     std::function<void(const juce::String&)> onButtonClick;
     std::function<void(const juce::String&)> onLearnClick;
+    std::function<void(float, float, float)> onValueChange;
+
+    void setLearnMode(bool enabled) {
+        state.isLearnMode = enabled;
+        auto xProps = xButton.getProperties();
+        xProps.isLearnMode = enabled;
+        xButton.setProperties(xProps);
+        
+        auto yProps = yButton.getProperties();
+        yProps.isLearnMode = enabled;
+        yButton.setProperties(yProps);
+        
+        auto pressureProps = pressureButton.getProperties();
+        pressureProps.isLearnMode = enabled;
+        pressureButton.setProperties(pressureProps);
+        
+        repaint();
+    }
 
 private:
     State state;

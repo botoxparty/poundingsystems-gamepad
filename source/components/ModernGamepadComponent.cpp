@@ -159,16 +159,14 @@ void ModernGamepadComponent::resized()
     setupLayout();
 }
 
-void ModernGamepadComponent::updateState(const GamepadManager::GamepadState& newState)
-{
-    if (!midiLearnMode)
-    {
+void ModernGamepadComponent::updateState(const GamepadManager::GamepadState& newState) {
+    if (!midiLearnMode) {
         // Update shoulder section
         shoulderSection.setState({
             newState.buttons[9],  // L1
             newState.buttons[10], // R1
-            (newState.axes[4] + 1.0f) * 0.5f,  // L2
-            (newState.axes[5] + 1.0f) * 0.5f   // R2
+            juce::jlimit(0.0f, 1.0f, (newState.axes[4] + 1.0f) * 0.5f),  // L2
+            juce::jlimit(0.0f, 1.0f, (newState.axes[5] + 1.0f) * 0.5f)   // R2
         });
         
         // Update D-pad
@@ -186,43 +184,74 @@ void ModernGamepadComponent::updateState(const GamepadManager::GamepadState& new
             newState.buttons[2],  // X
             newState.buttons[3]   // Y
         });
-        
+
         // Update analog sticks
-        leftStick.setState({
-            newState.axes[0],    // X
-            newState.axes[1],    // Y
-            newState.buttons[7]  // L3
-        });
-        
-        rightStick.setState({
-            newState.axes[2],    // X
-            newState.axes[3],    // Y
-            newState.buttons[8]  // R3
-        });
-        
+        {
+            AnalogStick::State stickState;
+            stickState.isEnabled = true;
+            stickState.xValue = juce::jlimit(-1.0f, 1.0f, newState.axes[0]);
+            stickState.yValue = juce::jlimit(-1.0f, 1.0f, newState.axes[1]);
+            stickState.isPressed = newState.buttons[7];
+            stickState.xCC = 1;
+            stickState.yCC = 2;
+            stickState.pressCC = 29;
+            stickState.isLearnMode = false;
+            stickState.name = "Left Stick";
+            stickState.isStick = true;
+            leftStick.setState(stickState);
+        }
+
+        {
+            AnalogStick::State stickState;
+            stickState.isEnabled = true;
+            stickState.xValue = juce::jlimit(-1.0f, 1.0f, newState.axes[2]);
+            stickState.yValue = juce::jlimit(-1.0f, 1.0f, newState.axes[3]);
+            stickState.isPressed = newState.buttons[8];
+            stickState.xCC = 3;
+            stickState.yCC = 4;
+            stickState.pressCC = 30;
+            stickState.isLearnMode = false;
+            stickState.name = "Right Stick";
+            stickState.isStick = true;
+            rightStick.setState(stickState);
+        }
+
         // Update touchpad
-        touchPad.setState({
-            newState.touchpad.x,
-            newState.touchpad.y,
-            newState.touchpad.pressure,
-            newState.touchpad.touched
-        });
-        
+        {
+            TouchPad::State padState;
+            padState.isEnabled = true;
+            padState.xValue = juce::jlimit(0.0f, 1.0f, newState.touchpad.x);
+            padState.yValue = juce::jlimit(0.0f, 1.0f, newState.touchpad.y);
+            padState.pressure = juce::jlimit(0.0f, 1.0f, newState.touchpad.pressure);
+            padState.isPressed = newState.touchpad.pressed;
+            padState.xCC = 35;
+            padState.yCC = 36;
+            padState.pressureCC = 37;
+            padState.isLearnMode = false;
+            touchPad.setState(padState);
+        }
+
         // Update gyroscope
-        gyroscope.setState({
-            newState.gyroscope.enabled,
-            newState.gyroscope.x,
-            newState.gyroscope.y,
-            newState.gyroscope.z
-        });
+        {
+            Gyroscope::State gyroState;
+            gyroState.enabled = newState.gyroscope.enabled;
+            gyroState.x = juce::jlimit(-1.0f, 1.0f, newState.gyroscope.x);
+            gyroState.y = juce::jlimit(-1.0f, 1.0f, newState.gyroscope.y);
+            gyroState.z = juce::jlimit(-1.0f, 1.0f, newState.gyroscope.z);
+            gyroState.xCC = 40;
+            gyroState.yCC = 41;
+            gyroState.zCC = 42;
+            gyroState.isLearnMode = false;
+            gyroscope.setState(gyroState);
+        }
     }
-    
+
     // Update status label
     statusLabel.setText(newState.connected
         ? "Connected: " + newState.name + (midiLearnMode ? " (Learn Mode)" : "")
         : "Disconnected",
         juce::dontSendNotification);
-    
+
     cachedState = newState;
     repaint();
 }

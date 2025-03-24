@@ -26,6 +26,27 @@ public:
     void setState(const State& newState);
     const State& getState() const { return state; }
 
+    void setLearnMode(bool enabled) {
+        state.isLearnMode = enabled;
+        auto aProps = aButton.getProperties();
+        aProps.isLearnMode = enabled;
+        aButton.setProperties(aProps);
+        
+        auto bProps = bButton.getProperties();
+        bProps.isLearnMode = enabled;
+        bButton.setProperties(bProps);
+        
+        auto xProps = xButton.getProperties();
+        xProps.isLearnMode = enabled;
+        xButton.setProperties(xProps);
+        
+        auto yProps = yButton.getProperties();
+        yProps.isLearnMode = enabled;
+        yButton.setProperties(yProps);
+        
+        repaint();
+    }
+
     // Event callbacks
     std::function<void()> onAClick;
     std::function<void()> onBClick;

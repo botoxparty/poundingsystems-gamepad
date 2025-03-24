@@ -20,10 +20,8 @@ public:
         bool isStick = true;
     };
 
-    explicit AnalogStick(const juce::String& name, bool isStick = true) {
-        state.name = name;
-        state.isStick = isStick;
-    }
+    AnalogStick();
+    explicit AnalogStick(const juce::String& name, bool isStick = true);
     ~AnalogStick() override = default;
 
     void setState(const State& newState);
@@ -33,6 +31,20 @@ public:
     // Callbacks for button interactions
     std::function<void(const juce::String&)> onButtonClick;
     std::function<void(const juce::String&)> onLearnClick;
+    std::function<void(const juce::String&, float)> onAxisChange;
+
+    void setLearnMode(bool enabled) {
+        state.isLearnMode = enabled;
+        auto xProps = xButton.getProperties();
+        xProps.isLearnMode = enabled;
+        xButton.setProperties(xProps);
+        
+        auto yProps = yButton.getProperties();
+        yProps.isLearnMode = enabled;
+        yButton.setProperties(yProps);
+        
+        repaint();
+    }
 
 private:
     State state;
