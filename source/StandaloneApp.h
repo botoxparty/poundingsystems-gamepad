@@ -4,6 +4,7 @@
 #include "GamepadManager.h"
 #include "MidiOutputManager.h"
 #include "components/ModernGamepadComponent.h"
+#include "components/MidiDeviceSelector.h"
 #include "BinaryData.h"
 #include "MidiCCMapping.h"
 
@@ -87,6 +88,7 @@ private:
     
     // UI Components
     std::unique_ptr<ModernGamepadComponent> gamepadComponent;
+    std::unique_ptr<MidiDeviceSelector> midiDeviceSelector;
     juce::ImageComponent logoComponent;
     
     // Managers

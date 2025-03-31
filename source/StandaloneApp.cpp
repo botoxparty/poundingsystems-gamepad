@@ -9,6 +9,10 @@ StandaloneApp::StandaloneApp()
     gamepadComponent = std::make_unique<ModernGamepadComponent>(gamepadManager.getGamepadState(0));
     addAndMakeVisible(gamepadComponent.get());  // Make visible immediately
     
+    // Create MIDI device selector
+    midiDeviceSelector = std::make_unique<MidiDeviceSelector>();
+    addAndMakeVisible(midiDeviceSelector.get());
+    
     // Set up logo
     auto logoImage = juce::ImageCache::getFromMemory(BinaryData::PoundingSystemsLogo_png, BinaryData::PoundingSystemsLogo_pngSize);
     logoComponent.setImage(logoImage);
@@ -55,6 +59,11 @@ void StandaloneApp::resized()
     auto footerArea = area.removeFromBottom(logoHeight);
     auto logoArea = footerArea.reduced(5, 0);
     logoComponent.setBounds(logoArea);
+    
+    // MIDI device selector at the top
+    auto selectorHeight = 30;
+    auto selectorArea = area.removeFromTop(selectorHeight).reduced(5, 0);
+    midiDeviceSelector->setBounds(selectorArea);
     
     // Gamepad area with padding
     auto gamepadArea = area.reduced(5, 5);

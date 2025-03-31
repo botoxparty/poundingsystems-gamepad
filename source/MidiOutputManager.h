@@ -6,7 +6,7 @@
 
 /**
  * Manages MIDI output for the gamepad controller
- * Implemented as a singleton to ensure only one instance exists
+ * Implemented as a singleton to ensure only one instaxnce exists
  */
 class MidiOutputManager
 {
@@ -34,9 +34,15 @@ public:
     juce::String getCurrentDeviceName() const { return currentDeviceInfo.name; }
     bool isDeviceOpen() const { return midiOutput != nullptr; }
     
+    // Virtual device management
+    bool createVirtualDevice();
+    bool isVirtualDevice(const juce::String& identifier) const;
+    
 private:
     std::unique_ptr<juce::MidiOutput> midiOutput;
+    std::unique_ptr<juce::MidiOutput> virtualDevice;
     juce::MidiDeviceInfo currentDeviceInfo;
+    juce::MidiDeviceInfo virtualDeviceInfo;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiOutputManager)
 }; 
