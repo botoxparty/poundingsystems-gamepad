@@ -97,8 +97,23 @@ public:
     }
     
 private:
+    class RefreshingComboBox : public juce::ComboBox
+    {
+    public:
+        RefreshingComboBox(MidiDeviceSelector& owner) : owner(owner) {}
+        
+        void mouseDown(const juce::MouseEvent& e) override
+        {
+            owner.refreshDeviceList();
+            juce::ComboBox::mouseDown(e);
+        }
+        
+    private:
+        MidiDeviceSelector& owner;
+    };
+
     juce::Label label;
-    juce::ComboBox deviceSelector;
+    RefreshingComboBox deviceSelector{*this};
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiDeviceSelector)
 }; 
