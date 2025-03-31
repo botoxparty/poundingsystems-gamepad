@@ -102,10 +102,10 @@ void GamepadManager::updateGamepadStates()
                 }
 
                 // Verify sensor is still enabled
-                if (!SDL_GamepadSensorEnabled(sdlGamepads[i], SDL_SENSOR_GYRO))
+                if (!SDL_GamepadSensorEnabled(sdlGamepads[i], SDL_SENSOR_ACCEL))
                 {
                     // Try to re-enable the sensor
-                    int result = SDL_SetGamepadSensorEnabled(sdlGamepads[i], SDL_SENSOR_GYRO, true);
+                    int result = SDL_SetGamepadSensorEnabled(sdlGamepads[i], SDL_SENSOR_ACCEL, true);
                     if (result != 0)
                     {
                         gamepadStates[i].gyroscope.enabled = false;
@@ -256,21 +256,21 @@ void GamepadManager::handleSDLEvents()
                                                    "\n - SDL Instance ID: " + juce::String(SDL_GetGamepadID(sdlGamepads[i])));
 
                             // Enable gyroscope if available
-                            bool hasSensor = SDL_GamepadHasSensor(sdlGamepads[i], SDL_SENSOR_GYRO);
+                            bool hasSensor = SDL_GamepadHasSensor(sdlGamepads[i], SDL_SENSOR_ACCEL);
                             juce::Logger::writeToLog("Gyroscope support check for " + gamepadStates[i].name + ": " + (hasSensor ? "Supported" : "Not supported"));
                             
                             if (hasSensor)
                             {
                                 // Log sensor capabilities
-                                float data_rate = SDL_GetGamepadSensorDataRate(sdlGamepads[i], SDL_SENSOR_GYRO);
+                                float data_rate = SDL_GetGamepadSensorDataRate(sdlGamepads[i], SDL_SENSOR_ACCEL);
                                 juce::Logger::writeToLog("Gyroscope data rate: " + juce::String(data_rate) + " Hz");
                                 
                                 // Try to enable the sensor
-                                int result = SDL_SetGamepadSensorEnabled(sdlGamepads[i], SDL_SENSOR_GYRO, true);
+                                int result = SDL_SetGamepadSensorEnabled(sdlGamepads[i], SDL_SENSOR_ACCEL, true);
                                 juce::Logger::writeToLog("Enable sensor result: " + juce::String(result));
                                 
                                 // Check if sensor is actually enabled
-                                if (SDL_GamepadSensorEnabled(sdlGamepads[i], SDL_SENSOR_GYRO))
+                                if (SDL_GamepadSensorEnabled(sdlGamepads[i], SDL_SENSOR_ACCEL))
                                 {
                                     gamepadStates[i].gyroscope.enabled = true;
                                     juce::Logger::writeToLog("Gyroscope confirmed enabled for: " + gamepadStates[i].name);
@@ -368,7 +368,7 @@ void GamepadManager::handleSDLEvents()
                     }
                     
                     // This is a gyroscope event
-                    if (event.gsensor.sensor == SDL_SENSOR_GYRO)
+                    if (event.gsensor.sensor == SDL_SENSOR_ACCEL)
                     {
                         bool gyroChanged = false;
                         static int logCounter = 0;  // Static counter to limit log frequency
