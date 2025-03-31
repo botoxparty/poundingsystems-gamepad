@@ -62,8 +62,17 @@ void MidiOutputManager::closeCurrentDevice()
     if (midiOutput != nullptr)
     {
         juce::Logger::writeToLog("Closing MIDI device: " + currentDeviceInfo.name);
-        midiOutput->stopBackgroundThread();
-        midiOutput.reset();
+        // If this is the virtual device, move it back to virtualDevice instead of closing it
+        if (isVirtualDevice(currentDeviceInfo.identifier))
+        {
+            juce::Logger::writeToLog("Moving virtual device back to storage");
+            virtualDevice = std::move(midiOutput);
+        }
+        else
+        {
+            midiOutput->stopBackgroundThread();
+            midiOutput.reset();
+        }
         currentDeviceInfo = juce::MidiDeviceInfo();
     }
 }
@@ -81,15 +90,10 @@ bool MidiOutputManager::openDevice(const juce::String& identifier)
     if (isVirtualDevice(identifier))
     {
         juce::Logger::writeToLog("Opening virtual device");
-        // Instead of moving the virtual device, create a new instance for output
-        midiOutput = juce::MidiOutput::openDevice(identifier);
-        if (midiOutput != nullptr)
-        {
-            currentDeviceInfo = virtualDeviceInfo;
-            midiOutput->startBackgroundThread();
-            return true;
-        }
-        return false;
+        // Move the virtual device to midiOutput
+        midiOutput = std::move(virtualDevice);
+        currentDeviceInfo = virtualDeviceInfo;
+        return true;
     }
     
     // Try to open the new device
@@ -140,8 +144,8 @@ juce::Array<juce::MidiDeviceInfo> MidiOutputManager::getAvailableDevices() const
         juce::Logger::writeToLog(" - " + device.name + " (" + device.identifier + ")");
     }
     
-    // Add virtual device to the list if it exists
-    if (virtualDevice != nullptr)
+    // Add virtual device to the list if it exists in either virtualDevice or midiOutput
+    if (virtualDevice != nullptr || (midiOutput != nullptr && isVirtualDevice(currentDeviceInfo.identifier)))
     {
         juce::Logger::writeToLog("Adding virtual device to list: " + virtualDeviceInfo.name + " (" + virtualDeviceInfo.identifier + ")");
         devices.add(virtualDeviceInfo);
@@ -181,12 +185,14 @@ void MidiOutputManager::sendControlChange(int channel, int controller, int value
         
         juce::MidiMessage message = juce::MidiMessage::controllerEvent(channel, controller, value);
         midiOutput->sendMessageNow(message);
-        juce::Logger::writeToLog("MIDI CC message sent successfully");
+        juce::Logger::writeToLog("MIDI CC message sent successfully to " + currentDeviceInfo.name + 
+                                (isVirtualDevice(currentDeviceInfo.identifier) ? " (Virtual Device)" : ""));
     }
     else
     {
         juce::Logger::writeToLog("WARNING: No MIDI output device selected! Current device info: " + 
-                                currentDeviceInfo.name + " (" + currentDeviceInfo.identifier + ")");
+                                currentDeviceInfo.name + " (" + currentDeviceInfo.identifier + ")" +
+                                (isVirtualDevice(currentDeviceInfo.identifier) ? " (Virtual Device)" : ""));
     }
 }
 
