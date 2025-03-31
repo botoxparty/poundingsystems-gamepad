@@ -4,9 +4,9 @@
 #include "ClassicButton.h"
 
 /**
- * Component that displays gyroscope data with MIDI learn capability for each axis
+ * Component that displays gyroscope and accelerometer data with MIDI learn capability for each axis
  */
-class Gyroscope : public juce::Component {
+class SensorDisplay : public juce::Component {
 public:
     struct State {
         bool enabled = false;
@@ -17,10 +17,11 @@ public:
         int yCC = -1;
         int zCC = -1;
         bool isLearnMode = false;
+        bool isAccelerometer = false;  // true for accelerometer, false for gyroscope
     };
 
-    Gyroscope();
-    ~Gyroscope() override = default;
+    SensorDisplay();
+    ~SensorDisplay() override = default;
 
     void setState(const State& newState);
     const State& getState() const { return state; }
@@ -64,5 +65,5 @@ private:
     void setupCallbacks();
     void updateButtonTexts();
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Gyroscope)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SensorDisplay)
 }; 

@@ -1,6 +1,6 @@
-#include "Gyroscope.h"
+#include "SensorDisplay.h"
 
-Gyroscope::Gyroscope()
+SensorDisplay::SensorDisplay()
 {
     // Add child components
     addAndMakeVisible(xButton);
@@ -10,7 +10,7 @@ Gyroscope::Gyroscope()
     setupCallbacks();
 }
 
-void Gyroscope::setState(const State& newState)
+void SensorDisplay::setState(const State& newState)
 {
     state = newState;
 
@@ -45,11 +45,14 @@ void Gyroscope::setState(const State& newState)
     zButton.setProperties(zProps);
 }
 
-void Gyroscope::resized()
+void SensorDisplay::resized()
 {
     auto bounds = getLocalBounds();
+    
+    // Reserve space for the header (25 pixels)
+    auto contentArea = bounds.removeFromTop(25);
 
-    // Configure flex layout
+    // Configure flex layout for the buttons
     layout.flexDirection = juce::FlexBox::Direction::column;
     layout.justifyContent = juce::FlexBox::JustifyContent::spaceAround;
     layout.alignItems = juce::FlexBox::AlignItems::stretch;
@@ -60,11 +63,11 @@ void Gyroscope::resized()
     layout.items.add(juce::FlexItem(yButton).withFlex(1.0f).withMargin(juce::FlexItem::Margin(2.0f)));
     layout.items.add(juce::FlexItem(zButton).withFlex(1.0f).withMargin(juce::FlexItem::Margin(2.0f)));
 
-    // Apply layout
+    // Apply layout to the remaining area
     layout.performLayout(bounds);
 }
 
-void Gyroscope::paint(juce::Graphics& g)
+void SensorDisplay::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
     
@@ -76,14 +79,21 @@ void Gyroscope::paint(juce::Graphics& g)
     g.setColour(juce::Colours::lightgrey);
     g.drawRoundedRectangle(bounds, 5.0f, 1.0f);
 
-    // Draw header
+    // Draw header with a slightly darker background
+    auto headerArea = bounds.removeFromTop(25.0f);
+    g.setColour(juce::Colours::darkgrey.brighter(0.05f));
+    g.fillRect(headerArea);
+    
+    // Draw header text
     g.setColour(juce::Colours::white);
     g.setFont(14.0f);
-    auto headerArea = bounds.removeFromTop(25.0f);
-    g.drawText("Gyroscope", headerArea, juce::Justification::centred, false);
+    g.drawText(state.isAccelerometer ? "Accelerometer" : "Gyroscope", 
+               headerArea.reduced(5.0f), 
+               juce::Justification::centred, 
+               false);
 }
 
-void Gyroscope::setupCallbacks()
+void SensorDisplay::setupCallbacks()
 {
     // X button callbacks
     xButton.onClick = [this]() {

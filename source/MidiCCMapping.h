@@ -37,4 +37,9 @@ namespace MidiCC {
     constexpr int GYRO_X = 39;
     constexpr int GYRO_Y = 40;
     constexpr int GYRO_Z = 41;
+
+    // Accelerometer CCs (23-25)
+    constexpr int ACCEL_X = 23;
+    constexpr int ACCEL_Y = 24;
+    constexpr int ACCEL_Z = 25;
 } 

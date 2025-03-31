@@ -102,10 +102,10 @@ void GamepadManager::updateGamepadStates()
                 }
 
                 // Verify sensor is still enabled
-                if (!SDL_GamepadSensorEnabled(sdlGamepads[i], SDL_SENSOR_ACCEL))
+                if (!SDL_GamepadSensorEnabled(sdlGamepads[i], SDL_SENSOR_GYRO))
                 {
                     // Try to re-enable the sensor
-                    int result = SDL_SetGamepadSensorEnabled(sdlGamepads[i], SDL_SENSOR_ACCEL, true);
+                    int result = SDL_SetGamepadSensorEnabled(sdlGamepads[i], SDL_SENSOR_GYRO, true);
                     if (result != 0)
                     {
                         gamepadStates[i].gyroscope.enabled = false;
@@ -256,21 +256,21 @@ void GamepadManager::handleSDLEvents()
                                                    "\n - SDL Instance ID: " + juce::String(SDL_GetGamepadID(sdlGamepads[i])));
 
                             // Enable gyroscope if available
-                            bool hasSensor = SDL_GamepadHasSensor(sdlGamepads[i], SDL_SENSOR_ACCEL);
+                            bool hasSensor = SDL_GamepadHasSensor(sdlGamepads[i], SDL_SENSOR_GYRO);
                             juce::Logger::writeToLog("Gyroscope support check for " + gamepadStates[i].name + ": " + (hasSensor ? "Supported" : "Not supported"));
                             
                             if (hasSensor)
                             {
                                 // Log sensor capabilities
-                                float data_rate = SDL_GetGamepadSensorDataRate(sdlGamepads[i], SDL_SENSOR_ACCEL);
+                                float data_rate = SDL_GetGamepadSensorDataRate(sdlGamepads[i], SDL_SENSOR_GYRO);
                                 juce::Logger::writeToLog("Gyroscope data rate: " + juce::String(data_rate) + " Hz");
                                 
                                 // Try to enable the sensor
-                                int result = SDL_SetGamepadSensorEnabled(sdlGamepads[i], SDL_SENSOR_ACCEL, true);
+                                int result = SDL_SetGamepadSensorEnabled(sdlGamepads[i], SDL_SENSOR_GYRO, true);
                                 juce::Logger::writeToLog("Enable sensor result: " + juce::String(result));
                                 
                                 // Check if sensor is actually enabled
-                                if (SDL_GamepadSensorEnabled(sdlGamepads[i], SDL_SENSOR_ACCEL))
+                                if (SDL_GamepadSensorEnabled(sdlGamepads[i], SDL_SENSOR_GYRO))
                                 {
                                     gamepadStates[i].gyroscope.enabled = true;
                                     juce::Logger::writeToLog("Gyroscope confirmed enabled for: " + gamepadStates[i].name);
@@ -290,6 +290,28 @@ void GamepadManager::handleSDLEvents()
                                 else
                                 {
                                     juce::Logger::writeToLog("Failed to enable gyroscope (state check failed): " + juce::String(SDL_GetError()));
+                                }
+                            }
+
+                            // Check for accelerometer support
+                            bool hasAccel = SDL_GamepadHasSensor(sdlGamepads[i], SDL_SENSOR_ACCEL);
+                            juce::Logger::writeToLog("Accelerometer support check for " + gamepadStates[i].name + ": " + (hasAccel ? "Supported" : "Not supported"));
+                            
+                            if (hasAccel)
+                            {
+                                // Log accelerometer capabilities
+                                float data_rate = SDL_GetGamepadSensorDataRate(sdlGamepads[i], SDL_SENSOR_ACCEL);
+                                juce::Logger::writeToLog("Accelerometer data rate: " + juce::String(data_rate) + " Hz");
+                                
+                                // Try to enable the sensor
+                                int result = SDL_SetGamepadSensorEnabled(sdlGamepads[i], SDL_SENSOR_ACCEL, true);
+                                juce::Logger::writeToLog("Enable accelerometer result: " + juce::String(result));
+                                
+                                // Check if sensor is actually enabled
+                                if (SDL_GamepadSensorEnabled(sdlGamepads[i], SDL_SENSOR_ACCEL))
+                                {
+                                    gamepadStates[i].accelerometer.enabled = true;
+                                    juce::Logger::writeToLog("Accelerometer confirmed enabled for: " + gamepadStates[i].name);
                                 }
                             }
                             
@@ -367,30 +389,30 @@ void GamepadManager::handleSDLEvents()
                         gamepadStates[i].deviceId = gamepadId;
                     }
                     
+                    bool stateChanged = false;
+                    static int logCounter = 0;  // Static counter to limit log frequency
+                    
                     // This is a gyroscope event
-                    if (event.gsensor.sensor == SDL_SENSOR_ACCEL)
+                    if (event.gsensor.sensor == SDL_SENSOR_GYRO)
                     {
-                        bool gyroChanged = false;
-                        static int logCounter = 0;  // Static counter to limit log frequency
-                        
                         // Check if values have changed significantly (apply small threshold)
                         if (std::abs(gamepadStates[i].gyroscope.x - event.gsensor.data[0]) > 0.01f)
                         {
                             gamepadStates[i].gyroscope.x = event.gsensor.data[0];
-                            gyroChanged = true;
+                            stateChanged = true;
                         }
                         if (std::abs(gamepadStates[i].gyroscope.y - event.gsensor.data[1]) > 0.01f)
                         {
                             gamepadStates[i].gyroscope.y = event.gsensor.data[1];
-                            gyroChanged = true;
+                            stateChanged = true;
                         }
                         if (std::abs(gamepadStates[i].gyroscope.z - event.gsensor.data[2]) > 0.01f)
                         {
                             gamepadStates[i].gyroscope.z = event.gsensor.data[2];
-                            gyroChanged = true;
+                            stateChanged = true;
                         }
                         
-                        if (gyroChanged)
+                        if (stateChanged)
                         {
                             // Indicate that the gyroscope is working
                             gamepadStates[i].gyroscope.enabled = true;
@@ -405,12 +427,53 @@ void GamepadManager::handleSDLEvents()
                                                                                event.gsensor.data[2],
                                                                                event.gsensor.sensor_timestamp));
                             }
-                            
-                            // Notify callbacks
-                            for (auto& callback : stateChangeCallbacks)
-                                callback();
                         }
                     }
+                    // This is an accelerometer event
+                    else if (event.gsensor.sensor == SDL_SENSOR_ACCEL)
+                    {
+                        // Check if values have changed significantly (apply small threshold)
+                        if (std::abs(gamepadStates[i].accelerometer.x - event.gsensor.data[0]) > 0.01f)
+                        {
+                            gamepadStates[i].accelerometer.x = event.gsensor.data[0];
+                            stateChanged = true;
+                        }
+                        if (std::abs(gamepadStates[i].accelerometer.y - event.gsensor.data[1]) > 0.01f)
+                        {
+                            gamepadStates[i].accelerometer.y = event.gsensor.data[1];
+                            stateChanged = true;
+                        }
+                        if (std::abs(gamepadStates[i].accelerometer.z - event.gsensor.data[2]) > 0.01f)
+                        {
+                            gamepadStates[i].accelerometer.z = event.gsensor.data[2];
+                            stateChanged = true;
+                        }
+                        
+                        if (stateChanged)
+                        {
+                            // Indicate that the accelerometer is working
+                            gamepadStates[i].accelerometer.enabled = true;
+                            
+                            // Log accelerometer data occasionally to avoid flooding
+                            if (++logCounter >= 30)  // Log every ~30th change
+                            {
+                                logCounter = 0;
+                                juce::Logger::writeToLog(juce::String::formatted("Accel data (event-driven) - X: %.2f, Y: %.2f, Z: %.2f, timestamp: %llu",
+                                                                               event.gsensor.data[0], 
+                                                                               event.gsensor.data[1], 
+                                                                               event.gsensor.data[2],
+                                                                               event.gsensor.sensor_timestamp));
+                            }
+                        }
+                    }
+                    
+                    // Notify callbacks if state changed
+                    if (stateChanged)
+                    {
+                        for (auto& callback : stateChangeCallbacks)
+                            callback();
+                    }
+                    
                     break;
                 }
             }

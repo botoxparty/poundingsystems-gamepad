@@ -11,7 +11,7 @@
 #include "FaceButtons.h"
 #include "AnalogStick.h"
 #include "TouchPad.h"
-#include "Gyroscope.h"
+#include "SensorDisplay.h"
 
 class ModernGamepadComponent : public juce::Component,
                              private juce::Timer
@@ -38,7 +38,8 @@ private:
     AnalogStick leftStick;
     AnalogStick rightStick;
     TouchPad touchPad;
-    Gyroscope gyroscope;
+    SensorDisplay gyroscopeDisplay;
+    SensorDisplay accelerometerDisplay;
 
     // Layout management
     juce::FlexBox mainLayout;

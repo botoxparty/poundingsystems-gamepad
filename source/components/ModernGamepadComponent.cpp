@@ -26,7 +26,8 @@ void ModernGamepadComponent::setupComponents()
     addAndMakeVisible(leftStick);
     addAndMakeVisible(rightStick);
     addAndMakeVisible(touchPad);
-    addAndMakeVisible(gyroscope);
+    addAndMakeVisible(gyroscopeDisplay);
+    addAndMakeVisible(accelerometerDisplay);
     
     // Setup Learn Mode button
     addAndMakeVisible(learnModeButton);
@@ -89,7 +90,7 @@ void ModernGamepadComponent::setupLayout()
     float touchpadWidth = 300;
     float faceButtonsWidth = 200;
     float stickWidth = 150;
-    float gyroscopeWidth = 300;
+    float gyroscopeWidth = 150;
     
     // Add items to top row (shoulder buttons and triggers)
     topRow.items.add(juce::FlexItem(shoulderSection).withWidth(shoulderSectionWidth).withHeight(shoulderSectionHeight).withMargin(2.0f));
@@ -99,9 +100,21 @@ void ModernGamepadComponent::setupLayout()
     middleRow.items.add(juce::FlexItem(touchPad).withWidth(touchpadWidth).withHeight(mainRowHeight).withMargin(5.0f));
     middleRow.items.add(juce::FlexItem(faceButtons).withWidth(faceButtonsWidth).withHeight(mainRowHeight).withMargin(5.0f));
     
-    // Add items to bottom row (left stick, gyroscope, right stick)
+    // Add items to bottom row (left stick, sensors, right stick)
     bottomRow.items.add(juce::FlexItem(leftStick).withWidth(stickWidth).withHeight(mainRowHeight).withMargin(5.0f));
-    bottomRow.items.add(juce::FlexItem(gyroscope).withWidth(gyroscopeWidth).withHeight(mainRowHeight).withMargin(5.0f));
+    
+    // Create a container for the sensors
+    juce::FlexBox sensorContainer;
+    sensorContainer.flexDirection = juce::FlexBox::Direction::row;
+    sensorContainer.justifyContent = juce::FlexBox::JustifyContent::spaceBetween;
+    sensorContainer.alignItems = juce::FlexBox::AlignItems::stretch;
+    
+    // Add both sensors to the container with equal width
+    sensorContainer.items.add(juce::FlexItem(gyroscopeDisplay).withFlex(1.0f).withMargin(2.0f));
+    sensorContainer.items.add(juce::FlexItem(accelerometerDisplay).withFlex(1.0f).withMargin(2.0f));
+    
+    // Add the sensor container to the bottom row
+    bottomRow.items.add(juce::FlexItem(sensorContainer).withWidth(gyroscopeWidth * 2).withHeight(mainRowHeight).withMargin(5.0f));
     bottomRow.items.add(juce::FlexItem(rightStick).withWidth(stickWidth).withHeight(mainRowHeight).withMargin(5.0f));
     
     // Add rows to main layout - top row doesn't use flex, others split remaining space
@@ -246,7 +259,7 @@ void ModernGamepadComponent::setupCallbacks()
     };
     
     // Gyroscope callbacks
-    gyroscope.onValueChange = [this](float x, float y, float z) {
+    gyroscopeDisplay.onValueChange = [this](float x, float y, float z) {
         if (!midiLearnMode) {
             sendMidiCC(MidiCC::GYRO_X, (x + 1.0f) * 0.5f);
             sendMidiCC(MidiCC::GYRO_Y, (y + 1.0f) * 0.5f);
@@ -254,17 +267,40 @@ void ModernGamepadComponent::setupCallbacks()
         }
     };
 
-    gyroscope.onLearnClick = [this](const juce::String& axis) {
+    gyroscopeDisplay.onLearnClick = [this](const juce::String& axis) {
         if (axis == "X") sendMidiCC(MidiCC::GYRO_X, (gamepadState.gyroscope.x + 1.0f) * 0.5f);
         else if (axis == "Y") sendMidiCC(MidiCC::GYRO_Y, (gamepadState.gyroscope.y + 1.0f) * 0.5f);
         else if (axis == "Z") sendMidiCC(MidiCC::GYRO_Z, (gamepadState.gyroscope.z + 1.0f) * 0.5f);
     };
 
-    gyroscope.onButtonClick = [this](const juce::String& axis) {
+    gyroscopeDisplay.onButtonClick = [this](const juce::String& axis) {
         if (!midiLearnMode) {
             if (axis == "X") sendMidiCC(MidiCC::GYRO_X, (gamepadState.gyroscope.x + 1.0f) * 0.5f);
             else if (axis == "Y") sendMidiCC(MidiCC::GYRO_Y, (gamepadState.gyroscope.y + 1.0f) * 0.5f);
             else if (axis == "Z") sendMidiCC(MidiCC::GYRO_Z, (gamepadState.gyroscope.z + 1.0f) * 0.5f);
+        }
+    };
+
+    // Accelerometer callbacks
+    accelerometerDisplay.onValueChange = [this](float x, float y, float z) {
+        if (!midiLearnMode) {
+            sendMidiCC(MidiCC::ACCEL_X, (x + 1.0f) * 0.5f);
+            sendMidiCC(MidiCC::ACCEL_Y, (y + 1.0f) * 0.5f);
+            sendMidiCC(MidiCC::ACCEL_Z, (z + 1.0f) * 0.5f);
+        }
+    };
+
+    accelerometerDisplay.onLearnClick = [this](const juce::String& axis) {
+        if (axis == "X") sendMidiCC(MidiCC::ACCEL_X, (gamepadState.accelerometer.x + 1.0f) * 0.5f);
+        else if (axis == "Y") sendMidiCC(MidiCC::ACCEL_Y, (gamepadState.accelerometer.y + 1.0f) * 0.5f);
+        else if (axis == "Z") sendMidiCC(MidiCC::ACCEL_Z, (gamepadState.accelerometer.z + 1.0f) * 0.5f);
+    };
+
+    accelerometerDisplay.onButtonClick = [this](const juce::String& axis) {
+        if (!midiLearnMode) {
+            if (axis == "X") sendMidiCC(MidiCC::ACCEL_X, (gamepadState.accelerometer.x + 1.0f) * 0.5f);
+            else if (axis == "Y") sendMidiCC(MidiCC::ACCEL_Y, (gamepadState.accelerometer.y + 1.0f) * 0.5f);
+            else if (axis == "Z") sendMidiCC(MidiCC::ACCEL_Z, (gamepadState.accelerometer.z + 1.0f) * 0.5f);
         }
     };
 }
@@ -374,7 +410,7 @@ void ModernGamepadComponent::updateState(const GamepadManager::GamepadState& new
 
     // Update gyroscope
     {
-        Gyroscope::State gyroState;
+        SensorDisplay::State gyroState;
         gyroState.enabled = newState.gyroscope.enabled;
         gyroState.x = juce::jlimit(-1.0f, 1.0f, newState.gyroscope.x);
         gyroState.y = juce::jlimit(-1.0f, 1.0f, newState.gyroscope.y);
@@ -383,7 +419,23 @@ void ModernGamepadComponent::updateState(const GamepadManager::GamepadState& new
         gyroState.yCC = MidiCC::GYRO_Y;
         gyroState.zCC = MidiCC::GYRO_Z;
         gyroState.isLearnMode = midiLearnMode;
-        gyroscope.setState(gyroState);
+        gyroState.isAccelerometer = false;
+        gyroscopeDisplay.setState(gyroState);
+    }
+
+    // Update accelerometer
+    {
+        SensorDisplay::State accelState;
+        accelState.enabled = newState.accelerometer.enabled;
+        accelState.x = juce::jlimit(-1.0f, 1.0f, newState.accelerometer.x);
+        accelState.y = juce::jlimit(-1.0f, 1.0f, newState.accelerometer.y);
+        accelState.z = juce::jlimit(-1.0f, 1.0f, newState.accelerometer.z);
+        accelState.xCC = MidiCC::ACCEL_X;
+        accelState.yCC = MidiCC::ACCEL_Y;
+        accelState.zCC = MidiCC::ACCEL_Z;
+        accelState.isLearnMode = midiLearnMode;
+        accelState.isAccelerometer = true;
+        accelerometerDisplay.setState(accelState);
     }
 
     // Update status label
@@ -410,7 +462,8 @@ void ModernGamepadComponent::setMidiLearnMode(bool enabled)
         leftStick.setLearnMode(enabled);
         rightStick.setLearnMode(enabled);
         touchPad.setLearnMode(enabled);
-        gyroscope.setLearnMode(enabled);
+        gyroscopeDisplay.setLearnMode(enabled);
+        accelerometerDisplay.setLearnMode(enabled);
         
         repaint();
     }

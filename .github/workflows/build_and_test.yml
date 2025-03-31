@@ -253,12 +253,12 @@ jobs:
           name: ${{ env.ARTIFACT_NAME }}.zip
           path: "${{ env.ARTIFACTS_PATH }}/${{ env.ARTIFACT_NAME }}.zip"
 
-      - name: Upload pkg (macOS)
-        if: ${{ matrix.name == 'macOS' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.ARTIFACT_NAME }}.pkg
-          path: packaging/${{ env.ARTIFACT_NAME }}.pkg
+      # - name: Upload pkg (macOS)
+      #   if: ${{ matrix.name == 'macOS' }}
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: ${{ env.ARTIFACT_NAME }}.pkg
+      #     path: packaging/${{ env.ARTIFACT_NAME }}.pkg
 
   release:
     if: contains(github.ref, 'tags/v')

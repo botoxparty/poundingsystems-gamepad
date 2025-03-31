@@ -52,6 +52,15 @@ public:
             float z = 0.0f; // Rotation rate around Z axis in radians/second
         };
         GyroscopeState gyroscope;
+
+        // Accelerometer support
+        struct AccelerometerState {
+            bool enabled = false;
+            float x = 0.0f; // Acceleration along X axis in meters/second²
+            float y = 0.0f; // Acceleration along Y axis in meters/second²
+            float z = 0.0f; // Acceleration along Z axis in meters/second²
+        };
+        AccelerometerState accelerometer;
     };
     
     GamepadManager();
