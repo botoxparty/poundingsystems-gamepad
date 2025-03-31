@@ -31,9 +31,17 @@ void MidiOutputManager::createInitialVirtualDevice()
     }
     else
     {
-        juce::Logger::writeToLog("Failed to create virtual MIDI device");
-        juce::Logger::writeToLog("This is likely a permissions or entitlements issue.");
-        juce::Logger::writeToLog("Make sure your app is not sandboxed and has proper entitlements.");
+        juce::String errorMessage = "Failed to create virtual MIDI device.\n\n"
+                                  "This is likely a permissions or entitlements issue.\n"
+                                  "Make sure your app is not sandboxed and has proper entitlements.";
+        
+        juce::Logger::writeToLog(errorMessage);
+        
+        // Show error popup
+        juce::NativeMessageBox::showMessageBoxAsync(
+            juce::MessageBoxIconType::WarningIcon,
+            "MIDI Device Error",
+            errorMessage);
     }
 }
 
