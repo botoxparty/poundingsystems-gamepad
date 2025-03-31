@@ -107,7 +107,7 @@ juce_add_gui_app(${PROJECT_NAME}
 # Set entitlements for macOS
 if(APPLE)
     set_target_properties(${PROJECT_NAME} PROPERTIES
-        XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS "${CMAKE_CURRENT_SOURCE_DIR}/packaging/GamepadMIDI.entitlements"
+        XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS "${CMAKE_CURRENT_SOURCE_DIR}/packaging/GamepadMIDIentitlements.plist"
     )
 endif()
 
@@ -209,6 +209,6 @@ juce_add_binary_data(Assets
 
 if(APPLE AND NOT DEFINED ENV{CI})
     add_custom_command(TARGET "${PROJECT_NAME}" POST_BUILD
-        COMMAND codesign --force --sign - --entitlements "${CMAKE_CURRENT_SOURCE_DIR}/packaging/GamepadMIDI.entitlements" "$<TARGET_FILE_DIR:${PROJECT_NAME}>/../.."
+        COMMAND codesign --force --sign - --entitlements "${CMAKE_CURRENT_SOURCE_DIR}/packaging/GamepadMIDIentitlements.plist" "$<TARGET_FILE_DIR:${PROJECT_NAME}>/../.."
         COMMENT "Development signing with entitlements")
 endif()

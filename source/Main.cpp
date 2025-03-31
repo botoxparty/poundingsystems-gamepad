@@ -23,6 +23,11 @@ public:
     
     void initialise(const juce::String& commandLine) override
     {
+        // Initialize file logger
+        logger.reset(juce::FileLogger::createDefaultAppLogger("GamepadMIDI", "gamepad_midi.log", 
+            getApplicationName() + " " + getApplicationVersion() + " - Log Started"));
+        juce::Logger::setCurrentLogger(logger.get());
+
         mainWindow = std::make_unique<MainWindow>(getApplicationName());
         #if JUCE_DEBUG
         // inspector = std::make_unique<melatonin::Inspector>(*mainWindow);
@@ -35,6 +40,9 @@ public:
         // inspector = nullptr;
         #endif
         mainWindow = nullptr;
+        
+        // Clean up logger
+        juce::Logger::setCurrentLogger(nullptr);
     }
     
     void systemRequestedQuit() override
@@ -46,6 +54,7 @@ public:
     
 private:
     std::unique_ptr<MainWindow> mainWindow;
+    std::unique_ptr<juce::FileLogger> logger;
     #if JUCE_DEBUG
     // std::unique_ptr<melatonin::Inspector> inspector;
     #endif

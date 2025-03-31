@@ -18,25 +18,23 @@ public:
         return instance;
     }
     
+    MidiOutputManager();
+    ~MidiOutputManager();
+    
+    void createInitialVirtualDevice();
+    void closeCurrentDevice();
+    bool openDevice(const juce::String& identifier);
+    bool setOutputDevice(const juce::String& identifier);
     juce::Array<juce::MidiDeviceInfo> getAvailableDevices() const;
     void sendControlChange(int channel, int controller, int value);
     void sendNoteOn(int channel, int noteNumber, float velocity);
     
     // Device management methods
-    bool setOutputDevice(const juce::String& identifier);
     juce::String getCurrentDeviceIdentifier() const { return currentDeviceInfo.identifier; }
     juce::String getCurrentDeviceName() const { return currentDeviceInfo.name; }
     bool isDeviceOpen() const { return midiOutput != nullptr; }
     
 private:
-    // Private constructor for singleton
-    MidiOutputManager();
-    ~MidiOutputManager();
-    
-    void createInitialVirtualDevice();
-    bool openDevice(const juce::String& identifier);
-    void closeCurrentDevice();
-    
     std::unique_ptr<juce::MidiOutput> midiOutput;
     juce::MidiDeviceInfo currentDeviceInfo;
     
