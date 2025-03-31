@@ -67,8 +67,9 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 # JUCE is setup as a submodule in the /JUCE folder
 add_subdirectory(JUCE)
 add_subdirectory(modules/melatonin_inspector)
+# Add the moonbase JUCEClient module
+add_subdirectory (modules/moonbase_JUCEClient)
 # Add SDL3 for gamepad support
-
 set(CMAKE_OSX_ARCHITECTURES "arm64")
 
 set(SDL_FORCE_STATIC OFF)
@@ -167,6 +168,9 @@ target_link_libraries(${PROJECT_NAME}
         Assets
 )
 
+# Link the moonbase JUCEClient module to the JUCE app target
+target_link_libraries("${PROJECT_NAME}" PRIVATE moonbase_JUCEClient)
+
 # Set C++20 standard
 target_compile_features(SharedCode INTERFACE cxx_std_20)
 
@@ -205,6 +209,7 @@ include(GitHubENV)
 juce_add_binary_data(Assets 
     SOURCES
         assets/images/PoundingSystemsLogo.png
+        assets/moonbase_api_config.json
 )
 
 if(APPLE AND NOT DEFINED ENV{CI})
