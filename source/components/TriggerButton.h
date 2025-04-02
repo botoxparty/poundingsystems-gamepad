@@ -23,7 +23,7 @@ public:
         -1, // ccNumber
         0.0f, // value
         false, // isLearnMode
-        juce::Colour(0, 0, 128), // progressColor
+        juce::Colour(0, 0, 255), // progressColor - Bright blue
         juce::Colour(220, 220, 220), // backgroundColor
         juce::Colours::black // textColor
     });

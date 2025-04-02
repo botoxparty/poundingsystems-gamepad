@@ -77,7 +77,7 @@ public:
         label.setBounds(bounds.removeFromLeft(labelWidth));
         
         // Combo box takes remaining space
-        deviceSelector.setBounds(bounds.reduced(5, 0));
+        deviceSelector.setBounds(bounds.reduced(5, 5));
     }
     
     void comboBoxChanged(juce::ComboBox* comboBoxThatHasChanged) override

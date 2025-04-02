@@ -31,21 +31,21 @@ void ShoulderSection::setState(const State& newState)
         state.isLearnMode
     });
 
-    // Update L2 trigger
-    l2Trigger.setProperties({
-        "L2",
-        state.l2CC,
-        state.l2Value,
-        state.isLearnMode
-    });
+    // Update L2 trigger - preserve existing properties
+    auto l2Props = l2Trigger.getProperties();
+    l2Props.text = "L2";
+    l2Props.ccNumber = state.l2CC;
+    l2Props.value = state.l2Value;
+    l2Props.isLearnMode = state.isLearnMode;
+    l2Trigger.setProperties(l2Props);
 
-    // Update R2 trigger
-    r2Trigger.setProperties({
-        "R2",
-        state.r2CC,
-        state.r2Value,
-        state.isLearnMode
-    });
+    // Update R2 trigger - preserve existing properties
+    auto r2Props = r2Trigger.getProperties();
+    r2Props.text = "R2";
+    r2Props.ccNumber = state.r2CC;
+    r2Props.value = state.r2Value;
+    r2Props.isLearnMode = state.isLearnMode;
+    r2Trigger.setProperties(r2Props);
 }
 
 void ShoulderSection::resized()

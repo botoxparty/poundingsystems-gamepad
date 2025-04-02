@@ -36,6 +36,15 @@ enable_language(C)
 
 project(${PROJECT_NAME} VERSION ${CURRENT_VERSION} LANGUAGES C CXX)
 
+# Set macOS SDK path
+if(APPLE)
+    execute_process(
+        COMMAND xcrun --show-sdk-path
+        OUTPUT_VARIABLE CMAKE_OSX_SYSROOT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+endif()
+
 # macOS specific configuration
 if(APPLE)
     # Define that we're on macOS for conditional compilation

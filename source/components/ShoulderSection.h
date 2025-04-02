@@ -60,8 +60,24 @@ private:
 
     ClassicButton l1Button{{"L1"}};
     ClassicButton r1Button{{"R1"}};
-    TriggerButton l2Trigger{{"L2"}};
-    TriggerButton r2Trigger{{"R2"}};
+    TriggerButton l2Trigger{{
+        "L2",  // text
+        -1,    // ccNumber
+        0.0f,  // value
+        false, // isLearnMode
+        juce::Colour(0, 0, 255), // progressColor - Bright blue
+        juce::Colour(220, 220, 220), // backgroundColor
+        juce::Colours::black // textColor
+    }};
+    TriggerButton r2Trigger{{
+        "R2",  // text
+        -1,    // ccNumber
+        0.0f,  // value
+        false, // isLearnMode
+        juce::Colour(0, 0, 255), // progressColor - Bright blue
+        juce::Colour(220, 220, 220), // backgroundColor
+        juce::Colours::black // textColor
+    }};
 
     juce::FlexBox layout;
 

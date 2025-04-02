@@ -321,12 +321,19 @@ void ModernGamepadComponent::resized()
 }
 
 void ModernGamepadComponent::updateState(const GamepadManager::GamepadState& newState) {
+    // Use the already normalized values from GamepadManager
+    float l2Value = newState.axes[4];
+    float r2Value = newState.axes[5];
+    
+    juce::Logger::writeToLog("ModernGamepadComponent - L2: " + juce::String(l2Value) + 
+                            ", R2: " + juce::String(r2Value));
+
     // Update shoulder section
     shoulderSection.setState({
         newState.buttons[9],  // L1
         newState.buttons[10], // R1
-        juce::jlimit(0.0f, 1.0f, (newState.axes[4] + 1.0f) * 0.5f),  // L2
-        juce::jlimit(0.0f, 1.0f, (newState.axes[5] + 1.0f) * 0.5f),   // R2
+        l2Value,  // L2
+        r2Value,  // R2
         midiLearnMode,
         MidiCC::L1_BUTTON,
         MidiCC::R1_BUTTON,

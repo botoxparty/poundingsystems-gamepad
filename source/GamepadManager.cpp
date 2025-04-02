@@ -140,13 +140,35 @@ void GamepadManager::updateGamepadStates()
                     // SDL axes range from -32768 to 32767, normalize to -1.0 to 1.0
                     float axisValue = SDL_GetGamepadAxis(sdlGamepads[i], sdlAxis) / 32767.0f;
                     
-                    // Apply a small deadzone
-                    if (std::abs(axisValue) < 0.1f)
-                        axisValue = 0.0f;
+                    // For triggers (L2 and R2), we need to handle them differently
+                    if (axis == 4 || axis == 5) // L2 or R2
+                    {
+                        // Triggers range from 0 to 32767, normalize to 0.0 to 1.0
+                        axisValue = SDL_GetGamepadAxis(sdlGamepads[i], sdlAxis) / 32767.0f;
+                        
+                        // Apply a small deadzone for triggers
+                        if (axisValue < 0.1f)
+                            axisValue = 0.0f;
+                    }
+                    else
+                    {
+                        // Apply a small deadzone for other axes
+                        if (std::abs(axisValue) < 0.1f)
+                            axisValue = 0.0f;
+                    }
                     
                     // Check if value has changed
                     if (std::abs(gamepadStates[i].axes[axis] - axisValue) > 0.01f)
                     {
+                        // Log trigger values
+                        if (axis == 4 || axis == 5)
+                        {
+                            juce::Logger::writeToLog("Raw trigger value for " + 
+                                juce::String(axis == 4 ? "L2" : "R2") + 
+                                ": " + juce::String(SDL_GetGamepadAxis(sdlGamepads[i], sdlAxis)) +
+                                ", Normalized: " + juce::String(axisValue));
+                        }
+                        
                         gamepadStates[i].axes[axis] = axisValue;
                         stateChanged = true;
                     }
@@ -417,16 +439,16 @@ void GamepadManager::handleSDLEvents()
                             // Indicate that the gyroscope is working
                             gamepadStates[i].gyroscope.enabled = true;
                             
-                            // Log gyro data occasionally to avoid flooding
-                            if (++logCounter >= 30)  // Log every ~30th change
-                            {
-                                logCounter = 0;
-                                juce::Logger::writeToLog(juce::String::formatted("Gyro data (event-driven) - X: %.2f, Y: %.2f, Z: %.2f, timestamp: %llu",
-                                                                               event.gsensor.data[0], 
-                                                                               event.gsensor.data[1], 
-                                                                               event.gsensor.data[2],
-                                                                               event.gsensor.sensor_timestamp));
-                            }
+                            // // Log gyro data occasionally to avoid flooding
+                            // if (++logCounter >= 30)  // Log every ~30th change
+                            // {
+                            //     logCounter = 0;
+                            //     juce::Logger::writeToLog(juce::String::formatted("Gyro data (event-driven) - X: %.2f, Y: %.2f, Z: %.2f, timestamp: %llu",
+                            //                                                    event.gsensor.data[0], 
+                            //                                                    event.gsensor.data[1], 
+                            //                                                    event.gsensor.data[2],
+                            //                                                    event.gsensor.sensor_timestamp));
+                            // }
                         }
                     }
                     // This is an accelerometer event
@@ -454,16 +476,16 @@ void GamepadManager::handleSDLEvents()
                             // Indicate that the accelerometer is working
                             gamepadStates[i].accelerometer.enabled = true;
                             
-                            // Log accelerometer data occasionally to avoid flooding
-                            if (++logCounter >= 30)  // Log every ~30th change
-                            {
-                                logCounter = 0;
-                                juce::Logger::writeToLog(juce::String::formatted("Accel data (event-driven) - X: %.2f, Y: %.2f, Z: %.2f, timestamp: %llu",
-                                                                               event.gsensor.data[0], 
-                                                                               event.gsensor.data[1], 
-                                                                               event.gsensor.data[2],
-                                                                               event.gsensor.sensor_timestamp));
-                            }
+                            // // Log accelerometer data occasionally to avoid flooding
+                            // if (++logCounter >= 30)  // Log every ~30th change
+                            // {
+                            //     logCounter = 0;
+                            //     juce::Logger::writeToLog(juce::String::formatted("Accel data (event-driven) - X: %.2f, Y: %.2f, Z: %.2f, timestamp: %llu",
+                            //                                                    event.gsensor.data[0], 
+                            //                                                    event.gsensor.data[1], 
+                            //                                                    event.gsensor.data[2],
+                            //                                                    event.gsensor.sensor_timestamp));
+                            // }
                         }
                     }
                     

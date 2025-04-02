@@ -61,12 +61,12 @@ void StandaloneApp::resized()
     logoComponent.setBounds(logoArea);
     
     // MIDI device selector at the top
-    auto selectorHeight = 30;
+    auto selectorHeight = 40;
     auto selectorArea = area.removeFromTop(selectorHeight).reduced(5, 0);
     midiDeviceSelector->setBounds(selectorArea);
     
     // Gamepad area with padding
-    auto gamepadArea = area.reduced(5, 5);
+    auto gamepadArea = area.reduced(5, 0);
     gamepadComponent->setBounds(gamepadArea);
 }
 
