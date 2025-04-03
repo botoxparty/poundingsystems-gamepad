@@ -2,6 +2,10 @@
 
 MidiOutputManager::MidiOutputManager()
 {
+    #if JUCE_WINDOWS
+        juce::Logger::writeToLog("Virtual MIDI device creation skipped on Windows");
+        return;
+    #else 
     // Always create virtual device first
     if (!createVirtualDevice())
     {
@@ -20,6 +24,7 @@ MidiOutputManager::MidiOutputManager()
     
     // Set virtual device as default
     setOutputDevice(virtualDeviceInfo.identifier);
+    #endif
 }
 
 bool MidiOutputManager::createVirtualDevice()
