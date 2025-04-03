@@ -28,24 +28,24 @@ bool MidiOutputManager::createVirtualDevice()
     #if JUCE_WINDOWS
         juce::Logger::writeToLog("Virtual MIDI device creation skipped on Windows");
         return false;
-    #endif
-
-    // Create virtual MIDI device
-    virtualDevice = juce::MidiOutput::createNewDevice("Gamepad MIDI");
-    
-    if (virtualDevice != nullptr)
-    {
-        virtualDeviceInfo = virtualDevice->getDeviceInfo();
-        virtualDevice->startBackgroundThread();
+    #else
+        // Create virtual MIDI device
+        virtualDevice = juce::MidiOutput::createNewDevice("Gamepad MIDI");
         
-        juce::Logger::writeToLog("Virtual MIDI device created successfully");
-        juce::Logger::writeToLog("Device name: " + virtualDeviceInfo.name);
-        juce::Logger::writeToLog("Device identifier: " + virtualDeviceInfo.identifier);
-        return true;
-    }
-    
-    juce::Logger::writeToLog("ERROR: Failed to create virtual MIDI device!");
-    return false;
+        if (virtualDevice != nullptr)
+        {
+            virtualDeviceInfo = virtualDevice->getDeviceInfo();
+            virtualDevice->startBackgroundThread();
+            
+            juce::Logger::writeToLog("Virtual MIDI device created successfully");
+            juce::Logger::writeToLog("Device name: " + virtualDeviceInfo.name);
+            juce::Logger::writeToLog("Device identifier: " + virtualDeviceInfo.identifier);
+            return true;
+        }
+        
+        juce::Logger::writeToLog("ERROR: Failed to create virtual MIDI device!");
+        return false;
+    #endif
 }
 
 bool MidiOutputManager::isVirtualDevice(const juce::String& identifier) const
