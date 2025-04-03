@@ -21,6 +21,7 @@ UninstallFilesDir="{commonappdata}\{#ProductName}\uninstall"
 
 [Files]
 Source: "..\Builds\{#ProjectName}_artefacts\Release\{#ProductName}.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\Builds\SDL3-build\Release\SDL3.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\{#ProductName}"; Filename: "{app}\{#ProductName}.exe"
