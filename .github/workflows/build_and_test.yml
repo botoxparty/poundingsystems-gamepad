@@ -61,31 +61,31 @@ jobs:
           sudo apt-get update && sudo apt install libasound2-dev libx11-dev libxinerama-dev libxext-dev libfreetype6-dev libwebkit2gtk-4.0-dev libglu1-mesa-dev xvfb ninja-build
           sudo /usr/bin/Xvfb $DISPLAY &
 
-      # - name: Cache IPP (Windows)
-      #   if: runner.os == 'Windows'
-      #   id: cache-ipp
-      #   uses: actions/cache@v4
-      #   with:
-      #     key: ipp-v6
-      #     path: C:\Program Files (x86)\Intel
+      - name: Cache IPP (Windows)
+        if: runner.os == 'Windows'
+        id: cache-ipp
+        uses: actions/cache@v4
+        with:
+          key: ipp-v6
+          path: C:\Program Files (x86)\Intel
 
-      # - name: Install IPP (Windows)
-      #   if: (runner.os == 'Windows') && (steps.cache-ipp.outputs.cache-hit != 'true')
-      #   run: |
-      #     curl --output oneapi.exe https://registrationcenter-download.intel.com/akdlm/IRC_NAS/2e89fab4-e1c7-4f14-a1ef-6cddba8c5fa7/intel-ipp-2022.0.0.796_offline.exe
-      #     ./oneapi.exe -s -x -f oneapi
-      #     ./oneapi/bootstrapper.exe -s -c --action install --components=intel.oneapi.win.ipp.devel --eula=accept -p=NEED_VS2022_INTEGRATION=1 --log-dir=.
+      - name: Install IPP (Windows)
+        if: (runner.os == 'Windows') && (steps.cache-ipp.outputs.cache-hit != 'true')
+        run: |
+          curl --output oneapi.exe https://registrationcenter-download.intel.com/akdlm/IRC_NAS/2e89fab4-e1c7-4f14-a1ef-6cddba8c5fa7/intel-ipp-2022.0.0.796_offline.exe
+          ./oneapi.exe -s -x -f oneapi
+          ./oneapi/bootstrapper.exe -s -c --action install --components=intel.oneapi.win.ipp.devel --eula=accept -p=NEED_VS2022_INTEGRATION=1 --log-dir=.
 
-      # - name: Save IPP cache (even on CI fail)
-      #   if: runner.os == 'Windows' && (steps.cache-ipp.outputs.cache-hit != 'true')
-      #   uses: actions/cache/save@v4
-      #   with:
-      #     path: C:\Program Files (x86)\Intel
-      #     key: ipp-v6
+      - name: Save IPP cache (even on CI fail)
+        if: runner.os == 'Windows' && (steps.cache-ipp.outputs.cache-hit != 'true')
+        uses: actions/cache/save@v4
+        with:
+          path: C:\Program Files (x86)\Intel
+          key: ipp-v6
 
-      # - name: Install Ninja (Windows)
-      #   if: runner.os == 'Windows'
-      #   run: choco install ninja
+      - name: Install Ninja (Windows)
+        if: runner.os == 'Windows'
+        run: choco install ninja
 
       - name: Install macOS Deps
         if: ${{ matrix.name == 'macOS' }}
@@ -208,11 +208,11 @@ jobs:
         working-directory: ${{ env.ARTIFACTS_PATH }}
         run: 7z a -tzip "${{ env.ARTIFACT_NAME }}.zip" "-xr!lib${{ env.PRODUCT_NAME }}_SharedCode.a" .
 
-      # - name: Generate Installer
-      #   if: ${{ matrix.name == 'Windows' }}
-      #   run: |
-      #     iscc "packaging\installer.iss"
-      #     mv "packaging/Output/${{ env.ARTIFACT_NAME }}.exe" "${{ env.ARTIFACTS_PATH }}/"
+      - name: Generate Installer
+        if: ${{ matrix.name == 'Windows' }}
+        run: |
+          iscc "packaging\installer.iss"
+          mv "packaging/Output/${{ env.ARTIFACT_NAME }}.exe" "${{ env.ARTIFACTS_PATH }}/"
 
       # - name: Codesign with Azure Trusted Signing
       #   if: ${{ matrix.name == 'Windows' }}
@@ -240,12 +240,12 @@ jobs:
       #     files-folder: ${{ env.ARTIFACTS_PATH }}
       #     files-folder-filter: exe
 
-      # - name: Upload Exe (Windows)
-      #   if: ${{ matrix.name == 'Windows' }}
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: ${{ env.ARTIFACT_NAME }}.exe
-      #     path: "${{ env.ARTIFACTS_PATH }}/${{ env.ARTIFACT_NAME }}.exe"
+      - name: Upload Exe (Windows)
+        if: ${{ matrix.name == 'Windows' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}.exe
+          path: "${{ env.ARTIFACTS_PATH }}/${{ env.ARTIFACT_NAME }}.exe"
 
       - name: Upload Zip (Linux)
         if: ${{ matrix.name == 'Linux' }}
