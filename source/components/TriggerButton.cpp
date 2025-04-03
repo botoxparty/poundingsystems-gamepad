@@ -8,7 +8,6 @@ TriggerButton::TriggerButton(const Properties& initialProps)
 
 void TriggerButton::setProperties(const Properties& newProps)
 {
-    juce::Logger::writeToLog("TriggerButton '" + newProps.text + "' value: " + juce::String(newProps.value));
     props = newProps;
     repaint();
 }
@@ -24,11 +23,6 @@ void TriggerButton::paint(juce::Graphics& g)
 void TriggerButton::drawClassicStyle(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
-    
-    // Log component dimensions and value
-    juce::Logger::writeToLog("TriggerButton '" + props.text + "' - Bounds: " + 
-                            juce::String(bounds.getWidth()) + "x" + juce::String(bounds.getHeight()) + 
-                            ", Value: " + juce::String(props.value));
     
     // Draw background with inset effect
     g.setColour(props.backgroundColor);

@@ -324,9 +324,6 @@ void ModernGamepadComponent::updateState(const GamepadManager::GamepadState& new
     // Use the already normalized values from GamepadManager
     float l2Value = newState.axes[4];
     float r2Value = newState.axes[5];
-    
-    juce::Logger::writeToLog("ModernGamepadComponent - L2: " + juce::String(l2Value) + 
-                            ", R2: " + juce::String(r2Value));
 
     // Update shoulder section
     shoulderSection.setState({
