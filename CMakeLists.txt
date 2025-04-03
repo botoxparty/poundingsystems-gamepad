@@ -34,18 +34,6 @@ set(BUNDLE_ID "com.poundingSystems.gamepadmidi")
 # Enable C language for SDL3
 enable_language(C)
 
-# Windows SDK configuration
-if(WIN32)
-    # Check if Windows SDK is available
-    if(NOT DEFINED ENV{WindowsSdkDir})
-        message(FATAL_ERROR "Windows SDK not found. Please ensure Windows SDK 10.0.19041.0 or later is installed.")
-    endif()
-
-    # Ensure we have the Windows SDK version that includes GameInput API
-    set(CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION "10.0.19041.0" CACHE STRING "Windows SDK version" FORCE)
-    set(CMAKE_SYSTEM_VERSION "10.0.19041.0" CACHE STRING "Windows SDK version" FORCE)
-endif()
-
 project(${PROJECT_NAME} VERSION ${CURRENT_VERSION} LANGUAGES C CXX)
 
 # Set macOS SDK path
@@ -97,16 +85,6 @@ set(SDL_FORCE_STATIC OFF)
 set(SDL_SHARED ON)
 set(SDL_STATIC OFF)
 set(SDL_OSX_ARCHITECTURES "arm64" CACHE STRING "Build architectures for macOS" FORCE)
-
-# Windows SDK configuration for SDL3
-if(WIN32)
-    # Add Windows SDK include directories
-    include_directories(
-        "$ENV{WindowsSdkDir}Include/10.0.19041.0/um"
-        "$ENV{WindowsSdkDir}Include/10.0.19041.0/shared"
-        "$ENV{WindowsSdkDir}Include/10.0.19041.0/winrt"
-    )
-endif()
 
 FetchContent_Declare(
     SDL3
