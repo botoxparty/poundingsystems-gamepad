@@ -24,6 +24,12 @@ MidiOutputManager::MidiOutputManager()
 
 bool MidiOutputManager::createVirtualDevice()
 {
+    // Don't create virtual device on Windows
+    #if JUCE_WINDOWS
+        juce::Logger::writeToLog("Virtual MIDI device creation skipped on Windows");
+        return false;
+    #endif
+
     // Create virtual MIDI device
     virtualDevice = juce::MidiOutput::createNewDevice("Gamepad MIDI");
     
