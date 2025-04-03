@@ -20,7 +20,7 @@ LicenseFile="resources\EULA"
 UninstallFilesDir="{commonappdata}\{#ProductName}\uninstall"
 
 [Files]
-Source: "..\Builds\{#ProjectName}_artefacts\Release\Standalone\{#ProductName}.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\Builds\{#ProjectName}_artefacts\Release\{#ProductName}.exe"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\{#ProductName}"; Filename: "{app}\{#ProductName}.exe"
