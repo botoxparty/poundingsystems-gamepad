@@ -90,6 +90,10 @@ jobs:
         if: runner.os == 'Windows'
         run: choco install ninja
 
+      - name: Install Inno Setup (Windows)
+        if: runner.os == 'Windows'
+        run: choco install innosetup
+
       - name: Install macOS Deps
         if: ${{ matrix.name == 'macOS' }}
         run: brew install ninja osxutils
