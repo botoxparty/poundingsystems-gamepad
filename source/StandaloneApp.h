@@ -1,6 +1,7 @@
 #pragma once
 
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <juce_core/juce_core.h>
 #include "GamepadManager.h"
 #include "MidiOutputManager.h"
 #include "components/ModernGamepadComponent.h"
@@ -34,7 +35,7 @@ private:
             
             auto* label = new juce::Label();
             label->setText("Pounding Systems Gamepad\n\n"
-                         "Version 1.0.0\n\n"
+                         "Version " + juce::String(VERSION) + "\n\n"
                          "2025 Pounding Systems", 
                          juce::dontSendNotification);
             label->setJustificationType(juce::Justification::centred);
