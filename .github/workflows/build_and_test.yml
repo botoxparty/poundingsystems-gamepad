@@ -215,7 +215,7 @@ jobs:
         working-directory: ${{ env.ARTIFACTS_PATH }}
         run: |
           # Ensure the binary is using the local SDL3 library
-          patchelf --set-rpath '$ORIGIN' GamepadMIDI
+          patchelf --set-rpath '$ORIGIN' "${{ env.PRODUCT_NAME }}"
           # Create the zip, excluding only the static library
           7z a -tzip "${{ env.ARTIFACT_NAME }}.zip" "-xr!lib${{ env.PRODUCT_NAME }}_SharedCode.a" .
 
