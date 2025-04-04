@@ -211,6 +211,13 @@ if(APPLE)
             "@executable_path/../Frameworks/libSDL3.0.dylib"
             "$<TARGET_FILE:${PROJECT_NAME}>"
     )
+elseif(UNIX AND NOT APPLE)
+    # For Linux, copy SDL3 shared library to the same directory as the binary
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE:SDL3-shared>"
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/"
+    )
 endif()
 
 include(GitHubENV)
