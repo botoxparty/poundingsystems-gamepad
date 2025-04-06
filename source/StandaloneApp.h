@@ -9,8 +9,12 @@
 #include "BinaryData.h"
 #include "MidiCCMapping.h"
 
+// Forward declarations
+class MidiMappingEditorWindow;
+
 class StandaloneApp : public juce::Component,
-                      private juce::Timer
+                      private juce::Timer,
+                      private juce::Button::Listener
 {
 public:
     StandaloneApp();
@@ -18,6 +22,19 @@ public:
     
     void paint(juce::Graphics& g) override;
     void resized() override;
+    
+    // MIDI mapping configuration
+    struct MidiMapping {
+        int channel;
+        int ccNumber;
+        float minValue;
+        float maxValue;
+        bool isButton;
+    };
+    
+    // Access to mappings for the editor
+    std::array<std::vector<MidiMapping>, GamepadManager::MAX_AXES> axisMappings;
+    std::array<std::vector<MidiMapping>, GamepadManager::MAX_BUTTONS> buttonMappings;
     
 private:
     // About window component
@@ -65,6 +82,8 @@ private:
     void handleGamepadStateChange();
     void setupMidiMappings();
     void mouseUp(const juce::MouseEvent& event) override;
+    void openMidiMappingEditor();
+    void buttonClicked(juce::Button* button) override;
     
     // State tracking for single gamepad
     struct GamepadState {
@@ -91,21 +110,11 @@ private:
     std::unique_ptr<ModernGamepadComponent> gamepadComponent;
     std::unique_ptr<MidiDeviceSelector> midiDeviceSelector;
     juce::ImageComponent logoComponent;
+    juce::TextButton midiMappingButton;
+    std::unique_ptr<MidiMappingEditorWindow> midiMappingWindow;
     
     // Managers
     GamepadManager gamepadManager;
-    
-    // MIDI mapping configuration
-    struct MidiMapping {
-        int channel;
-        int ccNumber;
-        float minValue;
-        float maxValue;
-        bool isButton;
-    };
-    
-    std::array<MidiMapping, GamepadManager::MAX_AXES> axisMappings;
-    std::array<MidiMapping, GamepadManager::MAX_BUTTONS> buttonMappings;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(StandaloneApp)
 }; 

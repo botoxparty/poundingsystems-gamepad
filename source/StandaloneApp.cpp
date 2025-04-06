@@ -1,4 +1,5 @@
 #include "StandaloneApp.h"
+#include "components/MidiMappingEditorWindow.h"
 
 StandaloneApp::StandaloneApp()
 {
@@ -19,6 +20,11 @@ StandaloneApp::StandaloneApp()
     logoComponent.setImagePlacement(juce::RectanglePlacement::centred | juce::RectanglePlacement::onlyReduceInSize);
     logoComponent.setMouseCursor(juce::MouseCursor::PointingHandCursor);
     logoComponent.addMouseListener(this, false);
+    
+    // Set up MIDI mapping button
+    midiMappingButton.setButtonText("MIDI Mapping");
+    midiMappingButton.addListener(this);
+    addAndMakeVisible(midiMappingButton);
     
     // Add components
     addAndMakeVisible(logoComponent);
@@ -65,6 +71,11 @@ void StandaloneApp::resized()
     auto selectorArea = area.removeFromTop(selectorHeight).reduced(5, 0);
     midiDeviceSelector->setBounds(selectorArea);
     
+    // MIDI mapping button below the selector
+    auto buttonHeight = 30;
+    auto buttonArea = area.removeFromTop(buttonHeight).reduced(5, 0);
+    midiMappingButton.setBounds(buttonArea);
+    
     // Gamepad area with padding
     auto gamepadArea = area.reduced(5, 0);
     gamepadComponent->setBounds(gamepadArea);
@@ -78,181 +89,147 @@ void StandaloneApp::timerCallback()
 
 void StandaloneApp::handleGamepadStateChange()
 {
-    const auto& currentState = gamepadManager.getGamepadState(0);
-    auto& previousState = previousGamepadState;
+    const auto& gamepad = gamepadManager.getGamepadState(0);
+    if (!gamepad.connected)
+        return;
 
-    // Check if connection state changed
-    bool connectionStateChanged = (currentState.connected != previousState.connected);
-
-    if (currentState.connected)
+    // Process axis changes
+    for (int i = 0; i < GamepadManager::MAX_AXES; ++i)
     {
-        // Process axes - only send if changed
-        for (int axisIndex = 0; axisIndex < GamepadManager::MAX_AXES; ++axisIndex)
-        {
-            if (currentState.axes[axisIndex] != previousState.axes[axisIndex])
-            {
-                const auto& mapping = axisMappings[axisIndex];
-                float normalizedValue = (currentState.axes[axisIndex] + 1.0f) * 0.5f;
-                int midiValue = juce::jmap(normalizedValue, 0.0f, 1.0f, 
-                                         static_cast<float>(mapping.minValue), 
-                                         static_cast<float>(mapping.maxValue));
-                
-                MidiOutputManager::getInstance().sendControlChange(mapping.channel, mapping.ccNumber, midiValue);
-                
-                // Update previous state
-                previousState.axes[axisIndex] = currentState.axes[axisIndex];
-            }
-        }
+        float currentValue = gamepad.axes[i];
+        float previousValue = previousGamepadState.axes[i];
         
-        // Process buttons - only send if changed
-        for (int buttonIndex = 0; buttonIndex < GamepadManager::MAX_BUTTONS; ++buttonIndex)
+        if (std::abs(currentValue - previousValue) > 0.01f)
         {
-            if (currentState.buttons[buttonIndex] != previousState.buttons[buttonIndex])
+            // Send MIDI CC for each mapping
+            for (const auto& mapping : axisMappings[static_cast<size_t>(i)])
             {
-                const auto& mapping = buttonMappings[buttonIndex];
-                int midiValue = currentState.buttons[buttonIndex] ? mapping.maxValue : mapping.minValue;
+                float normalizedValue = (currentValue + 1.0f) * 0.5f; // Convert from [-1,1] to [0,1]
+                float mappedValue = mapping.minValue + (normalizedValue * (mapping.maxValue - mapping.minValue));
+                int midiValue = static_cast<int>(mappedValue);
                 
                 MidiOutputManager::getInstance().sendControlChange(mapping.channel, mapping.ccNumber, midiValue);
-                
-                // Update previous state
-                previousState.buttons[buttonIndex] = currentState.buttons[buttonIndex];
             }
-        }
-
-        // Process touchpad state - only send if touched and values changed
-        if (currentState.touchpad.touched)
-        {
-            // Update touched state first
-            if (!previousState.touchpad.touched)
-            {
-                previousState.touchpad.touched = true;
-            }
-
-            // Send X position if changed
-            if (currentState.touchpad.x != previousState.touchpad.x)
-            {
-                MidiOutputManager::getInstance().sendControlChange(1, MidiCC::TOUCHPAD_X, 
-                    static_cast<int>(currentState.touchpad.x * 127.0f));
-                previousState.touchpad.x = currentState.touchpad.x;
-            }
-
-            // Send Y position if changed
-            if (currentState.touchpad.y != previousState.touchpad.y)
-            {
-                MidiOutputManager::getInstance().sendControlChange(1, MidiCC::TOUCHPAD_Y, 
-                    static_cast<int>(currentState.touchpad.y * 127.0f));
-                previousState.touchpad.y = currentState.touchpad.y;
-            }
-
-            // Send pressure if changed
-            if (currentState.touchpad.pressure != previousState.touchpad.pressure)
-            {
-                MidiOutputManager::getInstance().sendControlChange(1, MidiCC::TOUCHPAD_PRESSURE, 
-                    static_cast<int>(currentState.touchpad.pressure * 127.0f));
-                previousState.touchpad.pressure = currentState.touchpad.pressure;
-            }
-        }
-        else if (previousState.touchpad.touched)
-        {
-            // If touchpad was touched before but not now, send zero values
-            MidiOutputManager::getInstance().sendControlChange(1, MidiCC::TOUCHPAD_X, 0);
-            MidiOutputManager::getInstance().sendControlChange(1, MidiCC::TOUCHPAD_Y, 0);
-            MidiOutputManager::getInstance().sendControlChange(1, MidiCC::TOUCHPAD_PRESSURE, 0);
-            previousState.touchpad.touched = false;
-            previousState.touchpad.x = 0.0f;
-            previousState.touchpad.y = 0.0f;
-            previousState.touchpad.pressure = 0.0f;
-        }
-
-        // Send touchpad button state if changed
-        if (currentState.touchpad.pressed != previousState.touchpad.pressed)
-        {
-            MidiOutputManager::getInstance().sendControlChange(1, MidiCC::TOUCHPAD_BUTTON, 
-                currentState.touchpad.pressed ? 127 : 0);
-            previousState.touchpad.pressed = currentState.touchpad.pressed;
-        }
-
-        // Process gyroscope state if enabled and not in learn mode
-        if (currentState.gyroscope.enabled && !gamepadComponent->isMidiLearnMode())
-        {
-            // Send X axis if changed
-            if (currentState.gyroscope.x != previousState.gyroscope.x)
-            {
-                float normalizedX = (currentState.gyroscope.x + 10.0f) * 0.5f * 127.0f / 10.0f;
-                MidiOutputManager::getInstance().sendControlChange(1, MidiCC::GYRO_X, 
-                    static_cast<int>(juce::jlimit(0.0f, 127.0f, normalizedX)));
-                previousState.gyroscope.x = currentState.gyroscope.x;
-            }
-
-            // Send Y axis if changed
-            if (currentState.gyroscope.y != previousState.gyroscope.y)
-            {
-                float normalizedY = (currentState.gyroscope.y + 10.0f) * 0.5f * 127.0f / 10.0f;
-                MidiOutputManager::getInstance().sendControlChange(1, MidiCC::GYRO_Y, 
-                    static_cast<int>(juce::jlimit(0.0f, 127.0f, normalizedY)));
-                previousState.gyroscope.y = currentState.gyroscope.y;
-            }
-
-            // Send Z axis if changed
-            if (currentState.gyroscope.z != previousState.gyroscope.z)
-            {
-                float normalizedZ = (currentState.gyroscope.z + 10.0f) * 0.5f * 127.0f / 10.0f;
-                MidiOutputManager::getInstance().sendControlChange(1, MidiCC::GYRO_Z, 
-                    static_cast<int>(juce::jlimit(0.0f, 127.0f, normalizedZ)));
-                previousState.gyroscope.z = currentState.gyroscope.z;
-            }
+            
+            previousGamepadState.axes[i] = currentValue;
         }
     }
-    
-    // Update connection state
-    previousState.connected = currentState.connected;
 
-    // If connection state changed, trigger a layout update
-    if (connectionStateChanged)
+    // Process button changes
+    for (int i = 0; i < GamepadManager::MAX_BUTTONS; ++i)
     {
-        resized();
+        bool currentState = gamepad.buttons[i];
+        bool previousState = previousGamepadState.buttons[i];
+        
+        if (currentState != previousState)
+        {
+            // Send MIDI CC for each mapping
+            for (const auto& mapping : buttonMappings[static_cast<size_t>(i)])
+            {
+                int midiValue = currentState ? static_cast<int>(mapping.maxValue) : static_cast<int>(mapping.minValue);
+                MidiOutputManager::getInstance().sendControlChange(mapping.channel, mapping.ccNumber, midiValue);
+            }
+            
+            previousGamepadState.buttons[i] = currentState;
+        }
+    }
+
+    // Process touchpad changes
+    const auto& currentTouchpad = gamepad.touchpad;
+    auto& previousTouchpad = previousGamepadState.touchpad;
+    
+    if (currentTouchpad.touched != previousTouchpad.touched ||
+        currentTouchpad.pressed != previousTouchpad.pressed ||
+        std::abs(currentTouchpad.x - previousTouchpad.x) > 0.01f ||
+        std::abs(currentTouchpad.y - previousTouchpad.y) > 0.01f ||
+        std::abs(currentTouchpad.pressure - previousTouchpad.pressure) > 0.01f)
+    {
+        // Send MIDI CC for touchpad X
+        float normalizedX = (currentTouchpad.x + 1.0f) * 0.5f;
+        int midiX = static_cast<int>(normalizedX * 127.0f);
+        MidiOutputManager::getInstance().sendControlChange(1, MidiCC::TOUCHPAD_X, midiX);
+        
+        // Send MIDI CC for touchpad Y
+        float normalizedY = (currentTouchpad.y + 1.0f) * 0.5f;
+        int midiY = static_cast<int>(normalizedY * 127.0f);
+        MidiOutputManager::getInstance().sendControlChange(1, MidiCC::TOUCHPAD_Y, midiY);
+        
+        // Send MIDI CC for touchpad pressure
+        int midiPressure = static_cast<int>(currentTouchpad.pressure * 127.0f);
+        MidiOutputManager::getInstance().sendControlChange(1, MidiCC::TOUCHPAD_PRESSURE, midiPressure);
+        
+        // Copy touchpad state fields individually
+        previousTouchpad.touched = currentTouchpad.touched;
+        previousTouchpad.pressed = currentTouchpad.pressed;
+        previousTouchpad.x = currentTouchpad.x;
+        previousTouchpad.y = currentTouchpad.y;
+        previousTouchpad.pressure = currentTouchpad.pressure;
+    }
+
+    // Process gyroscope changes
+    const auto& currentGyro = gamepad.gyroscope;
+    auto& previousGyro = previousGamepadState.gyroscope;
+    
+    if (currentGyro.enabled != previousGyro.enabled ||
+        std::abs(currentGyro.x - previousGyro.x) > 0.01f ||
+        std::abs(currentGyro.y - previousGyro.y) > 0.01f ||
+        std::abs(currentGyro.z - previousGyro.z) > 0.01f)
+    {
+        // Send MIDI CC for gyroscope X
+        float normalizedX = (currentGyro.x + 1.0f) * 0.5f;
+        int midiX = static_cast<int>(normalizedX * 127.0f);
+        MidiOutputManager::getInstance().sendControlChange(1, MidiCC::GYRO_X, midiX);
+        
+        // Send MIDI CC for gyroscope Y
+        float normalizedY = (currentGyro.y + 1.0f) * 0.5f;
+        int midiY = static_cast<int>(normalizedY * 127.0f);
+        MidiOutputManager::getInstance().sendControlChange(1, MidiCC::GYRO_Y, midiY);
+        
+        // Send MIDI CC for gyroscope Z
+        float normalizedZ = (currentGyro.z + 1.0f) * 0.5f;
+        int midiZ = static_cast<int>(normalizedZ * 127.0f);
+        MidiOutputManager::getInstance().sendControlChange(1, MidiCC::GYRO_Z, midiZ);
+        
+        // Copy gyroscope state fields individually
+        previousGyro.enabled = currentGyro.enabled;
+        previousGyro.x = currentGyro.x;
+        previousGyro.y = currentGyro.y;
+        previousGyro.z = currentGyro.z;
     }
 }
 
 void StandaloneApp::setupMidiMappings()
 {
-    // Map axes to CC numbers from MidiCC mapping
-    axisMappings[0] = { 1, MidiCC::LEFT_STICK_X, 0, 127, false }; // Left stick X
-    axisMappings[1] = { 1, MidiCC::LEFT_STICK_Y, 0, 127, false }; // Left stick Y
-    axisMappings[2] = { 1, MidiCC::RIGHT_STICK_X, 0, 127, false }; // Right stick X
-    axisMappings[3] = { 1, MidiCC::RIGHT_STICK_Y, 0, 127, false }; // Right stick Y
-    axisMappings[4] = { 1, MidiCC::L2_TRIGGER, 0, 127, false }; // L2 trigger
-    axisMappings[5] = { 1, MidiCC::R2_TRIGGER, 0, 127, false }; // R2 trigger
-
-    // Map buttons to CC numbers from MidiCC mapping
-    buttonMappings[0] = { 1, MidiCC::A_BUTTON, 0, 127, true }; // A button
-    buttonMappings[1] = { 1, MidiCC::B_BUTTON, 0, 127, true }; // B button
-    buttonMappings[2] = { 1, MidiCC::X_BUTTON, 0, 127, true }; // X button
-    buttonMappings[3] = { 1, MidiCC::Y_BUTTON, 0, 127, true }; // Y button
-    
-    // Shoulder buttons
-    buttonMappings[9] = { 1, MidiCC::L1_BUTTON, 0, 127, true }; // L1 button
-    buttonMappings[10] = { 1, MidiCC::R1_BUTTON, 0, 127, true }; // R1 button
-
-    // D-pad
-    buttonMappings[11] = { 1, MidiCC::DPAD_UP, 0, 127, true }; // D-pad Up
-    buttonMappings[12] = { 1, MidiCC::DPAD_DOWN, 0, 127, true }; // D-pad Down
-    buttonMappings[13] = { 1, MidiCC::DPAD_LEFT, 0, 127, true }; // D-pad Left
-    buttonMappings[14] = { 1, MidiCC::DPAD_RIGHT, 0, 127, true }; // D-pad Right
-
-    // Initialize remaining buttons with sequential CC numbers starting after the mapped ones
-    for (int buttonIndex = 0; buttonIndex < GamepadManager::MAX_BUTTONS; ++buttonIndex)
+    // Initialize axis mappings with multiple MIDI CCs per control
+    for (int i = 0; i < GamepadManager::MAX_AXES; ++i)
     {
-        if (buttonMappings[buttonIndex].ccNumber == 0) // If not already mapped
-        {
-            buttonMappings[buttonIndex] = {
-                1, // channel
-                42 + buttonIndex, // CC number (starting after our mapped range)
-                0, // min value
-                127, // max value
-                true // is a button
-            };
-        }
+        axisMappings[static_cast<size_t>(i)].clear();
+        
+        // Add default mapping for each axis
+        MidiMapping defaultMapping;
+        defaultMapping.channel = 1;
+        defaultMapping.ccNumber = i + 1; // CC 1-8 for axes
+        defaultMapping.minValue = 0;
+        defaultMapping.maxValue = 127;
+        defaultMapping.isButton = false;
+        
+        axisMappings[static_cast<size_t>(i)].push_back(defaultMapping);
+    }
+    
+    // Initialize button mappings with multiple MIDI CCs per control
+    for (int i = 0; i < GamepadManager::MAX_BUTTONS; ++i)
+    {
+        buttonMappings[static_cast<size_t>(i)].clear();
+        
+        // Add default mapping for each button
+        MidiMapping defaultMapping;
+        defaultMapping.channel = 1;
+        defaultMapping.ccNumber = i + 16; // CC 16-31 for buttons
+        defaultMapping.minValue = 0;
+        defaultMapping.maxValue = 127;
+        defaultMapping.isButton = true;
+        
+        buttonMappings[static_cast<size_t>(i)].push_back(defaultMapping);
     }
 }
 
@@ -260,6 +237,24 @@ void StandaloneApp::handleLogoClick()
 {
     auto* aboutWindow = new AboutWindow();
     aboutWindow->enterModalState(true, nullptr, true);
+}
+
+void StandaloneApp::openMidiMappingEditor()
+{
+    if (midiMappingWindow == nullptr)
+    {
+        midiMappingWindow = std::make_unique<MidiMappingEditorWindow>(*this);
+    }
+    
+    midiMappingWindow->enterModalState(true, nullptr, true);
+}
+
+void StandaloneApp::buttonClicked(juce::Button* button)
+{
+    if (button == &midiMappingButton)
+    {
+        openMidiMappingEditor();
+    }
 }
 
 void StandaloneApp::mouseUp(const juce::MouseEvent& event)
