@@ -233,7 +233,7 @@ void MidiMappingEditor::addMapping(int rowIndex)
     // Create a dialog to get mapping details
     juce::DialogWindow::LaunchOptions options;
     auto* content = new juce::Component();
-    content->setSize(300, 200);
+    content->setSize(300, 250);
     
     auto* channelLabel = new juce::Label("channel", "MIDI Channel:");
     auto* channelEditor = new juce::TextEditor();
@@ -310,7 +310,7 @@ void MidiMappingEditor::addMapping(int rowIndex)
     };
     
     options.content.setOwned(content);
-    options.content->setSize(300, 200);
+    options.content->setSize(300, 250);
     options.dialogTitle = "Add MIDI Mapping";
     options.dialogBackgroundColour = juce::Colours::lightgrey;
     options.escapeKeyTriggersCloseButton = true;
@@ -318,7 +318,7 @@ void MidiMappingEditor::addMapping(int rowIndex)
     options.resizable = false;
     
     auto* window = options.launchAsync();
-    window->centreWithSize(300, 200);
+    window->centreWithSize(300, 250);
 }
 
 void MidiMappingEditor::removeMapping(int rowIndex)

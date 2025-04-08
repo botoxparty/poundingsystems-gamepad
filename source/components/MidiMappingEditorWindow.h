@@ -16,19 +16,20 @@ public:
                       true)
     {
         setUsingNativeTitleBar(true);
-        editor = std::make_unique<MidiMappingEditor>(app);
-        setContentOwned(editor.release(), true);
+        auto editorComponent = std::make_unique<MidiMappingEditor>(app);
+        setContentOwned(editorComponent.release(), true);
         centreWithSize(800, 600);
         setResizable(true, true);
     }
     
     void closeButtonPressed() override
     {
-        setVisible(false);
+        // Delete this window when it's closed
+        delete this;
     }
     
 private:
-    std::unique_ptr<MidiMappingEditor> editor;
+    // No need to store the editor as a member variable since it's owned by the DialogWindow
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiMappingEditorWindow)
 }; 

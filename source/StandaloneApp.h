@@ -118,7 +118,6 @@ private:
     std::unique_ptr<MidiDeviceSelector> midiDeviceSelector;
     juce::ImageComponent logoComponent;
     juce::TextButton midiMappingButton;
-    std::unique_ptr<MidiMappingEditorWindow> midiMappingWindow;
     
     // Managers
     GamepadManager gamepadManager;

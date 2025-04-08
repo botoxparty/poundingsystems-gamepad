@@ -267,12 +267,9 @@ void StandaloneApp::handleLogoClick()
 
 void StandaloneApp::openMidiMappingEditor()
 {
-    if (midiMappingWindow == nullptr)
-    {
-        midiMappingWindow = std::make_unique<MidiMappingEditorWindow>(*this);
-    }
-    
-    midiMappingWindow->enterModalState(true, nullptr, true);
+    // Create a new window that will delete itself when closed
+    auto* window = new MidiMappingEditorWindow(*this);
+    window->enterModalState(true, nullptr, true);
 }
 
 void StandaloneApp::buttonClicked(juce::Button* button)
