@@ -197,6 +197,28 @@ void MidiMappingEditor::updateMappingData()
         data.mappings = app.buttonMappings[static_cast<size_t>(i)];
         mappingData.push_back(data);
     }
+
+    // Add gyroscope mappings
+    for (int i = 0; i < 3; ++i)
+    {
+        MappingData data;
+        data.controlName = getControlName("Gyro", i);
+        data.controlType = "Gyro";
+        data.controlIndex = i;
+        data.mappings = app.gyroMappings[static_cast<size_t>(i)];
+        mappingData.push_back(data);
+    }
+
+    // Add accelerometer mappings
+    for (int i = 0; i < 3; ++i)
+    {
+        MappingData data;
+        data.controlName = getControlName("Accel", i);
+        data.controlType = "Accel";
+        data.controlIndex = i;
+        data.mappings = app.accelerometerMappings[static_cast<size_t>(i)];
+        mappingData.push_back(data);
+    }
     
     mappingTable.updateContent();
 }
@@ -345,6 +367,26 @@ juce::String MidiMappingEditor::getControlName(const juce::String& controlType, 
             default: return "Button " + juce::String(index);
         }
     }
+    else if (controlType == "Gyro")
+    {
+        switch (index)
+        {
+            case 0: return "Gyroscope X";
+            case 1: return "Gyroscope Y";
+            case 2: return "Gyroscope Z";
+            default: return "Gyro " + juce::String(index);
+        }
+    }
+    else if (controlType == "Accel")
+    {
+        switch (index)
+        {
+            case 0: return "Accelerometer X";
+            case 1: return "Accelerometer Y";
+            case 2: return "Accelerometer Z";
+            default: return "Accel " + juce::String(index);
+        }
+    }
     
     return controlType + " " + juce::String(index);
 }
@@ -358,6 +400,10 @@ void MidiMappingEditor::updateAppMappings()
             app.axisMappings[static_cast<size_t>(data.controlIndex)] = data.mappings;
         else if (data.controlType == "Button")
             app.buttonMappings[static_cast<size_t>(data.controlIndex)] = data.mappings;
+        else if (data.controlType == "Gyro")
+            app.gyroMappings[static_cast<size_t>(data.controlIndex)] = data.mappings;
+        else if (data.controlType == "Accel")
+            app.accelerometerMappings[static_cast<size_t>(data.controlIndex)] = data.mappings;
     }
 }
 

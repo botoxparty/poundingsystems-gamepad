@@ -35,6 +35,8 @@ public:
     // Access to mappings for the editor
     std::array<std::vector<MidiMapping>, GamepadManager::MAX_AXES> axisMappings;
     std::array<std::vector<MidiMapping>, GamepadManager::MAX_BUTTONS> buttonMappings;
+    std::array<std::vector<MidiMapping>, 3> gyroMappings;  // X, Y, Z
+    std::array<std::vector<MidiMapping>, 3> accelerometerMappings;  // X, Y, Z
     
 private:
     // About window component
@@ -103,6 +105,11 @@ private:
             float y = 0.0f;
             float z = 0.0f;
         } gyroscope;
+        struct AccelerometerState {
+            float x = 0.0f;
+            float y = 0.0f;
+            float z = 0.0f;
+        } accelerometer;
     };
     GamepadState previousGamepadState;
     

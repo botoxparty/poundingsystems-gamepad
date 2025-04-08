@@ -134,68 +134,60 @@ void StandaloneApp::handleGamepadStateChange()
         }
     }
 
-    // Process touchpad changes
-    const auto& currentTouchpad = gamepad.touchpad;
-    auto& previousTouchpad = previousGamepadState.touchpad;
-    
-    if (currentTouchpad.touched != previousTouchpad.touched ||
-        currentTouchpad.pressed != previousTouchpad.pressed ||
-        std::abs(currentTouchpad.x - previousTouchpad.x) > 0.01f ||
-        std::abs(currentTouchpad.y - previousTouchpad.y) > 0.01f ||
-        std::abs(currentTouchpad.pressure - previousTouchpad.pressure) > 0.01f)
+    // Process gyroscope changes
+    if (gamepad.gyroscope.enabled)
     {
-        // Send MIDI CC for touchpad X
-        float normalizedX = (currentTouchpad.x + 1.0f) * 0.5f;
-        int midiX = static_cast<int>(normalizedX * 127.0f);
-        MidiOutputManager::getInstance().sendControlChange(1, MidiCC::TOUCHPAD_X, midiX);
+        float gyroValues[3] = {gamepad.gyroscope.x, gamepad.gyroscope.y, gamepad.gyroscope.z};
+        float prevGyroValues[3] = {previousGamepadState.gyroscope.x, previousGamepadState.gyroscope.y, previousGamepadState.gyroscope.z};
         
-        // Send MIDI CC for touchpad Y
-        float normalizedY = (currentTouchpad.y + 1.0f) * 0.5f;
-        int midiY = static_cast<int>(normalizedY * 127.0f);
-        MidiOutputManager::getInstance().sendControlChange(1, MidiCC::TOUCHPAD_Y, midiY);
+        for (int i = 0; i < 3; ++i)
+        {
+            if (std::abs(gyroValues[i] - prevGyroValues[i]) > 0.01f)
+            {
+                // Send MIDI CC for each mapping
+                for (const auto& mapping : gyroMappings[static_cast<size_t>(i)])
+                {
+                    float normalizedValue = (gyroValues[i] + 1.0f) * 0.5f; // Convert from [-1,1] to [0,1]
+                    float mappedValue = mapping.minValue + (normalizedValue * (mapping.maxValue - mapping.minValue));
+                    int midiValue = static_cast<int>(mappedValue);
+                    
+                    MidiOutputManager::getInstance().sendControlChange(mapping.channel, mapping.ccNumber, midiValue);
+                }
+                
+                prevGyroValues[i] = gyroValues[i];
+            }
+        }
         
-        // Send MIDI CC for touchpad pressure
-        int midiPressure = static_cast<int>(currentTouchpad.pressure * 127.0f);
-        MidiOutputManager::getInstance().sendControlChange(1, MidiCC::TOUCHPAD_PRESSURE, midiPressure);
-        
-        // Copy touchpad state fields individually
-        previousTouchpad.touched = currentTouchpad.touched;
-        previousTouchpad.pressed = currentTouchpad.pressed;
-        previousTouchpad.x = currentTouchpad.x;
-        previousTouchpad.y = currentTouchpad.y;
-        previousTouchpad.pressure = currentTouchpad.pressure;
+        previousGamepadState.gyroscope.x = gyroValues[0];
+        previousGamepadState.gyroscope.y = gyroValues[1];
+        previousGamepadState.gyroscope.z = gyroValues[2];
     }
 
-    // Process gyroscope changes
-    const auto& currentGyro = gamepad.gyroscope;
-    auto& previousGyro = previousGamepadState.gyroscope;
+    // Process accelerometer changes
+    float accelValues[3] = {gamepad.accelerometer.x, gamepad.accelerometer.y, gamepad.accelerometer.z};
+    float prevAccelValues[3] = {previousGamepadState.accelerometer.x, previousGamepadState.accelerometer.y, previousGamepadState.accelerometer.z};
     
-    if (currentGyro.enabled != previousGyro.enabled ||
-        std::abs(currentGyro.x - previousGyro.x) > 0.01f ||
-        std::abs(currentGyro.y - previousGyro.y) > 0.01f ||
-        std::abs(currentGyro.z - previousGyro.z) > 0.01f)
+    for (int i = 0; i < 3; ++i)
     {
-        // Send MIDI CC for gyroscope X
-        float normalizedX = (currentGyro.x + 1.0f) * 0.5f;
-        int midiX = static_cast<int>(normalizedX * 127.0f);
-        MidiOutputManager::getInstance().sendControlChange(1, MidiCC::GYRO_X, midiX);
-        
-        // Send MIDI CC for gyroscope Y
-        float normalizedY = (currentGyro.y + 1.0f) * 0.5f;
-        int midiY = static_cast<int>(normalizedY * 127.0f);
-        MidiOutputManager::getInstance().sendControlChange(1, MidiCC::GYRO_Y, midiY);
-        
-        // Send MIDI CC for gyroscope Z
-        float normalizedZ = (currentGyro.z + 1.0f) * 0.5f;
-        int midiZ = static_cast<int>(normalizedZ * 127.0f);
-        MidiOutputManager::getInstance().sendControlChange(1, MidiCC::GYRO_Z, midiZ);
-        
-        // Copy gyroscope state fields individually
-        previousGyro.enabled = currentGyro.enabled;
-        previousGyro.x = currentGyro.x;
-        previousGyro.y = currentGyro.y;
-        previousGyro.z = currentGyro.z;
+        if (std::abs(accelValues[i] - prevAccelValues[i]) > 0.01f)
+        {
+            // Send MIDI CC for each mapping
+            for (const auto& mapping : accelerometerMappings[static_cast<size_t>(i)])
+            {
+                float normalizedValue = (accelValues[i] + 1.0f) * 0.5f; // Convert from [-1,1] to [0,1]
+                float mappedValue = mapping.minValue + (normalizedValue * (mapping.maxValue - mapping.minValue));
+                int midiValue = static_cast<int>(mappedValue);
+                
+                MidiOutputManager::getInstance().sendControlChange(mapping.channel, mapping.ccNumber, midiValue);
+            }
+            
+            prevAccelValues[i] = accelValues[i];
+        }
     }
+    
+    previousGamepadState.accelerometer.x = accelValues[0];
+    previousGamepadState.accelerometer.y = accelValues[1];
+    previousGamepadState.accelerometer.z = accelValues[2];
 }
 
 void StandaloneApp::setupMidiMappings()
@@ -230,6 +222,36 @@ void StandaloneApp::setupMidiMappings()
         defaultMapping.isButton = true;
         
         buttonMappings[static_cast<size_t>(i)].push_back(defaultMapping);
+    }
+
+    // Initialize gyroscope mappings
+    for (int i = 0; i < 3; ++i)
+    {
+        gyroMappings[static_cast<size_t>(i)].clear();
+        
+        MidiMapping defaultMapping;
+        defaultMapping.channel = 1;
+        defaultMapping.ccNumber = MidiCC::GYRO_X + i; // CC 39-41 for gyro
+        defaultMapping.minValue = 0;
+        defaultMapping.maxValue = 127;
+        defaultMapping.isButton = false;
+        
+        gyroMappings[static_cast<size_t>(i)].push_back(defaultMapping);
+    }
+
+    // Initialize accelerometer mappings
+    for (int i = 0; i < 3; ++i)
+    {
+        accelerometerMappings[static_cast<size_t>(i)].clear();
+        
+        MidiMapping defaultMapping;
+        defaultMapping.channel = 1;
+        defaultMapping.ccNumber = MidiCC::ACCEL_X + i; // CC 42-44 for accelerometer
+        defaultMapping.minValue = 0;
+        defaultMapping.maxValue = 127;
+        defaultMapping.isButton = false;
+        
+        accelerometerMappings[static_cast<size_t>(i)].push_back(defaultMapping);
     }
 }
 
