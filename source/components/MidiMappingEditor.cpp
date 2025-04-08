@@ -450,25 +450,78 @@ juce::String MidiMappingEditor::getControlName(const juce::String& controlType, 
 
 void MidiMappingEditor::updateAppMappings()
 {
-    // Update axis mappings
+    // Clear existing mappings first
+    for (auto& mappings : app.axisMappings) mappings.clear();
+    for (auto& mappings : app.buttonMappings) mappings.clear();
+    for (auto& mappings : app.gyroMappings) mappings.clear();
+    for (auto& mappings : app.accelerometerMappings) mappings.clear();
+    
+    // Update mappings
     for (const auto& data : mappingData)
     {
+        juce::Logger::writeToLog("Updating mapping for " + data.controlName + 
+                                " (Type: " + data.controlType + 
+                                ", Index: " + juce::String(data.controlIndex) + ")");
+        
         if (data.controlType == "Axis")
-            app.axisMappings[static_cast<size_t>(data.controlIndex)] = data.mappings;
+        {
+            if (data.controlIndex >= 0 && data.controlIndex < GamepadManager::MAX_AXES)
+            {
+                app.axisMappings[static_cast<size_t>(data.controlIndex)] = data.mappings;
+                juce::Logger::writeToLog("Added " + juce::String(data.mappings.size()) + " axis mappings");
+            }
+            else
+            {
+                juce::Logger::writeToLog("WARNING: Invalid axis index: " + juce::String(data.controlIndex));
+            }
+        }
         else if (data.controlType == "Button")
-            app.buttonMappings[static_cast<size_t>(data.controlIndex)] = data.mappings;
+        {
+            if (data.controlIndex >= 0 && data.controlIndex < GamepadManager::MAX_BUTTONS)
+            {
+                app.buttonMappings[static_cast<size_t>(data.controlIndex)] = data.mappings;
+                juce::Logger::writeToLog("Added " + juce::String(data.mappings.size()) + " button mappings");
+            }
+            else
+            {
+                juce::Logger::writeToLog("WARNING: Invalid button index: " + juce::String(data.controlIndex));
+            }
+        }
         else if (data.controlType == "Gyro")
-            app.gyroMappings[static_cast<size_t>(data.controlIndex)] = data.mappings;
+        {
+            if (data.controlIndex >= 0 && data.controlIndex < 3)
+            {
+                app.gyroMappings[static_cast<size_t>(data.controlIndex)] = data.mappings;
+                juce::Logger::writeToLog("Added " + juce::String(data.mappings.size()) + " gyro mappings");
+            }
+            else
+            {
+                juce::Logger::writeToLog("WARNING: Invalid gyro index: " + juce::String(data.controlIndex));
+            }
+        }
         else if (data.controlType == "Accel")
-            app.accelerometerMappings[static_cast<size_t>(data.controlIndex)] = data.mappings;
+        {
+            if (data.controlIndex >= 0 && data.controlIndex < 3)
+            {
+                app.accelerometerMappings[static_cast<size_t>(data.controlIndex)] = data.mappings;
+                juce::Logger::writeToLog("Added " + juce::String(data.mappings.size()) + " accelerometer mappings");
+            }
+            else
+            {
+                juce::Logger::writeToLog("WARNING: Invalid accelerometer index: " + juce::String(data.controlIndex));
+            }
+        }
     }
     
     // Notify the gamepad component that mappings have changed
     app.updateMidiMappings();
+    juce::Logger::writeToLog("MIDI mappings updated and gamepad component notified");
 }
 
 void MidiMappingEditor::saveMappings()
 {
+    juce::Logger::writeToLog("Starting to save MIDI mappings...");
+    
     juce::FileChooser chooser("Save MIDI Mappings",
                              juce::File::getSpecialLocation(juce::File::userHomeDirectory),
                              "*.json");
@@ -476,8 +529,9 @@ void MidiMappingEditor::saveMappings()
     if (chooser.browseForFileToSave(true))
     {
         juce::File file = chooser.getResult();
+        juce::Logger::writeToLog("Saving to file: " + file.getFullPathName());
+        
         juce::DynamicObject::Ptr jsonObj = new juce::DynamicObject();
-        juce::var json(jsonObj);
         
         // Convert mapping data to JSON
         juce::Array<juce::var> mappingsArray;
@@ -507,13 +561,30 @@ void MidiMappingEditor::saveMappings()
         
         jsonObj->setProperty("mappings", mappingsArray);
         
+        // Convert to JSON string with proper formatting
+        juce::String jsonString = juce::JSON::toString(juce::var(jsonObj), true);
+        juce::Logger::writeToLog("Generated JSON: " + jsonString);
+        
         // Write to file
-        file.replaceWithText(json.toString());
+        if (file.replaceWithText(jsonString))
+        {
+            juce::Logger::writeToLog("Successfully saved MIDI mappings to file");
+        }
+        else
+        {
+            juce::Logger::writeToLog("ERROR: Failed to write to file");
+        }
+    }
+    else
+    {
+        juce::Logger::writeToLog("Save operation cancelled");
     }
 }
 
 void MidiMappingEditor::loadMappings()
 {
+    juce::Logger::writeToLog("Starting to load MIDI mappings...");
+    
     juce::FileChooser chooser("Load MIDI Mappings",
                              juce::File::getSpecialLocation(juce::File::userHomeDirectory),
                              "*.json");
@@ -521,12 +592,22 @@ void MidiMappingEditor::loadMappings()
     if (chooser.browseForFileToOpen())
     {
         juce::File file = chooser.getResult();
+        juce::Logger::writeToLog("Selected file: " + file.getFullPathName());
+        
         juce::var json = juce::JSON::parse(file);
+        if (json.isVoid())
+        {
+            juce::Logger::writeToLog("ERROR: Failed to parse JSON file");
+            return;
+        }
+        
+        juce::Logger::writeToLog("Successfully parsed JSON file");
         
         if (auto* obj = json.getDynamicObject())
         {
             if (auto* mappingsVar = obj->getProperty("mappings").getArray())
             {
+                juce::Logger::writeToLog("Found " + juce::String(mappingsVar->size()) + " mappings to load");
                 mappingData.clear();
                 
                 for (const auto& mappingVar : *mappingsVar)
@@ -538,8 +619,15 @@ void MidiMappingEditor::loadMappings()
                         data.controlType = mappingObj->getProperty("controlType").toString();
                         data.controlIndex = mappingObj->getProperty("controlIndex");
                         
+                        juce::Logger::writeToLog("Loading mapping for " + data.controlName + 
+                                               " (Type: " + data.controlType + 
+                                               ", Index: " + juce::String(data.controlIndex) + ")");
+                        
                         if (auto* midiMappingsVar = mappingObj->getProperty("mappings").getArray())
                         {
+                            juce::Logger::writeToLog("Found " + juce::String(midiMappingsVar->size()) + 
+                                                   " MIDI mappings for " + data.controlName);
+                            
                             for (const auto& midiMappingVar : *midiMappingsVar)
                             {
                                 if (auto* midiMappingObj = midiMappingVar.getDynamicObject())
@@ -551,42 +639,60 @@ void MidiMappingEditor::loadMappings()
                                     {
                                         mapping.type = static_cast<StandaloneApp::MidiMapping::Type>(
                                             midiMappingObj->getProperty("type").operator int());
+                                        juce::String typeStr = (mapping.type == StandaloneApp::MidiMapping::Type::ControlChange) ? 
+                                            "Control Change" : "Note";
+                                        juce::Logger::writeToLog("Mapping type: " + typeStr);
                                     }
                                     else
                                     {
-                                        // Default to ControlChange for backward compatibility
                                         mapping.type = StandaloneApp::MidiMapping::Type::ControlChange;
+                                        juce::Logger::writeToLog("Using default mapping type: Control Change");
                                     }
                                     
                                     mapping.channel = midiMappingObj->getProperty("channel");
                                     mapping.ccNumber = midiMappingObj->getProperty("ccNumber");
-                                    
-                                    // Handle the noteNumber field, with backward compatibility
-                                    if (midiMappingObj->hasProperty("noteNumber"))
-                                    {
-                                        mapping.noteNumber = midiMappingObj->getProperty("noteNumber");
-                                    }
-                                    else
-                                    {
-                                        // Default to 0 for backward compatibility
-                                        mapping.noteNumber = 0;
-                                    }
-                                    
+                                    mapping.noteNumber = midiMappingObj->hasProperty("noteNumber") ? 
+                                        static_cast<int>(midiMappingObj->getProperty("noteNumber")) : 0;
                                     mapping.minValue = midiMappingObj->getProperty("minValue");
                                     mapping.maxValue = midiMappingObj->getProperty("maxValue");
                                     mapping.isButton = midiMappingObj->getProperty("isButton");
+                                    
+                                    juce::Logger::writeToLog("Added MIDI mapping - Channel: " + juce::String(mapping.channel) + 
+                                                           ", CC: " + juce::String(mapping.ccNumber) + 
+                                                           ", Note: " + juce::String(mapping.noteNumber) + 
+                                                           ", Range: [" + juce::String(mapping.minValue) + 
+                                                           "-" + juce::String(mapping.maxValue) + "]");
+                                    
                                     data.mappings.push_back(mapping);
                                 }
                             }
+                        }
+                        else
+                        {
+                            juce::Logger::writeToLog("WARNING: No MIDI mappings found for " + data.controlName);
                         }
                         
                         mappingData.push_back(data);
                     }
                 }
                 
+                juce::Logger::writeToLog("Finished loading all mappings, updating app...");
                 updateAppMappings();
                 mappingTable.updateContent();
+                juce::Logger::writeToLog("MIDI mappings loaded and UI updated");
+            }
+            else
+            {
+                juce::Logger::writeToLog("ERROR: No mappings array found in JSON file");
             }
         }
+        else
+        {
+            juce::Logger::writeToLog("ERROR: Invalid JSON structure");
+        }
+    }
+    else
+    {
+        juce::Logger::writeToLog("File selection cancelled");
     }
 } 
