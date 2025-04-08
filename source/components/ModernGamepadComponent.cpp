@@ -259,13 +259,6 @@ void ModernGamepadComponent::setupCallbacks()
     };
     
     // Gyroscope callbacks
-    gyroscopeDisplay.onValueChange = [this](float x, float y, float z) {
-        if (!midiLearnMode) {
-            sendMidiCC(MidiCC::GYRO_X, (x + 1.0f) * 0.5f);
-            sendMidiCC(MidiCC::GYRO_Y, (y + 1.0f) * 0.5f);
-            sendMidiCC(MidiCC::GYRO_Z, (z + 1.0f) * 0.5f);
-        }
-    };
 
     gyroscopeDisplay.onLearnClick = [this](const juce::String& axis) {
         if (axis == "X") sendMidiCC(MidiCC::GYRO_X, (gamepadState.gyroscope.x + 1.0f) * 0.5f);
@@ -281,14 +274,6 @@ void ModernGamepadComponent::setupCallbacks()
         }
     };
 
-    // Accelerometer callbacks
-    accelerometerDisplay.onValueChange = [this](float x, float y, float z) {
-        if (!midiLearnMode) {
-            sendMidiCC(MidiCC::ACCEL_X, (x + 1.0f) * 0.5f);
-            sendMidiCC(MidiCC::ACCEL_Y, (y + 1.0f) * 0.5f);
-            sendMidiCC(MidiCC::ACCEL_Z, (z + 1.0f) * 0.5f);
-        }
-    };
 
     accelerometerDisplay.onLearnClick = [this](const juce::String& axis) {
         if (axis == "X") sendMidiCC(MidiCC::ACCEL_X, (gamepadState.accelerometer.x + 1.0f) * 0.5f);
