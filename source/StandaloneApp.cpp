@@ -93,6 +93,10 @@ void StandaloneApp::handleGamepadStateChange()
     if (!gamepad.connected)
         return;
 
+    // If in MIDI learn mode, only process UI-triggered changes
+    if (gamepadComponent->isMidiLearnMode())
+        return;
+
     // Process axis changes
     for (int i = 0; i < GamepadManager::MAX_AXES; ++i)
     {
