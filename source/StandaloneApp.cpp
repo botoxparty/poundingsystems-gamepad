@@ -6,8 +6,11 @@ StandaloneApp::StandaloneApp()
     // Initialize MIDI output manager early
     MidiOutputManager::getInstance();
     
+    // Set up MIDI mappings first
+    setupMidiMappings();
+    
     // Create single gamepad component
-    gamepadComponent = std::make_unique<ModernGamepadComponent>(gamepadManager.getGamepadState(0));
+    gamepadComponent = std::make_unique<ModernGamepadComponent>(gamepadManager.getGamepadState(0), *this);
     addAndMakeVisible(gamepadComponent.get());  // Make visible immediately
     
     // Create MIDI device selector
@@ -28,9 +31,6 @@ StandaloneApp::StandaloneApp()
     
     // Add components
     addAndMakeVisible(logoComponent);
-    
-    // Set up MIDI mappings
-    setupMidiMappings();
     
     // Add gamepad state change callback
     gamepadManager.addStateChangeCallback([this] { handleGamepadStateChange(); });
@@ -127,11 +127,27 @@ void StandaloneApp::handleGamepadStateChange()
         
         if (currentState != previousState)
         {
-            // Send MIDI CC for each mapping
+            // Send MIDI messages for each mapping
             for (const auto& mapping : buttonMappings[static_cast<size_t>(i)])
             {
-                int midiValue = currentState ? static_cast<int>(mapping.maxValue) : static_cast<int>(mapping.minValue);
-                MidiOutputManager::getInstance().sendControlChange(mapping.channel, mapping.ccNumber, midiValue);
+                if (mapping.type == MidiMapping::Type::ControlChange)
+                {
+                    int midiValue = currentState ? static_cast<int>(mapping.maxValue) : static_cast<int>(mapping.minValue);
+                    MidiOutputManager::getInstance().sendControlChange(mapping.channel, mapping.ccNumber, midiValue);
+                }
+                else // Note
+                {
+                    // For buttons, we send note on when pressed and note off when released
+                    if (currentState)
+                    {
+                        MidiOutputManager::getInstance().sendNoteOn(mapping.channel, mapping.noteNumber, mapping.maxValue / 127.0f);
+                    }
+                    else
+                    {
+                        // Send note off with zero velocity
+                        MidiOutputManager::getInstance().sendNoteOn(mapping.channel, mapping.noteNumber, 0.0f);
+                    }
+                }
             }
             
             previousGamepadState.buttons[i] = currentState;
@@ -203,8 +219,10 @@ void StandaloneApp::setupMidiMappings()
         
         // Add default mapping for each axis
         MidiMapping defaultMapping;
+        defaultMapping.type = MidiMapping::Type::ControlChange;
         defaultMapping.channel = 1;
         defaultMapping.ccNumber = i + 1; // CC 1-8 for axes
+        defaultMapping.noteNumber = 0;  // Not used for CC
         defaultMapping.minValue = 0;
         defaultMapping.maxValue = 127;
         defaultMapping.isButton = false;
@@ -219,8 +237,10 @@ void StandaloneApp::setupMidiMappings()
         
         // Add default mapping for each button
         MidiMapping defaultMapping;
+        defaultMapping.type = MidiMapping::Type::ControlChange;
         defaultMapping.channel = 1;
         defaultMapping.ccNumber = i + 16; // CC 16-31 for buttons
+        defaultMapping.noteNumber = 0;  // Not used for CC
         defaultMapping.minValue = 0;
         defaultMapping.maxValue = 127;
         defaultMapping.isButton = true;
@@ -234,8 +254,10 @@ void StandaloneApp::setupMidiMappings()
         gyroMappings[static_cast<size_t>(i)].clear();
         
         MidiMapping defaultMapping;
+        defaultMapping.type = MidiMapping::Type::ControlChange;
         defaultMapping.channel = 1;
         defaultMapping.ccNumber = MidiCC::GYRO_X + i; // CC 39-41 for gyro
+        defaultMapping.noteNumber = 0;  // Not used for CC
         defaultMapping.minValue = 0;
         defaultMapping.maxValue = 127;
         defaultMapping.isButton = false;
@@ -249,8 +271,10 @@ void StandaloneApp::setupMidiMappings()
         accelerometerMappings[static_cast<size_t>(i)].clear();
         
         MidiMapping defaultMapping;
+        defaultMapping.type = MidiMapping::Type::ControlChange;
         defaultMapping.channel = 1;
         defaultMapping.ccNumber = MidiCC::ACCEL_X + i; // CC 42-44 for accelerometer
+        defaultMapping.noteNumber = 0;  // Not used for CC
         defaultMapping.minValue = 0;
         defaultMapping.maxValue = 127;
         defaultMapping.isButton = false;

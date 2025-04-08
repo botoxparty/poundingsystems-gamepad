@@ -25,8 +25,15 @@ public:
     
     // MIDI mapping configuration
     struct MidiMapping {
+        enum class Type {
+            ControlChange,
+            Note
+        };
+        
+        Type type = Type::ControlChange;
         int channel;
-        int ccNumber;
+        int ccNumber;  // For CC messages
+        int noteNumber;  // For Note messages
         float minValue;
         float maxValue;
         bool isButton;
@@ -37,6 +44,12 @@ public:
     std::array<std::vector<MidiMapping>, GamepadManager::MAX_BUTTONS> buttonMappings;
     std::array<std::vector<MidiMapping>, 3> gyroMappings;  // X, Y, Z
     std::array<std::vector<MidiMapping>, 3> accelerometerMappings;  // X, Y, Z
+    
+    void updateMidiMappings()
+    {
+        if (gamepadComponent)
+            gamepadComponent->midiMappingsChanged();
+    }
     
 private:
     // About window component

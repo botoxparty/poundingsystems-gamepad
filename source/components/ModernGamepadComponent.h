@@ -13,21 +13,27 @@
 #include "TouchPad.h"
 #include "SensorDisplay.h"
 
+class StandaloneApp;  // Forward declaration
+
 class ModernGamepadComponent : public juce::Component,
                              private juce::Timer
 {
 public:
-    ModernGamepadComponent(const GamepadManager::GamepadState& state);
+    ModernGamepadComponent(const GamepadManager::GamepadState& state, StandaloneApp& app);
     ~ModernGamepadComponent() override;
 
     void paint(juce::Graphics& g) override;
     void resized() override;
     void updateState(const GamepadManager::GamepadState& newState);
     bool isMidiLearnMode() const { return midiLearnMode; }
+    
+    // Call this when MIDI mappings have been updated
+    void midiMappingsChanged() { updateState(gamepadState); }
 
 private:
-    // Reference to gamepad state
+    // Reference to gamepad state and app
     const GamepadManager::GamepadState& gamepadState;
+    StandaloneApp& app;
     GamepadManager::GamepadState cachedState;
     bool midiLearnMode = false;
 
@@ -56,7 +62,7 @@ private:
     void setupLayout();
     void setupCallbacks();
     void setMidiLearnMode(bool enabled);
-    void sendMidiCC(int ccNumber, float value);
+    void sendMidiCC(int controlIndex, float value, bool isButton);
     void timerCallback() override;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ModernGamepadComponent)

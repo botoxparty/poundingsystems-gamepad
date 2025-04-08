@@ -110,10 +110,20 @@ void MidiMappingEditor::paintCell(juce::Graphics& g, int rowNumber, int columnId
             for (size_t i = 0; i < data.mappings.size(); ++i)
             {
                 const auto& mapping = data.mappings[i];
-                mappingText += juce::String("Ch:") + juce::String(mapping.channel) +
-                             " CC:" + juce::String(mapping.ccNumber) +
-                             " [" + juce::String(mapping.minValue) + "-" + juce::String(mapping.maxValue) + "]";
-                             
+                
+                if (mapping.type == StandaloneApp::MidiMapping::Type::ControlChange)
+                {
+                    mappingText += juce::String("Ch:") + juce::String(mapping.channel) +
+                                 " CC:" + juce::String(mapping.ccNumber) +
+                                 " [" + juce::String(mapping.minValue) + "-" + juce::String(mapping.maxValue) + "]";
+                }
+                else // Note
+                {
+                    mappingText += juce::String("Ch:") + juce::String(mapping.channel) +
+                                 " Note:" + juce::String(mapping.noteNumber) +
+                                 " [" + juce::String(mapping.minValue) + "-" + juce::String(mapping.maxValue) + "]";
+                }
+                                 
                 if (i < data.mappings.size() - 1)
                     mappingText += ", ";
             }
@@ -233,15 +243,26 @@ void MidiMappingEditor::addMapping(int rowIndex)
     // Create a dialog to get mapping details
     juce::DialogWindow::LaunchOptions options;
     auto* content = new juce::Component();
-    content->setSize(300, 250);
+    content->setSize(300, 300);
     
     auto* channelLabel = new juce::Label("channel", "MIDI Channel:");
     auto* channelEditor = new juce::TextEditor();
     channelEditor->setText("1");
     
+    auto* typeLabel = new juce::Label("type", "MIDI Type:");
+    auto* typeComboBox = new juce::ComboBox("typeComboBox");
+    typeComboBox->addItem("Control Change (CC)", 1);
+    typeComboBox->addItem("Note", 2);
+    typeComboBox->setSelectedId(1);
+    
     auto* ccLabel = new juce::Label("cc", "CC Number:");
     auto* ccEditor = new juce::TextEditor();
     ccEditor->setText("1");
+    
+    auto* noteLabel = new juce::Label("note", "Note Number:");
+    auto* noteEditor = new juce::TextEditor();
+    noteEditor->setText("60");  // Middle C
+    noteEditor->setEnabled(false);  // Initially disabled
     
     auto* minLabel = new juce::Label("min", "Min Value:");
     auto* minEditor = new juce::TextEditor();
@@ -256,8 +277,12 @@ void MidiMappingEditor::addMapping(int rowIndex)
     
     content->addAndMakeVisible(channelLabel);
     content->addAndMakeVisible(channelEditor);
+    content->addAndMakeVisible(typeLabel);
+    content->addAndMakeVisible(typeComboBox);
     content->addAndMakeVisible(ccLabel);
     content->addAndMakeVisible(ccEditor);
+    content->addAndMakeVisible(noteLabel);
+    content->addAndMakeVisible(noteEditor);
     content->addAndMakeVisible(minLabel);
     content->addAndMakeVisible(minEditor);
     content->addAndMakeVisible(maxLabel);
@@ -270,12 +295,23 @@ void MidiMappingEditor::addMapping(int rowIndex)
     channelLabel->setBounds(bounds.removeFromTop(20));
     channelEditor->setBounds(bounds.removeFromTop(20));
     bounds.removeFromTop(10);
+    
+    typeLabel->setBounds(bounds.removeFromTop(20));
+    typeComboBox->setBounds(bounds.removeFromTop(20));
+    bounds.removeFromTop(10);
+    
     ccLabel->setBounds(bounds.removeFromTop(20));
     ccEditor->setBounds(bounds.removeFromTop(20));
     bounds.removeFromTop(10);
+    
+    noteLabel->setBounds(bounds.removeFromTop(20));
+    noteEditor->setBounds(bounds.removeFromTop(20));
+    bounds.removeFromTop(10);
+    
     minLabel->setBounds(bounds.removeFromTop(20));
     minEditor->setBounds(bounds.removeFromTop(20));
     bounds.removeFromTop(10);
+    
     maxLabel->setBounds(bounds.removeFromTop(20));
     maxEditor->setBounds(bounds.removeFromTop(20));
     bounds.removeFromTop(10);
@@ -285,12 +321,33 @@ void MidiMappingEditor::addMapping(int rowIndex)
     buttonArea.removeFromLeft(10);
     cancelButton->setBounds(buttonArea.removeFromLeft(100));
     
+    // Handle type selection change
+    typeComboBox->onChange = [ccEditor, noteEditor, typeComboBox]() {
+        bool isCC = typeComboBox->getSelectedId() == 1;
+        ccEditor->setEnabled(isCC);
+        noteEditor->setEnabled(!isCC);
+    };
+    
     // Handle button clicks
-    okButton->onClick = [this, content, channelEditor, ccEditor, minEditor, maxEditor, &data]()
+    okButton->onClick = [this, content, channelEditor, typeComboBox, ccEditor, noteEditor, minEditor, maxEditor, &data]()
     {
         StandaloneApp::MidiMapping mapping;
         mapping.channel = channelEditor->getText().getIntValue();
-        mapping.ccNumber = ccEditor->getText().getIntValue();
+        mapping.type = typeComboBox->getSelectedId() == 1 ? 
+                      StandaloneApp::MidiMapping::Type::ControlChange : 
+                      StandaloneApp::MidiMapping::Type::Note;
+        
+        if (mapping.type == StandaloneApp::MidiMapping::Type::ControlChange)
+        {
+            mapping.ccNumber = ccEditor->getText().getIntValue();
+            mapping.noteNumber = 0;  // Not used for CC
+        }
+        else
+        {
+            mapping.ccNumber = 0;  // Not used for Note
+            mapping.noteNumber = noteEditor->getText().getIntValue();
+        }
+        
         mapping.minValue = minEditor->getText().getFloatValue();
         mapping.maxValue = maxEditor->getText().getFloatValue();
         mapping.isButton = (data.controlType == "Button");
@@ -310,7 +367,7 @@ void MidiMappingEditor::addMapping(int rowIndex)
     };
     
     options.content.setOwned(content);
-    options.content->setSize(300, 250);
+    options.content->setSize(300, 300);
     options.dialogTitle = "Add MIDI Mapping";
     options.dialogBackgroundColour = juce::Colours::lightgrey;
     options.escapeKeyTriggersCloseButton = true;
@@ -318,7 +375,7 @@ void MidiMappingEditor::addMapping(int rowIndex)
     options.resizable = false;
     
     auto* window = options.launchAsync();
-    window->centreWithSize(300, 250);
+    window->centreWithSize(300, 300);
 }
 
 void MidiMappingEditor::removeMapping(int rowIndex)
@@ -405,6 +462,9 @@ void MidiMappingEditor::updateAppMappings()
         else if (data.controlType == "Accel")
             app.accelerometerMappings[static_cast<size_t>(data.controlIndex)] = data.mappings;
     }
+    
+    // Notify the gamepad component that mappings have changed
+    app.updateMidiMappings();
 }
 
 void MidiMappingEditor::saveMappings()
@@ -432,8 +492,10 @@ void MidiMappingEditor::saveMappings()
             for (const auto& mapping : data.mappings)
             {
                 juce::DynamicObject::Ptr midiMappingObj = new juce::DynamicObject();
+                midiMappingObj->setProperty("type", static_cast<int>(mapping.type));
                 midiMappingObj->setProperty("channel", mapping.channel);
                 midiMappingObj->setProperty("ccNumber", mapping.ccNumber);
+                midiMappingObj->setProperty("noteNumber", mapping.noteNumber);
                 midiMappingObj->setProperty("minValue", mapping.minValue);
                 midiMappingObj->setProperty("maxValue", mapping.maxValue);
                 midiMappingObj->setProperty("isButton", mapping.isButton);
@@ -483,8 +545,33 @@ void MidiMappingEditor::loadMappings()
                                 if (auto* midiMappingObj = midiMappingVar.getDynamicObject())
                                 {
                                     StandaloneApp::MidiMapping mapping;
+                                    
+                                    // Handle the type field, with backward compatibility
+                                    if (midiMappingObj->hasProperty("type"))
+                                    {
+                                        mapping.type = static_cast<StandaloneApp::MidiMapping::Type>(
+                                            midiMappingObj->getProperty("type").operator int());
+                                    }
+                                    else
+                                    {
+                                        // Default to ControlChange for backward compatibility
+                                        mapping.type = StandaloneApp::MidiMapping::Type::ControlChange;
+                                    }
+                                    
                                     mapping.channel = midiMappingObj->getProperty("channel");
                                     mapping.ccNumber = midiMappingObj->getProperty("ccNumber");
+                                    
+                                    // Handle the noteNumber field, with backward compatibility
+                                    if (midiMappingObj->hasProperty("noteNumber"))
+                                    {
+                                        mapping.noteNumber = midiMappingObj->getProperty("noteNumber");
+                                    }
+                                    else
+                                    {
+                                        // Default to 0 for backward compatibility
+                                        mapping.noteNumber = 0;
+                                    }
+                                    
                                     mapping.minValue = midiMappingObj->getProperty("minValue");
                                     mapping.maxValue = midiMappingObj->getProperty("maxValue");
                                     mapping.isButton = midiMappingObj->getProperty("isButton");

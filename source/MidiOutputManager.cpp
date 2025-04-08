@@ -209,6 +209,10 @@ void MidiOutputManager::sendControlChange(int channel, int controller, int value
 
 void MidiOutputManager::sendNoteOn(int channel, int noteNumber, float velocity)
 {
+    juce::Logger::writeToLog("Attempting to send MIDI Note On - Device: " + (midiOutput != nullptr ? currentDeviceInfo.name : "None") + 
+                            ", Channel: " + juce::String(channel) + 
+                            ", Note Number: " + juce::String(noteNumber) + 
+                            ", Velocity: " + juce::String(velocity));
     if (midiOutput != nullptr)
     {
         auto message = juce::MidiMessage::noteOn(channel, noteNumber, velocity);
