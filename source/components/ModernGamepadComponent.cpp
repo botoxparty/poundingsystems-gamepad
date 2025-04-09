@@ -33,7 +33,7 @@ void ModernGamepadComponent::setupComponents()
     
     // Setup Learn Mode button
     addAndMakeVisible(learnModeButton);
-    learnModeButton.setButtonText("Learn Mode");
+    learnModeButton.setButtonText("Teach Mode");
     learnModeButton.onClick = [this] { setMidiLearnMode(!midiLearnMode); };
     learnModeButton.setColour(juce::TextButton::buttonColourId, juce::Colours::darkgrey);
     learnModeButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
@@ -431,7 +431,7 @@ void ModernGamepadComponent::updateState(const GamepadManager::GamepadState& new
 
     // Update status label
     statusLabel.setText(newState.connected
-        ? "Connected: " + newState.name + (midiLearnMode ? " (Learn Mode)" : "")
+        ? "Connected: " + newState.name + (midiLearnMode ? " (Teach Mode)" : "")
         : "Disconnected",
         juce::dontSendNotification);
 

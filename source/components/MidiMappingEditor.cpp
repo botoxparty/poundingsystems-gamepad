@@ -263,6 +263,8 @@ void MidiMappingEditor::addMapping(int rowIndex)
     auto* noteEditor = new juce::TextEditor();
     noteEditor->setText("60");  // Middle C
     noteEditor->setEnabled(false);  // Initially disabled
+    noteEditor->setVisible(false);  // Initially hidden
+    noteLabel->setVisible(false);   // Initially hidden
     
     auto* minLabel = new juce::Label("min", "Min Value:");
     auto* minEditor = new juce::TextEditor();
@@ -300,32 +302,62 @@ void MidiMappingEditor::addMapping(int rowIndex)
     typeComboBox->setBounds(bounds.removeFromTop(20));
     bounds.removeFromTop(10);
     
-    ccLabel->setBounds(bounds.removeFromTop(20));
-    ccEditor->setBounds(bounds.removeFromTop(20));
-    bounds.removeFromTop(10);
+    // Create a function to update the layout when visibility changes
+    auto updateLayout = [=]() {
+        auto layoutBounds = content->getLocalBounds().reduced(10);
+        
+        // Position the first components
+        layoutBounds.removeFromTop(20); // channelLabel
+        layoutBounds.removeFromTop(20); // channelEditor
+        layoutBounds.removeFromTop(10);
+        
+        layoutBounds.removeFromTop(20); // typeLabel
+        layoutBounds.removeFromTop(20); // typeComboBox
+        layoutBounds.removeFromTop(10);
+        
+        // Position CC or Note components based on visibility
+        if (ccLabel->isVisible()) {
+            ccLabel->setBounds(layoutBounds.removeFromTop(20));
+            ccEditor->setBounds(layoutBounds.removeFromTop(20));
+            layoutBounds.removeFromTop(10);
+        }
+        
+        if (noteLabel->isVisible()) {
+            noteLabel->setBounds(layoutBounds.removeFromTop(20));
+            noteEditor->setBounds(layoutBounds.removeFromTop(20));
+            layoutBounds.removeFromTop(10);
+        }
+        
+        // Position the remaining components
+        minLabel->setBounds(layoutBounds.removeFromTop(20));
+        minEditor->setBounds(layoutBounds.removeFromTop(20));
+        layoutBounds.removeFromTop(10);
+        
+        maxLabel->setBounds(layoutBounds.removeFromTop(20));
+        maxEditor->setBounds(layoutBounds.removeFromTop(20));
+        layoutBounds.removeFromTop(10);
+        
+        auto buttonArea = layoutBounds.removeFromBottom(30);
+        okButton->setBounds(buttonArea.removeFromLeft(100));
+        buttonArea.removeFromLeft(10);
+        cancelButton->setBounds(buttonArea.removeFromLeft(100));
+    };
     
-    noteLabel->setBounds(bounds.removeFromTop(20));
-    noteEditor->setBounds(bounds.removeFromTop(20));
-    bounds.removeFromTop(10);
-    
-    minLabel->setBounds(bounds.removeFromTop(20));
-    minEditor->setBounds(bounds.removeFromTop(20));
-    bounds.removeFromTop(10);
-    
-    maxLabel->setBounds(bounds.removeFromTop(20));
-    maxEditor->setBounds(bounds.removeFromTop(20));
-    bounds.removeFromTop(10);
-    
-    auto buttonArea = bounds.removeFromBottom(30);
-    okButton->setBounds(buttonArea.removeFromLeft(100));
-    buttonArea.removeFromLeft(10);
-    cancelButton->setBounds(buttonArea.removeFromLeft(100));
+    // Initial layout
+    updateLayout();
     
     // Handle type selection change
-    typeComboBox->onChange = [ccEditor, noteEditor, typeComboBox]() {
+    typeComboBox->onChange = [ccEditor, noteEditor, ccLabel, noteLabel, typeComboBox, updateLayout]() {
         bool isCC = typeComboBox->getSelectedId() == 1;
         ccEditor->setEnabled(isCC);
+        ccEditor->setVisible(isCC);
+        ccLabel->setVisible(isCC);
         noteEditor->setEnabled(!isCC);
+        noteEditor->setVisible(!isCC);
+        noteLabel->setVisible(!isCC);
+        
+        // Update layout after changing visibility
+        updateLayout();
     };
     
     // Handle button clicks

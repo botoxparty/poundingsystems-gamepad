@@ -25,7 +25,7 @@ StandaloneApp::StandaloneApp()
     logoComponent.addMouseListener(this, false);
     
     // Set up MIDI mapping button
-    midiMappingButton.setButtonText("MIDI Mapping");
+    midiMappingButton.setButtonText("Map");
     midiMappingButton.addListener(this);
     addAndMakeVisible(midiMappingButton);
     
@@ -66,14 +66,16 @@ void StandaloneApp::resized()
     auto logoArea = footerArea.reduced(5, 0);
     logoComponent.setBounds(logoArea);
     
-    // MIDI device selector at the top
-    auto selectorHeight = 40;
-    auto selectorArea = area.removeFromTop(selectorHeight).reduced(5, 0);
-    midiDeviceSelector->setBounds(selectorArea);
+    // Top area for MIDI device selector and mapping button
+    auto topHeight = 40;
+    auto topArea = area.removeFromTop(topHeight).reduced(5, 0);
     
-    // MIDI mapping button below the selector
-    auto buttonHeight = 30;
-    auto buttonArea = area.removeFromTop(buttonHeight).reduced(5, 0);
+    // Split the top area into two parts: selector and button
+    auto buttonWidth = 100;
+    auto selectorArea = topArea.removeFromLeft(topArea.getWidth() - buttonWidth - 10);
+    auto buttonArea = topArea.reduced(0, 5); // Add vertical padding to the button
+    
+    midiDeviceSelector->setBounds(selectorArea);
     midiMappingButton.setBounds(buttonArea);
     
     // Gamepad area with padding
