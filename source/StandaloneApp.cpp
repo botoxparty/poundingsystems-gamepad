@@ -295,7 +295,7 @@ void StandaloneApp::openMidiMappingEditor()
 {
     // Create a new window that will delete itself when closed
     auto* window = new MidiMappingEditorWindow(*this);
-    window->enterModalState(true, nullptr, true);
+    window->setVisible(true);
 }
 
 void StandaloneApp::buttonClicked(juce::Button* button)
@@ -311,5 +311,23 @@ void StandaloneApp::mouseUp(const juce::MouseEvent& event)
     if (event.eventComponent == &logoComponent)
     {
         handleLogoClick();
+    }
+}
+
+void StandaloneApp::notifyGamepadControlActivated(const juce::String& controlType, int controlIndex)
+{
+    // Find the MIDI editor window if it's open
+    for (int i = 0; i < juce::TopLevelWindow::getNumTopLevelWindows(); ++i)
+    {
+        if (auto* window = dynamic_cast<MidiMappingEditorWindow*>(juce::TopLevelWindow::getTopLevelWindow(i)))
+        {
+            // Get the editor component from the window
+            if (auto* editor = dynamic_cast<MidiMappingEditor*>(window->getContentComponent()))
+            {
+                // Highlight the control in the editor
+                editor->highlightControl(controlType, controlIndex);
+                break;
+            }
+        }
     }
 }

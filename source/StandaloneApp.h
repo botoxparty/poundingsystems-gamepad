@@ -51,6 +51,9 @@ public:
             gamepadComponent->midiMappingsChanged();
     }
     
+    // Notify the MIDI editor window when a gamepad control is activated
+    void notifyGamepadControlActivated(const juce::String& controlType, int controlIndex);
+    
 private:
     // About window component
     class AboutWindow : public juce::DialogWindow

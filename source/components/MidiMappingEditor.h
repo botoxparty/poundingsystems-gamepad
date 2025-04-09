@@ -38,6 +38,9 @@ public:
     void saveMappings();
     void loadMappings();
     
+    // Highlight a control in the editor
+    void highlightControl(const juce::String& controlType, int controlIndex);
+    
 private:
     struct MappingData
     {

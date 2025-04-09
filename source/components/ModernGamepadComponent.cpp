@@ -47,6 +47,36 @@ void ModernGamepadComponent::setupComponents()
     statusLabel.setColour(juce::Label::outlineColourId, juce::Colours::darkgrey);
     statusLabel.setFont(juce::Font(14.0f));
     statusLabel.setBorderSize(juce::BorderSize<int>(1, 10, 1, 1)); // Left: 10px, Others: 1px
+    
+    // Setup select/home/cancel buttons
+    addAndMakeVisible(selectButton);
+    addAndMakeVisible(homeButton);
+    addAndMakeVisible(cancelButton);
+    
+    // Set up button callbacks
+    selectButton.onClick = [this]() {
+        if (midiLearnMode) {
+            if (selectButton.onLearnClick) selectButton.onLearnClick();
+        } else {
+            if (selectButton.onClick) selectButton.onClick();
+        }
+    };
+    
+    homeButton.onClick = [this]() {
+        if (midiLearnMode) {
+            if (homeButton.onLearnClick) homeButton.onLearnClick();
+        } else {
+            if (homeButton.onClick) homeButton.onClick();
+        }
+    };
+    
+    cancelButton.onClick = [this]() {
+        if (midiLearnMode) {
+            if (cancelButton.onLearnClick) cancelButton.onLearnClick();
+        } else {
+            if (cancelButton.onClick) cancelButton.onClick();
+        }
+    };
 }
 
 void ModernGamepadComponent::setupLayout()
@@ -93,14 +123,26 @@ void ModernGamepadComponent::setupLayout()
     float faceButtonsWidth = 200;
     float stickWidth = 150;
     float gyroscopeWidth = 150;
+    float controlButtonWidth = 80; // Width for select/home/cancel buttons
     
     // Add items to top row (shoulder buttons and triggers)
     topRow.items.add(juce::FlexItem(shoulderSection).withWidth(shoulderSectionWidth).withHeight(shoulderSectionHeight).withMargin(2.0f));
     
     // Add items to middle row (d-pad, touchpad, face buttons)
-    middleRow.items.add(juce::FlexItem(dPad).withWidth(dpadWidth).withHeight(mainRowHeight).withMargin(5.0f));
-    middleRow.items.add(juce::FlexItem(touchPad).withWidth(touchpadWidth).withHeight(mainRowHeight).withMargin(5.0f));
-    middleRow.items.add(juce::FlexItem(faceButtons).withWidth(faceButtonsWidth).withHeight(mainRowHeight).withMargin(5.0f));
+    middleRow.items.add(juce::FlexItem(dPad).withWidth(dpadWidth).withHeight(mainRowHeight).withMargin(10.0f));
+    middleRow.items.add(juce::FlexItem(touchPad).withWidth(touchpadWidth).withHeight(mainRowHeight).withMargin(10.0f));
+    middleRow.items.add(juce::FlexItem(faceButtons).withWidth(faceButtonsWidth).withHeight(mainRowHeight).withMargin(10.0f));
+    
+    // Create a container for the control buttons (select/home/cancel)
+    juce::FlexBox controlButtonsContainer;
+    controlButtonsContainer.flexDirection = juce::FlexBox::Direction::row;
+    controlButtonsContainer.justifyContent = juce::FlexBox::JustifyContent::center;
+    controlButtonsContainer.alignItems = juce::FlexBox::AlignItems::center;
+    
+    // Add the control buttons to the container with minimal spacing
+    controlButtonsContainer.items.add(juce::FlexItem(selectButton).withWidth(controlButtonWidth).withHeight(20).withMargin(1.0f));
+    controlButtonsContainer.items.add(juce::FlexItem(homeButton).withWidth(controlButtonWidth).withHeight(20).withMargin(1.0f));
+    controlButtonsContainer.items.add(juce::FlexItem(cancelButton).withWidth(controlButtonWidth).withHeight(20).withMargin(1.0f));
     
     // Add items to bottom row (left stick, sensors, right stick)
     bottomRow.items.add(juce::FlexItem(leftStick).withWidth(stickWidth).withHeight(mainRowHeight).withMargin(5.0f));
@@ -120,9 +162,13 @@ void ModernGamepadComponent::setupLayout()
     bottomRow.items.add(juce::FlexItem(rightStick).withWidth(stickWidth).withHeight(mainRowHeight).withMargin(5.0f));
     
     // Add rows to main layout - top row doesn't use flex, others split remaining space
-    mainLayout.items.add(juce::FlexItem(topRow).withHeight(shoulderSectionHeight).withMargin(2.0f));  // Fixed height, no flex
-    mainLayout.items.add(juce::FlexItem(middleRow).withFlex(1.0f).withMargin(2.0f));
-    mainLayout.items.add(juce::FlexItem(bottomRow).withFlex(1.0f).withMargin(2.0f));
+    mainLayout.items.add(juce::FlexItem(topRow).withHeight(shoulderSectionHeight).withMargin(5.0f));  // Fixed height, no flex
+    mainLayout.items.add(juce::FlexItem(middleRow).withFlex(1.0f).withMargin(10.0f));
+    
+    // Add the control buttons container between the middle and bottom rows
+    mainLayout.items.add(juce::FlexItem(controlButtonsContainer).withHeight(40).withMargin(5.0f));
+    
+    mainLayout.items.add(juce::FlexItem(bottomRow).withFlex(1.0f).withMargin(5.0f));
     
     // Perform layout
     mainLayout.performLayout(bounds.toFloat());
@@ -140,6 +186,12 @@ void ModernGamepadComponent::setupLayout()
             comp->setBounds(item.currentBounds.toNearestInt());
     }
     
+    for (const auto& item : controlButtonsContainer.items)
+    {
+        if (auto* comp = dynamic_cast<juce::Component*>(item.associatedComponent))
+            comp->setBounds(item.currentBounds.toNearestInt());
+    }
+    
     for (const auto& item : bottomRow.items)
     {
         if (auto* comp = dynamic_cast<juce::Component*>(item.associatedComponent))
@@ -151,10 +203,22 @@ void ModernGamepadComponent::setupCallbacks()
 {
     // ShoulderSection callbacks
     shoulderSection.onButtonClick = [this](const juce::String& button) {
-        if (button == "L1") sendMidiCC(9, 1.0f, true);  // L1 is button 9
-        else if (button == "R1") sendMidiCC(10, 1.0f, true);  // R1 is button 10
-        else if (button == "L2") sendMidiCC(4, 1.0f, false);  // L2 is axis 4
-        else if (button == "R2") sendMidiCC(5, 1.0f, false);  // R2 is axis 5
+        if (button == "L1") {
+            sendMidiCC(9, 1.0f, true);  // L1 is button 9
+            app.notifyGamepadControlActivated("Button", 9);
+        }
+        else if (button == "R1") {
+            sendMidiCC(10, 1.0f, true);  // R1 is button 10
+            app.notifyGamepadControlActivated("Button", 10);
+        }
+        else if (button == "L2") {
+            sendMidiCC(4, 1.0f, false);  // L2 is axis 4
+            app.notifyGamepadControlActivated("Axis", 4);
+        }
+        else if (button == "R2") {
+            sendMidiCC(5, 1.0f, false);  // R2 is axis 5
+            app.notifyGamepadControlActivated("Axis", 5);
+        }
     };
     
     shoulderSection.onLearnClick = [this](const juce::String& button) {
@@ -166,10 +230,22 @@ void ModernGamepadComponent::setupCallbacks()
     
     // D-pad callbacks
     dPad.onButtonClick = [this](const juce::String& button) {
-        if (button == "Up") sendMidiCC(11, 1.0f, true);  // D-pad Up is button 11
-        else if (button == "Down") sendMidiCC(12, 1.0f, true);  // D-pad Down is button 12
-        else if (button == "Left") sendMidiCC(13, 1.0f, true);  // D-pad Left is button 13
-        else if (button == "Right") sendMidiCC(14, 1.0f, true);  // D-pad Right is button 14
+        if (button == "Up") {
+            sendMidiCC(11, 1.0f, true);  // D-pad Up is button 11
+            app.notifyGamepadControlActivated("Button", 11);
+        }
+        else if (button == "Down") {
+            sendMidiCC(12, 1.0f, true);  // D-pad Down is button 12
+            app.notifyGamepadControlActivated("Button", 12);
+        }
+        else if (button == "Left") {
+            sendMidiCC(13, 1.0f, true);  // D-pad Left is button 13
+            app.notifyGamepadControlActivated("Button", 13);
+        }
+        else if (button == "Right") {
+            sendMidiCC(14, 1.0f, true);  // D-pad Right is button 14
+            app.notifyGamepadControlActivated("Button", 14);
+        }
     };
     
     dPad.onLearnClick = [this](const juce::String& button) {
@@ -181,10 +257,22 @@ void ModernGamepadComponent::setupCallbacks()
     
     // Face buttons callbacks
     faceButtons.onButtonClick = [this](const juce::String& button) {
-        if (button == "A") sendMidiCC(0, 1.0f, true);  // A is button 0
-        else if (button == "B") sendMidiCC(1, 1.0f, true);  // B is button 1
-        else if (button == "X") sendMidiCC(2, 1.0f, true);  // X is button 2
-        else if (button == "Y") sendMidiCC(3, 1.0f, true);  // Y is button 3
+        if (button == "A") {
+            sendMidiCC(0, 1.0f, true);  // A is button 0
+            app.notifyGamepadControlActivated("Button", 0);
+        }
+        else if (button == "B") {
+            sendMidiCC(1, 1.0f, true);  // B is button 1
+            app.notifyGamepadControlActivated("Button", 1);
+        }
+        else if (button == "X") {
+            sendMidiCC(2, 1.0f, true);  // X is button 2
+            app.notifyGamepadControlActivated("Button", 2);
+        }
+        else if (button == "Y") {
+            sendMidiCC(3, 1.0f, true);  // Y is button 3
+            app.notifyGamepadControlActivated("Button", 3);
+        }
     };
     
     faceButtons.onLearnClick = [this](const juce::String& button) {
@@ -207,9 +295,18 @@ void ModernGamepadComponent::setupCallbacks()
     };
 
     leftStick.onButtonClick = [this](const juce::String& control) {
-        if (control == "X") sendMidiCC(0, (gamepadState.axes[0] + 1.0f) * 0.5f, false);
-        else if (control == "Y") sendMidiCC(1, (gamepadState.axes[1] + 1.0f) * 0.5f, false);
-        else if (control == "Press") sendMidiCC(9, gamepadState.buttons[7] ? 1.0f : 0.0f, true);
+        if (control == "X") {
+            sendMidiCC(0, (gamepadState.axes[0] + 1.0f) * 0.5f, false);
+            app.notifyGamepadControlActivated("Axis", 0);
+        }
+        else if (control == "Y") {
+            sendMidiCC(1, (gamepadState.axes[1] + 1.0f) * 0.5f, false);
+            app.notifyGamepadControlActivated("Axis", 1);
+        }
+        else if (control == "Press") {
+            sendMidiCC(9, gamepadState.buttons[7] ? 1.0f : 0.0f, true);
+            app.notifyGamepadControlActivated("Button", 7);
+        }
     };
     
     rightStick.onAxisChange = [this](const juce::String& axis, float value) {
@@ -224,9 +321,18 @@ void ModernGamepadComponent::setupCallbacks()
     };
 
     rightStick.onButtonClick = [this](const juce::String& control) {
-        if (control == "X") sendMidiCC(2, (gamepadState.axes[2] + 1.0f) * 0.5f, false);
-        else if (control == "Y") sendMidiCC(3, (gamepadState.axes[3] + 1.0f) * 0.5f, false);
-        else if (control == "Press") sendMidiCC(10, gamepadState.buttons[8] ? 1.0f : 0.0f, true);
+        if (control == "X") {
+            sendMidiCC(2, (gamepadState.axes[2] + 1.0f) * 0.5f, false);
+            app.notifyGamepadControlActivated("Axis", 2);
+        }
+        else if (control == "Y") {
+            sendMidiCC(3, (gamepadState.axes[3] + 1.0f) * 0.5f, false);
+            app.notifyGamepadControlActivated("Axis", 3);
+        }
+        else if (control == "Press") {
+            sendMidiCC(10, gamepadState.buttons[8] ? 1.0f : 0.0f, true);
+            app.notifyGamepadControlActivated("Button", 8);
+        }
     };
     
     // Touchpad callbacks
@@ -254,10 +360,22 @@ void ModernGamepadComponent::setupCallbacks()
     };
     
     touchPad.onButtonClick = [this](const juce::String& control) {
-        if (control == "X") sendMidiCC(6, cachedState.touchpad.x, false);
-        else if (control == "Y") sendMidiCC(7, cachedState.touchpad.y, false);
-        else if (control == "Pressure") sendMidiCC(8, cachedState.touchpad.pressure, false);
-        else if (control == "Button") sendMidiCC(15, cachedState.touchpad.pressed ? 1.0f : 0.0f, true);
+        if (control == "X") {
+            sendMidiCC(6, cachedState.touchpad.x, false);
+            app.notifyGamepadControlActivated("Axis", 6);
+        }
+        else if (control == "Y") {
+            sendMidiCC(7, cachedState.touchpad.y, false);
+            app.notifyGamepadControlActivated("Axis", 7);
+        }
+        else if (control == "Pressure") {
+            sendMidiCC(8, cachedState.touchpad.pressure, false);
+            app.notifyGamepadControlActivated("Axis", 8);
+        }
+        else if (control == "Button") {
+            sendMidiCC(15, cachedState.touchpad.pressed ? 1.0f : 0.0f, true);
+            app.notifyGamepadControlActivated("Button", 15);
+        }
     };
     
     // Gyroscope callbacks
@@ -270,9 +388,18 @@ void ModernGamepadComponent::setupCallbacks()
 
     gyroscopeDisplay.onButtonClick = [this](const juce::String& axis) {
         if (!midiLearnMode) {
-            if (axis == "X") sendMidiCC(0, (gamepadState.gyroscope.x + 1.0f) * 0.5f, false);
-            else if (axis == "Y") sendMidiCC(1, (gamepadState.gyroscope.y + 1.0f) * 0.5f, false);
-            else if (axis == "Z") sendMidiCC(2, (gamepadState.gyroscope.z + 1.0f) * 0.5f, false);
+            if (axis == "X") {
+                sendMidiCC(0, (gamepadState.gyroscope.x + 1.0f) * 0.5f, false);
+                app.notifyGamepadControlActivated("Gyro", 0);
+            }
+            else if (axis == "Y") {
+                sendMidiCC(1, (gamepadState.gyroscope.y + 1.0f) * 0.5f, false);
+                app.notifyGamepadControlActivated("Gyro", 1);
+            }
+            else if (axis == "Z") {
+                sendMidiCC(2, (gamepadState.gyroscope.z + 1.0f) * 0.5f, false);
+                app.notifyGamepadControlActivated("Gyro", 2);
+            }
         }
     };
 
@@ -285,9 +412,18 @@ void ModernGamepadComponent::setupCallbacks()
 
     accelerometerDisplay.onButtonClick = [this](const juce::String& axis) {
         if (!midiLearnMode) {
-            if (axis == "X") sendMidiCC(3, (gamepadState.accelerometer.x + 1.0f) * 0.5f, false);
-            else if (axis == "Y") sendMidiCC(4, (gamepadState.accelerometer.y + 1.0f) * 0.5f, false);
-            else if (axis == "Z") sendMidiCC(5, (gamepadState.accelerometer.z + 1.0f) * 0.5f, false);
+            if (axis == "X") {
+                sendMidiCC(3, (gamepadState.accelerometer.x + 1.0f) * 0.5f, false);
+                app.notifyGamepadControlActivated("Accel", 0);
+            }
+            else if (axis == "Y") {
+                sendMidiCC(4, (gamepadState.accelerometer.y + 1.0f) * 0.5f, false);
+                app.notifyGamepadControlActivated("Accel", 1);
+            }
+            else if (axis == "Z") {
+                sendMidiCC(5, (gamepadState.accelerometer.z + 1.0f) * 0.5f, false);
+                app.notifyGamepadControlActivated("Accel", 2);
+            }
         }
     };
 }

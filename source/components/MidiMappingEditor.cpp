@@ -18,9 +18,9 @@ MidiMappingEditor::MidiMappingEditor(StandaloneApp& app)
     mappingTable.setColour(juce::ListBox::backgroundColourId, juce::Colours::white);
     mappingTable.setColour(juce::ListBox::outlineColourId, juce::Colours::grey);
     mappingTable.setColour(juce::TableListBox::backgroundColourId, juce::Colours::lightgrey);
-    mappingTable.getHeader().addColumn("Control", ControlNameColumn, 150, 150, 150);
-    mappingTable.getHeader().addColumn("Type", ControlTypeColumn, 100, 100, 100);
-    mappingTable.getHeader().addColumn("MIDI Mappings", MappingColumn, 300, 300, 300);
+    mappingTable.getHeader().addColumn("Control", ControlNameColumn, 150, 150, 150, juce::TableHeaderComponent::notSortable);
+    mappingTable.getHeader().addColumn("Type", ControlTypeColumn, 100, 100, 100, juce::TableHeaderComponent::notSortable);
+    mappingTable.getHeader().addColumn("MIDI Mappings", MappingColumn, 300, 300, 300, juce::TableHeaderComponent::notSortable);
     addAndMakeVisible(mappingTable);
     
     // Set up buttons
@@ -83,7 +83,26 @@ int MidiMappingEditor::getNumRows()
 void MidiMappingEditor::paintRowBackground(juce::Graphics& g, int rowNumber, int width, int height, bool rowIsSelected)
 {
     if (rowIsSelected)
-        g.fillAll(juce::Colours::lightblue);
+    {
+        // Check if this row is currently being flashed
+        bool isFlashing = false;
+        for (size_t i = 0; i < mappingData.size(); ++i)
+        {
+            if (static_cast<int>(i) == rowNumber)
+            {
+                // This is a simple way to create a flashing effect
+                // We'll use the current time to determine if we should flash
+                auto currentTime = juce::Time::getMillisecondCounter();
+                isFlashing = (currentTime / 100) % 2 == 0; // Flash every 100ms
+                break;
+            }
+        }
+        
+        if (isFlashing)
+            g.fillAll(juce::Colours::orange); // Flash color
+        else
+            g.fillAll(juce::Colours::lightblue); // Normal selection color
+    }
     else
         g.fillAll(juce::Colours::white);
 }
@@ -421,6 +440,7 @@ void MidiMappingEditor::removeMapping(int rowIndex)
         data.mappings.pop_back();
         updateAppMappings();
         mappingTable.updateContent();
+        mappingTable.repaint();
     }
 }
 
@@ -453,6 +473,8 @@ juce::String MidiMappingEditor::getControlName(const juce::String& controlType, 
             case 12: return "D-pad Down";
             case 13: return "D-pad Left";
             case 14: return "D-pad Right";
+            case 7: return "Left Stick Button";
+            case 8: return "Right Stick Button";
             default: return "Button " + juce::String(index);
         }
     }
@@ -726,5 +748,20 @@ void MidiMappingEditor::loadMappings()
     else
     {
         juce::Logger::writeToLog("File selection cancelled");
+    }
+}
+
+void MidiMappingEditor::highlightControl(const juce::String& controlType, int controlIndex)
+{
+    // Find the row that matches the control type and index
+    for (size_t i = 0; i < mappingData.size(); ++i)
+    {
+        if (mappingData[i].controlType == controlType && mappingData[i].controlIndex == controlIndex)
+        {
+            // Select the row and make it visible
+            mappingTable.selectRow(static_cast<int>(i));
+            mappingTable.scrollToEnsureRowIsOnscreen(static_cast<int>(i));
+            break;
+        }
     }
 } 

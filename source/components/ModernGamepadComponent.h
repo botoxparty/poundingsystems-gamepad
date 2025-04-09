@@ -12,6 +12,7 @@
 #include "AnalogStick.h"
 #include "TouchPad.h"
 #include "SensorDisplay.h"
+#include "ClassicButton.h"
 
 class StandaloneApp;  // Forward declaration
 
@@ -56,6 +57,11 @@ private:
     // UI Elements
     juce::TextButton learnModeButton;
     juce::Label statusLabel;
+
+    // New buttons for select/home/cancel using ClassicButton
+    ClassicButton selectButton{ClassicButton::Properties::create("Select")};
+    ClassicButton homeButton{ClassicButton::Properties::create("Home")};
+    ClassicButton cancelButton{ClassicButton::Properties::create("Cancel")};
 
     // Helper methods
     void setupComponents();
