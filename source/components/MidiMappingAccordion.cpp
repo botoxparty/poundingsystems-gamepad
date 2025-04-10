@@ -100,6 +100,10 @@ void MidiMappingAccordion::ControlItem::MappingsList::buttonClicked(juce::Button
             currentMappings.erase(currentMappings.begin() + i);
             owner.updateMappings(currentMappings);
             owner.parent.updateAppMappings();
+            
+            // Force a resize of the parent accordion to adjust for the removed item
+            owner.parent.resized();
+            
             break;
         }
     }
@@ -292,7 +296,10 @@ void MidiMappingAccordion::ControlItem::setExpanded(bool shouldBeExpanded)
         if (viewport != nullptr)
             scrollY = viewport->getViewPositionY();
         
+        // Resize this control item
         resized();
+        
+        // Resize the parent accordion to adjust for the new height
         parent.resized();
         
         // Restore the viewport position after resizing
@@ -338,8 +345,28 @@ void MidiMappingAccordion::resized()
     
     for (auto& item : controlItems)
     {
-        // Calculate height based on expanded state
-        int itemHeight = item->isExpanded() ? 200 : 30; // 30px for header, 170px for body when expanded
+        // Calculate height based on expanded state and number of mappings
+        int itemHeight;
+        
+        if (item->isExpanded())
+        {
+            // Base height for header (30px) + button area (30px)
+            itemHeight = 60;
+            
+            // Add height for each mapping (30px per mapping)
+            const auto& mappings = item->getMappings();
+            int mappingsHeight = mappings.empty() ? 30 : static_cast<int>(mappings.size() * 30);
+            
+            // Add some padding at the bottom
+            mappingsHeight += 10;
+            
+            itemHeight += mappingsHeight;
+        }
+        else
+        {
+            // Just the header height when collapsed
+            itemHeight = 30;
+        }
         
         // Make items take the full width of the component
         item->setBounds(0, y, getWidth(), itemHeight);
@@ -607,6 +634,9 @@ void MidiMappingAccordion::addMapping(ControlItem* controlItem)
         
         // Update app mappings
         updateAppMappings();
+        
+        // Force a resize of the accordion to adjust for the new item
+        resized();
         
         if (auto* dialogWindow = content->findParentComponentOfClass<juce::DialogWindow>())
             dialogWindow->closeButtonPressed();
