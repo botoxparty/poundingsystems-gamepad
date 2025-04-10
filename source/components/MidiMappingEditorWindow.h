@@ -24,7 +24,7 @@ public:
         
         setContentOwned(editorComponent.release(), true);
         centreWithSize(300, 600);
-        setResizable(true, true);
+        setResizable(false, false);
     }
     
     void closeButtonPressed() override

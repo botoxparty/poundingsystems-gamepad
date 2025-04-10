@@ -343,6 +343,9 @@ void MidiMappingAccordion::resized()
     area.removeFromBottom(10);
     viewport.setBounds(area);
     
+    // Get the scrollbar width
+    int scrollbarWidth = viewport.getScrollBarThickness();
+    
     // Position control items with no padding between them
     int y = 0;
     int maxWidth = 0;
@@ -352,12 +355,14 @@ void MidiMappingAccordion::resized()
         // Calculate height based on expanded state
         int itemHeight = item->isExpanded() ? 200 : 30; // 30px for header, 170px for body when expanded
         
-        item->setBounds(0, y, viewport.getWidth() - 20, itemHeight);
+        // Make items take the full width of the viewport minus the scrollbar width
+        item->setBounds(0, y, viewport.getWidth() - scrollbarWidth, itemHeight);
         y += itemHeight; // No spacing between items
         maxWidth = juce::jmax(maxWidth, item->getWidth());
     }
     
-    viewportContent.setBounds(0, 0, maxWidth, y);
+    // Make the content take the full width of the viewport minus the scrollbar width
+    viewportContent.setBounds(0, 0, viewport.getWidth() - scrollbarWidth, y);
 }
 
 void MidiMappingAccordion::buttonClicked(juce::Button* button)
