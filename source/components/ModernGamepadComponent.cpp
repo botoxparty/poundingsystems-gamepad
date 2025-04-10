@@ -31,6 +31,11 @@ void ModernGamepadComponent::setupComponents()
     addAndMakeVisible(gyroscopeDisplay);
     addAndMakeVisible(accelerometerDisplay);
     
+    // Add and make visible the control buttons
+    addAndMakeVisible(selectButton);
+    addAndMakeVisible(homeButton);
+    addAndMakeVisible(cancelButton);
+    
     // Setup Learn Mode button
     addAndMakeVisible(learnModeButton);
     learnModeButton.setButtonText("Teach Mode");
@@ -47,11 +52,6 @@ void ModernGamepadComponent::setupComponents()
     statusLabel.setColour(juce::Label::outlineColourId, juce::Colours::darkgrey);
     statusLabel.setFont(juce::Font(14.0f));
     statusLabel.setBorderSize(juce::BorderSize<int>(1, 10, 1, 1)); // Left: 10px, Others: 1px
-    
-    // Setup select/home/cancel buttons
-    addAndMakeVisible(selectButton);
-    addAndMakeVisible(homeButton);
-    addAndMakeVisible(cancelButton);
     
     // Set up button callbacks
     selectButton.onClick = [this]() {
@@ -114,39 +114,59 @@ void ModernGamepadComponent::setupLayout()
     topRow.justifyContent = juce::FlexBox::JustifyContent::spaceBetween;
     topRow.alignItems = juce::FlexBox::AlignItems::center;
     
-    middleRow.flexDirection = juce::FlexBox::Direction::row;
-    middleRow.justifyContent = juce::FlexBox::JustifyContent::spaceBetween;
-    middleRow.alignItems = juce::FlexBox::AlignItems::center;
+    // Declare the three-column layout and column layouts
+    juce::FlexBox threeColumnLayout;
+    juce::FlexBox leftColumn;
+    juce::FlexBox middleColumn;
+    juce::FlexBox rightColumn;
     
-    bottomRow.flexDirection = juce::FlexBox::Direction::row;
-    bottomRow.justifyContent = juce::FlexBox::JustifyContent::spaceBetween;
-    bottomRow.alignItems = juce::FlexBox::AlignItems::center;
+    // Configure three-column layout
+    threeColumnLayout.flexDirection = juce::FlexBox::Direction::row;
+    threeColumnLayout.justifyContent = juce::FlexBox::JustifyContent::spaceBetween;
+    threeColumnLayout.alignItems = juce::FlexBox::AlignItems::stretch;
+    
+    // Configure column layouts
+    leftColumn.flexDirection = juce::FlexBox::Direction::column;
+    leftColumn.justifyContent = juce::FlexBox::JustifyContent::spaceBetween;
+    leftColumn.alignItems = juce::FlexBox::AlignItems::center;
+    
+    middleColumn.flexDirection = juce::FlexBox::Direction::column;
+    middleColumn.justifyContent = juce::FlexBox::JustifyContent::spaceBetween;
+    middleColumn.alignItems = juce::FlexBox::AlignItems::center;
+    
+    rightColumn.flexDirection = juce::FlexBox::Direction::column;
+    rightColumn.justifyContent = juce::FlexBox::JustifyContent::spaceBetween;
+    rightColumn.alignItems = juce::FlexBox::AlignItems::center;
     
     // Clear any existing items
     topRow.items.clear();
-    middleRow.items.clear();
-    bottomRow.items.clear();
+    threeColumnLayout.items.clear();
+    leftColumn.items.clear();
+    middleColumn.items.clear();
+    rightColumn.items.clear();
     mainLayout.items.clear();
     
     // Calculate component sizes
     float remainingHeight = bounds.getHeight() - 20; // -20 for padding
-    float shoulderSectionHeight = 40; // Fixed height instead of relative
-    float mainRowHeight = (remainingHeight - shoulderSectionHeight) / 2.0f; // Split remaining space between middle and bottom
-    float shoulderSectionWidth = bounds.getWidth() - 20; // -20 for padding
-    float dpadWidth = 200;
-    float touchpadWidth = 300;
-    float faceButtonsWidth = 200;
-    float stickWidth = 150;
-    float gyroscopeWidth = 150;
+    float shoulderSectionHeight = 40; // Fixed height for shoulder section
+    float mainContentHeight = remainingHeight - shoulderSectionHeight;
+    float shoulderSectionWidth = bounds.getWidth();
+    
+    // Calculate column widths using fractional approach
+    float totalWidth = bounds.getWidth();
+    float leftColumnWidth = totalWidth * 0.25f; // 25% of total width
+    float middleColumnWidth = totalWidth * 0.5f; // 50% of total width
+    float rightColumnWidth = totalWidth * 0.25f; // 25% of total width
+    
+    // Calculate component widths with margins
+    float dpadWidth = leftColumnWidth - 20; // Leave some margin
+    float touchpadWidth = middleColumnWidth - 20;
+    float faceButtonsWidth = rightColumnWidth - 20;
+    float stickWidth = leftColumnWidth - 20;
     float controlButtonWidth = 80; // Width for select/home/cancel buttons
     
     // Add items to top row (shoulder buttons and triggers)
     topRow.items.add(juce::FlexItem(shoulderSection).withWidth(shoulderSectionWidth).withHeight(shoulderSectionHeight).withMargin(2.0f));
-    
-    // Add items to middle row (d-pad, touchpad, face buttons)
-    middleRow.items.add(juce::FlexItem(dPad).withWidth(dpadWidth).withHeight(mainRowHeight).withMargin(10.0f));
-    middleRow.items.add(juce::FlexItem(touchPad).withWidth(touchpadWidth).withHeight(mainRowHeight).withMargin(10.0f));
-    middleRow.items.add(juce::FlexItem(faceButtons).withWidth(faceButtonsWidth).withHeight(mainRowHeight).withMargin(10.0f));
     
     // Create a container for the control buttons (select/home/cancel)
     juce::FlexBox controlButtonsContainer;
@@ -154,13 +174,23 @@ void ModernGamepadComponent::setupLayout()
     controlButtonsContainer.justifyContent = juce::FlexBox::JustifyContent::center;
     controlButtonsContainer.alignItems = juce::FlexBox::AlignItems::center;
     
-    // Add the control buttons to the container with minimal spacing
-    controlButtonsContainer.items.add(juce::FlexItem(selectButton).withWidth(controlButtonWidth).withHeight(20).withMargin(1.0f));
-    controlButtonsContainer.items.add(juce::FlexItem(homeButton).withWidth(controlButtonWidth).withHeight(20).withMargin(1.0f));
-    controlButtonsContainer.items.add(juce::FlexItem(cancelButton).withWidth(controlButtonWidth).withHeight(20).withMargin(1.0f));
+    // Set button properties to make them more visible
+    selectButton.setProperties(ClassicButton::Properties::create("Select"));
+    selectButton.setColour(juce::TextButton::buttonColourId, juce::Colours::lightgrey);
+    selectButton.setColour(juce::TextButton::textColourOffId, juce::Colours::black);
     
-    // Add items to bottom row (left stick, sensors, right stick)
-    bottomRow.items.add(juce::FlexItem(leftStick).withWidth(stickWidth).withHeight(mainRowHeight).withMargin(5.0f));
+    homeButton.setProperties(ClassicButton::Properties::create("Home"));
+    homeButton.setColour(juce::TextButton::buttonColourId, juce::Colours::lightgrey);
+    homeButton.setColour(juce::TextButton::textColourOffId, juce::Colours::black);
+    
+    cancelButton.setProperties(ClassicButton::Properties::create("Cancel"));
+    cancelButton.setColour(juce::TextButton::buttonColourId, juce::Colours::lightgrey);
+    cancelButton.setColour(juce::TextButton::textColourOffId, juce::Colours::black);
+    
+    // Add the control buttons to the container with minimal spacing
+    controlButtonsContainer.items.add(juce::FlexItem(selectButton).withWidth(controlButtonWidth).withHeight(20).withMargin(5.0f));
+    controlButtonsContainer.items.add(juce::FlexItem(homeButton).withWidth(controlButtonWidth).withHeight(20).withMargin(5.0f));
+    controlButtonsContainer.items.add(juce::FlexItem(cancelButton).withWidth(controlButtonWidth).withHeight(20).withMargin(5.0f));
     
     // Create a container for the sensors
     juce::FlexBox sensorContainer;
@@ -169,21 +199,33 @@ void ModernGamepadComponent::setupLayout()
     sensorContainer.alignItems = juce::FlexBox::AlignItems::stretch;
     
     // Add both sensors to the container with equal width
-    sensorContainer.items.add(juce::FlexItem(gyroscopeDisplay).withFlex(1.0f).withMargin(2.0f));
-    sensorContainer.items.add(juce::FlexItem(accelerometerDisplay).withFlex(1.0f).withMargin(2.0f));
+    sensorContainer.items.add(juce::FlexItem(gyroscopeDisplay).withWidth(touchpadWidth/2).withFlex(1.0f).withMargin(2.0f));
+    sensorContainer.items.add(juce::FlexItem(accelerometerDisplay).withWidth(touchpadWidth/2).withFlex(1.0f).withMargin(2.0f));
     
-    // Add the sensor container to the bottom row
-    bottomRow.items.add(juce::FlexItem(sensorContainer).withWidth(gyroscopeWidth * 2).withHeight(mainRowHeight).withMargin(5.0f));
-    bottomRow.items.add(juce::FlexItem(rightStick).withWidth(stickWidth).withHeight(mainRowHeight).withMargin(5.0f));
+    // Add items to left column (d-pad and left stick)
+    leftColumn.items.add(juce::FlexItem(dPad).withWidth(dpadWidth).withFlex(1.0f).withMargin(5.0f));
+    leftColumn.items.add(juce::FlexItem(leftStick).withWidth(stickWidth).withFlex(1.0f).withMargin(5.0f));
     
-    // Add rows to main layout - top row doesn't use flex, others split remaining space
-    mainLayout.items.add(juce::FlexItem(topRow).withHeight(shoulderSectionHeight).withMargin(5.0f));  // Fixed height, no flex
-    mainLayout.items.add(juce::FlexItem(middleRow).withFlex(1.0f).withMargin(10.0f));
+    // Add items to middle column (touchpad, control buttons, sensors)
+    middleColumn.items.add(juce::FlexItem(touchPad).withWidth(touchpadWidth).withFlex(1.0f).withMargin(5.0f));
     
-    // Add the control buttons container between the middle and bottom rows
-    mainLayout.items.add(juce::FlexItem(controlButtonsContainer).withHeight(40).withMargin(5.0f));
+    // Add the control buttons container to the middle column with explicit size
+    middleColumn.items.add(juce::FlexItem(controlButtonsContainer).withWidth(touchpadWidth).withHeight(20).withMargin(5.0f));
     
-    mainLayout.items.add(juce::FlexItem(bottomRow).withFlex(1.0f).withMargin(5.0f));
+    middleColumn.items.add(juce::FlexItem(sensorContainer).withWidth(touchpadWidth).withFlex(1.0f).withMargin(5.0f));
+    
+    // Add items to right column (face buttons and right stick)
+    rightColumn.items.add(juce::FlexItem(faceButtons).withWidth(faceButtonsWidth).withFlex(1.0f).withMargin(5.0f));
+    rightColumn.items.add(juce::FlexItem(rightStick).withWidth(stickWidth).withFlex(1.0f).withMargin(5.0f));
+    
+    // Add columns to the three-column layout with specific flex values
+    threeColumnLayout.items.add(juce::FlexItem(leftColumn).withFlex(0.25f).withMargin(5.0f));
+    threeColumnLayout.items.add(juce::FlexItem(middleColumn).withFlex(0.5f).withMargin(5.0f));
+    threeColumnLayout.items.add(juce::FlexItem(rightColumn).withFlex(0.25f).withMargin(5.0f));
+    
+    // Add rows to main layout
+    mainLayout.items.add(juce::FlexItem(topRow).withHeight(shoulderSectionHeight));  // Fixed height, no flex
+    mainLayout.items.add(juce::FlexItem(threeColumnLayout).withFlex(1.0f).withMargin(5.0f));
     
     // Perform layout
     mainLayout.performLayout(bounds.toFloat());
@@ -195,22 +237,67 @@ void ModernGamepadComponent::setupLayout()
             comp->setBounds(item.currentBounds.toNearestInt());
     }
     
-    for (const auto& item : middleRow.items)
+    // Set bounds for the three-column layout components
+    for (const auto& item : threeColumnLayout.items)
     {
-        if (auto* comp = dynamic_cast<juce::Component*>(item.associatedComponent))
-            comp->setBounds(item.currentBounds.toNearestInt());
-    }
-    
-    for (const auto& item : controlButtonsContainer.items)
-    {
-        if (auto* comp = dynamic_cast<juce::Component*>(item.associatedComponent))
-            comp->setBounds(item.currentBounds.toNearestInt());
-    }
-    
-    for (const auto& item : bottomRow.items)
-    {
-        if (auto* comp = dynamic_cast<juce::Component*>(item.associatedComponent))
-            comp->setBounds(item.currentBounds.toNearestInt());
+        if (item.associatedComponent != nullptr)
+        {
+            juce::FlexBox* flexBox = dynamic_cast<juce::FlexBox*>(item.associatedComponent);
+            if (flexBox != nullptr)
+            {
+                // Set bounds for the column itself
+                flexBox->performLayout(item.currentBounds.toFloat());
+                
+                // Set bounds for items in the column
+                for (const auto& columnItem : flexBox->items)
+                {
+                    if (columnItem.associatedComponent != nullptr)
+                    {
+                        juce::FlexBox* column = dynamic_cast<juce::FlexBox*>(columnItem.associatedComponent);
+                        if (column != nullptr)
+                        {
+                            // Set bounds for the column
+                            column->performLayout(columnItem.currentBounds.toFloat());
+                            
+                            // Set bounds for items in the column
+                            for (const auto& compItem : column->items)
+                            {
+                                if (compItem.associatedComponent != nullptr)
+                                {
+                                    juce::Component* comp = dynamic_cast<juce::Component*>(compItem.associatedComponent);
+                                    if (comp != nullptr)
+                                    {
+                                        comp->setBounds(compItem.currentBounds.toNearestInt());
+                                    }
+                                    else
+                                    {
+                                        // Handle nested FlexBox (like controlButtonsContainer or sensorContainer)
+                                        juce::FlexBox* nestedFlexBox = dynamic_cast<juce::FlexBox*>(compItem.associatedComponent);
+                                        if (nestedFlexBox != nullptr)
+                                        {
+                                            nestedFlexBox->performLayout(compItem.currentBounds.toFloat());
+                                            
+                                            // Set bounds for items in the nested FlexBox
+                                            for (const auto& nestedItem : nestedFlexBox->items)
+                                            {
+                                                if (nestedItem.associatedComponent != nullptr)
+                                                {
+                                                    juce::Component* nestedComp = dynamic_cast<juce::Component*>(nestedItem.associatedComponent);
+                                                    if (nestedComp != nullptr)
+                                                    {
+                                                        nestedComp->setBounds(nestedItem.currentBounds.toNearestInt());
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
