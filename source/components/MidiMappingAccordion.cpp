@@ -3,9 +3,28 @@
 #include <juce_core/juce_core.h>
 
 // Implementation of ControlItem::MappingsList
-MidiMappingAccordion::ControlItem::MappingsList::MappingsList(const std::vector<StandaloneApp::MidiMapping>& mappings)
-    : mappings(mappings)
+MidiMappingAccordion::ControlItem::MappingsList::MappingsList(const std::vector<StandaloneApp::MidiMapping>& mappings, ControlItem& owner)
+    : mappings(mappings), owner(owner)
 {
+    // Create remove buttons for each mapping
+    updateRemoveButtons();
+}
+
+void MidiMappingAccordion::ControlItem::MappingsList::updateRemoveButtons()
+{
+    // Clear existing buttons
+    removeButtons.clear();
+    
+    // Create a new button for each mapping
+    for (size_t i = 0; i < mappings.size(); ++i)
+    {
+        auto button = std::make_unique<juce::TextButton>("X");
+        button->setColour(juce::TextButton::buttonColourId, juce::Colours::red);
+        // button->setColour(juce::TextButton::textColourId, juce::Colours::white);
+        button->addListener(this);
+        addAndMakeVisible(button.get());
+        removeButtons.push_back(std::move(button));
+    }
 }
 
 void MidiMappingAccordion::ControlItem::MappingsList::paint(juce::Graphics& g)
@@ -46,20 +65,44 @@ void MidiMappingAccordion::ControlItem::MappingsList::paint(juce::Graphics& g)
         g.fillRect(juce::Rectangle<float>(5.0f, y, getWidth() - 10, 22));
         
         g.setColour(juce::Colours::black);
-        g.drawText(mappingText, 10, y, getWidth() - 20, 22, juce::Justification::centredLeft, true);
+        g.drawText(mappingText, 10, y, getWidth() - 35, 22, juce::Justification::centredLeft, true);
         y += 30;
     }
 }
 
 void MidiMappingAccordion::ControlItem::MappingsList::resized()
 {
-    // Nothing to do here
+    // Position the remove buttons
+    int y = 5;
+    for (size_t i = 0; i < removeButtons.size(); ++i)
+    {
+        removeButtons[i]->setBounds(getWidth() - 25, y, 20, 22);
+        y += 30;
+    }
 }
 
 void MidiMappingAccordion::ControlItem::MappingsList::updateMappings(const std::vector<StandaloneApp::MidiMapping>& newMappings)
 {
     mappings = newMappings;
+    updateRemoveButtons();
     repaint();
+}
+
+void MidiMappingAccordion::ControlItem::MappingsList::buttonClicked(juce::Button* button)
+{
+    // Find which button was clicked
+    for (size_t i = 0; i < removeButtons.size(); ++i)
+    {
+        if (button == removeButtons[i].get())
+        {
+            // Remove this specific mapping
+            auto currentMappings = mappings;
+            currentMappings.erase(currentMappings.begin() + i);
+            owner.updateMappings(currentMappings);
+            owner.parent.updateAppMappings();
+            break;
+        }
+    }
 }
 
 // Implementation of HeaderComponent
@@ -143,14 +186,8 @@ MidiMappingAccordion::ControlItem::ControlItem(const juce::String& name,
     // addMappingButton.setColour(juce::TextButton::textColourId, juce::Colours::black);
     addAndMakeVisible(addMappingButton);
     
-    removeMappingButton.setButtonText("Remove Mapping");
-    removeMappingButton.addListener(this);
-    removeMappingButton.setColour(juce::TextButton::buttonColourId, juce::Colours::lightcoral);
-    // removeMappingButton.setColour(juce::TextButton::textColourId, juce::Colours::black);
-    addAndMakeVisible(removeMappingButton);
-    
     // Set up mappings list
-    mappingsList = std::make_unique<MappingsList>(mappings);
+    mappingsList = std::make_unique<MappingsList>(mappings, *this);
     addAndMakeVisible(mappingsList.get());
 }
 
@@ -200,7 +237,6 @@ void MidiMappingAccordion::ControlItem::resized()
         auto buttonArea = bounds.removeFromBottom(30).reduced(5);
         addMappingButton.setBounds(buttonArea.removeFromLeft(100));
         buttonArea.removeFromLeft(10);
-        removeMappingButton.setBounds(buttonArea.removeFromLeft(100));
         
         // Position mappings list in the body area
         mappingsList->setBounds(bounds.reduced(5));
@@ -222,10 +258,6 @@ void MidiMappingAccordion::ControlItem::buttonClicked(juce::Button* button)
     else if (button == &addMappingButton)
     {
         parent.addMapping(this);
-    }
-    else if (button == &removeMappingButton)
-    {
-        parent.removeMapping(this);
     }
 }
 
@@ -249,7 +281,6 @@ void MidiMappingAccordion::ControlItem::setExpanded(bool shouldBeExpanded)
             mappingsList->setVisible(expanded);
         
         addMappingButton.setVisible(expanded);
-        removeMappingButton.setVisible(expanded);
         
         // Repaint the header component to update the UI
         if (headerComponent != nullptr)
@@ -599,75 +630,6 @@ void MidiMappingAccordion::addMapping(ControlItem* controlItem)
     window->centreWithSize(300, 250);
 }
 
-void MidiMappingAccordion::removeMapping(ControlItem* controlItem)
-{
-    auto currentMappings = controlItem->getMappings();
-    if (!currentMappings.empty())
-    {
-        currentMappings.pop_back();
-        controlItem->updateMappings(currentMappings);
-        updateAppMappings();
-    }
-}
-
-juce::String MidiMappingAccordion::getControlName(const juce::String& controlType, int index) const
-{
-    if (controlType == "Axis")
-    {
-        switch (index)
-        {
-            case 0: return "Left Stick X";
-            case 1: return "Left Stick Y";
-            case 2: return "Right Stick X";
-            case 3: return "Right Stick Y";
-            case 4: return "L2 Trigger";
-            case 5: return "R2 Trigger";
-            default: return "Axis " + juce::String(index);
-        }
-    }
-    else if (controlType == "Button")
-    {
-        switch (index)
-        {
-            case 0: return "A Button";
-            case 1: return "B Button";
-            case 2: return "X Button";
-            case 3: return "Y Button";
-            case 9: return "L1 Button";
-            case 10: return "R1 Button";
-            case 11: return "D-pad Up";
-            case 12: return "D-pad Down";
-            case 13: return "D-pad Left";
-            case 14: return "D-pad Right";
-            case 7: return "Left Stick Button";
-            case 8: return "Right Stick Button";
-            default: return "Button " + juce::String(index);
-        }
-    }
-    else if (controlType == "Gyro")
-    {
-        switch (index)
-        {
-            case 0: return "Gyroscope X";
-            case 1: return "Gyroscope Y";
-            case 2: return "Gyroscope Z";
-            default: return "Gyro " + juce::String(index);
-        }
-    }
-    else if (controlType == "Accel")
-    {
-        switch (index)
-        {
-            case 0: return "Accelerometer X";
-            case 1: return "Accelerometer Y";
-            case 2: return "Accelerometer Z";
-            default: return "Accel " + juce::String(index);
-        }
-    }
-    
-    return controlType + " " + juce::String(index);
-}
-
 void MidiMappingAccordion::updateAppMappings()
 {
     // Clear existing mappings first
@@ -888,4 +850,62 @@ juce::String MidiMappingAccordion::getMidiNoteName(int midiNoteNumber)
     int noteIndex = midiNoteNumber % 12;
     
     return juce::String(noteNames[noteIndex]) + juce::String(octave);
+}
+
+juce::String MidiMappingAccordion::getControlName(const juce::String& controlType, int index) const
+{
+    if (controlType == "Axis")
+    {
+        switch (index)
+        {
+            case 0: return "Left Stick X";
+            case 1: return "Left Stick Y";
+            case 2: return "Right Stick X";
+            case 3: return "Right Stick Y";
+            case 4: return "L2 Trigger";
+            case 5: return "R2 Trigger";
+            default: return "Axis " + juce::String(index);
+        }
+    }
+    else if (controlType == "Button")
+    {
+        switch (index)
+        {
+            case 0: return "A Button";
+            case 1: return "B Button";
+            case 2: return "X Button";
+            case 3: return "Y Button";
+            case 9: return "L1 Button";
+            case 10: return "R1 Button";
+            case 11: return "D-pad Up";
+            case 12: return "D-pad Down";
+            case 13: return "D-pad Left";
+            case 14: return "D-pad Right";
+            case 7: return "Left Stick Button";
+            case 8: return "Right Stick Button";
+            default: return "Button " + juce::String(index);
+        }
+    }
+    else if (controlType == "Gyro")
+    {
+        switch (index)
+        {
+            case 0: return "Gyroscope X";
+            case 1: return "Gyroscope Y";
+            case 2: return "Gyroscope Z";
+            default: return "Gyro " + juce::String(index);
+        }
+    }
+    else if (controlType == "Accel")
+    {
+        switch (index)
+        {
+            case 0: return "Accelerometer X";
+            case 1: return "Accelerometer Y";
+            case 2: return "Accelerometer Z";
+            default: return "Accel " + juce::String(index);
+        }
+    }
+    
+    return controlType + " " + juce::String(index);
 } 

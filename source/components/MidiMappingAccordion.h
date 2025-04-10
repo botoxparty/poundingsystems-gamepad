@@ -33,16 +33,21 @@ private:
                         public juce::Button::Listener
     {
     public:
-        class MappingsList : public juce::Component
+        class MappingsList : public juce::Component,
+                            public juce::Button::Listener
         {
         public:
-            MappingsList(const std::vector<StandaloneApp::MidiMapping>& mappings);
+            MappingsList(const std::vector<StandaloneApp::MidiMapping>& mappings, ControlItem& owner);
             void paint(juce::Graphics& g) override;
             void resized() override;
             void updateMappings(const std::vector<StandaloneApp::MidiMapping>& newMappings);
+            void buttonClicked(juce::Button* button) override;
             
         private:
+            void updateRemoveButtons();
             std::vector<StandaloneApp::MidiMapping> mappings;
+            std::vector<std::unique_ptr<juce::TextButton>> removeButtons;
+            ControlItem& owner;
         };
         
         // Add a custom header component class
@@ -77,6 +82,9 @@ private:
         const std::vector<StandaloneApp::MidiMapping>& getMappings() const { return mappings; }
         const juce::String& getName() const { return controlName; }
         
+        // Friend declaration to allow MappingsList to access parent
+        friend class MappingsList;
+        
     private:
         juce::String controlName;
         juce::String controlType;
@@ -87,7 +95,6 @@ private:
         std::unique_ptr<HeaderComponent> headerComponent;
         juce::TextButton expandButton;
         juce::TextButton addMappingButton;
-        juce::TextButton removeMappingButton;
         std::unique_ptr<MappingsList> mappingsList;
         
         bool expanded = false;
@@ -96,7 +103,6 @@ private:
     
     void updateMappingData();
     void addMapping(ControlItem* controlItem);
-    void removeMapping(ControlItem* controlItem);
     void updateAppMappings();
     juce::String getControlName(const juce::String& controlType, int index) const;
     juce::String getMidiNoteName(int midiNoteNumber);
