@@ -1,7 +1,7 @@
 #pragma once
 
 #include <juce_gui_basics/juce_gui_basics.h>
-#include "MidiMappingAccordion.h"
+#include "MidiMappingEditor.h"
 #include "ModernLookAndFeel.h"
 #include "../StandaloneApp.h"
 
@@ -17,7 +17,7 @@ public:
                       true)
     {
         setUsingNativeTitleBar(true);
-        auto editorComponent = std::make_unique<MidiMappingAccordion>(app);
+        auto editorComponent = std::make_unique<MidiMappingEditor>(app);
         
         // Apply the custom look and feel to the editor component
         editorComponent->setLookAndFeel(&modernLookAndFeel);

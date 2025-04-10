@@ -293,19 +293,6 @@ MidiMappingAccordion::MidiMappingAccordion(StandaloneApp& app)
     viewport.setScrollBarThickness(12);
     addAndMakeVisible(viewport);
     
-    // Set up buttons with improved styling
-    saveButton.setButtonText("Save");
-    saveButton.addListener(this);
-    saveButton.setColour(juce::TextButton::buttonColourId, juce::Colours::lightblue);
-    // saveButton.setColour(juce::TextButton::textColourId, juce::Colours::black);
-    addAndMakeVisible(saveButton);
-    
-    loadButton.setButtonText("Load");
-    loadButton.addListener(this);
-    loadButton.setColour(juce::TextButton::buttonColourId, juce::Colours::lightgreen);
-    // loadButton.setColour(juce::TextButton::textColourId, juce::Colours::black);
-    addAndMakeVisible(loadButton);
-    
     // Initialize mapping data
     updateMappingData();
 }
@@ -331,16 +318,7 @@ void MidiMappingAccordion::resized()
 {
     auto area = getLocalBounds();
     
-    // Position buttons at the bottom
-    auto buttonArea = area.removeFromBottom(40);
-    buttonArea.reduce(10, 10);
-    
-    saveButton.setBounds(buttonArea.removeFromLeft(100));
-    buttonArea.removeFromLeft(10);
-    loadButton.setBounds(buttonArea.removeFromLeft(100));
-    
     // Position viewport
-    area.removeFromBottom(10);
     viewport.setBounds(area);
     
     // Get the scrollbar width
@@ -367,14 +345,7 @@ void MidiMappingAccordion::resized()
 
 void MidiMappingAccordion::buttonClicked(juce::Button* button)
 {
-    if (button == &saveButton)
-    {
-        saveMappings();
-    }
-    else if (button == &loadButton)
-    {
-        loadMappings();
-    }
+    // Button click handling for other buttons remains
 }
 
 void MidiMappingAccordion::updateMappingData()

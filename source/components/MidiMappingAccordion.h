@@ -104,8 +104,6 @@ private:
     StandaloneApp& app;
     juce::Viewport viewport;
     juce::Component viewportContent;
-    juce::TextButton saveButton;
-    juce::TextButton loadButton;
     
     std::vector<std::unique_ptr<ControlItem>> controlItems;
     
