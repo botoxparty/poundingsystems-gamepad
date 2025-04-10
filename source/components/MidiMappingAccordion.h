@@ -102,9 +102,6 @@ private:
     juce::String getMidiNoteName(int midiNoteNumber);
     
     StandaloneApp& app;
-    juce::Viewport viewport;
-    juce::Component viewportContent;
-    
     std::vector<std::unique_ptr<ControlItem>> controlItems;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiMappingAccordion)

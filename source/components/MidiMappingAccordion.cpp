@@ -283,24 +283,11 @@ void MidiMappingAccordion::ControlItem::setHighlighted(bool shouldBeHighlighted)
 MidiMappingAccordion::MidiMappingAccordion(StandaloneApp& app)
     : app(app)
 {
-    // Set a fixed width for the component
-    setSize(400, 500);
-    
-    // Set up viewport
-    viewport.setViewedComponent(&viewportContent);
-    viewport.setScrollBarsShown(true, true);
-    viewport.setScrollOnDragEnabled(true);
-    viewport.setScrollBarThickness(12);
-    addAndMakeVisible(viewport);
-    
     // Initialize mapping data
     updateMappingData();
 }
 
-MidiMappingAccordion::~MidiMappingAccordion()
-{
-    viewport.setViewedComponent(nullptr);
-}
+MidiMappingAccordion::~MidiMappingAccordion() = default;
 
 void MidiMappingAccordion::paint(juce::Graphics& g)
 {
@@ -309,38 +296,27 @@ void MidiMappingAccordion::paint(juce::Graphics& g)
     // Draw a subtle border around the entire component
     g.setColour(juce::Colours::grey.withAlpha(0.5f));
     g.drawRect(getLocalBounds().toFloat(), 1.0f);
-    
-    // Set a fixed width for the component
-    setSize(400, getHeight());
 }
 
 void MidiMappingAccordion::resized()
 {
     auto area = getLocalBounds();
     
-    // Position viewport
-    viewport.setBounds(area);
-    
-    // Get the scrollbar width
-    int scrollbarWidth = viewport.getScrollBarThickness();
-    
     // Position control items with no padding between them
     int y = 0;
-    int maxWidth = 0;
     
     for (auto& item : controlItems)
     {
         // Calculate height based on expanded state
         int itemHeight = item->isExpanded() ? 200 : 30; // 30px for header, 170px for body when expanded
         
-        // Make items take the full width of the viewport minus the scrollbar width
-        item->setBounds(0, y, viewport.getWidth() - scrollbarWidth, itemHeight);
+        // Make items take the full width of the component
+        item->setBounds(0, y, getWidth(), itemHeight);
         y += itemHeight; // No spacing between items
-        maxWidth = juce::jmax(maxWidth, item->getWidth());
     }
     
-    // Make the content take the full width of the viewport minus the scrollbar width
-    viewportContent.setBounds(0, 0, viewport.getWidth() - scrollbarWidth, y);
+    // Set the component height based on the total height of all items
+    setSize(getWidth(), y);
 }
 
 void MidiMappingAccordion::buttonClicked(juce::Button* button)
@@ -384,10 +360,10 @@ void MidiMappingAccordion::updateMappingData()
         controlItems.push_back(std::move(item));
     }
     
-    // Add all items to the viewport content
+    // Add all items to the component
     for (auto& item : controlItems)
     {
-        viewportContent.addAndMakeVisible(item.get());
+        addAndMakeVisible(item.get());
     }
     
     resized();
@@ -886,8 +862,11 @@ void MidiMappingAccordion::highlightControl(const juce::String& controlType, int
             item->setHighlighted(true);
             item->setExpanded(true);
             
-            // Scroll to make the item visible
-            viewport.setViewPosition(0, item->getY());
+            // Find the parent viewport to scroll to the item
+            if (auto* viewport = findParentComponentOfClass<juce::Viewport>())
+            {
+                viewport->setViewPosition(0, item->getY());
+            }
             
             // Start a timer to remove the highlight after a short time
             juce::Timer::callAfterDelay(1000, [this, item = item.get()]() {

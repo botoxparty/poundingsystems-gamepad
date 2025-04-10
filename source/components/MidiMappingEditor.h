@@ -8,7 +8,8 @@
 /**
  * A component that displays and allows editing of MIDI mappings
  */
-class MidiMappingEditor : public juce::Component
+class MidiMappingEditor : public juce::Component,
+                         public juce::Button::Listener
 {
 public:
     MidiMappingEditor(StandaloneApp& app);
@@ -16,6 +17,9 @@ public:
     
     void paint(juce::Graphics& g) override;
     void resized() override;
+    
+    // Button::Listener implementation
+    void buttonClicked(juce::Button* button) override;
     
     // Save and load mappings
     void saveMappings();
@@ -26,7 +30,12 @@ public:
     
 private:
     StandaloneApp& app;
+    std::unique_ptr<juce::Viewport> viewport;
     std::unique_ptr<MidiMappingAccordion> accordion;
+    
+    // Buttons
+    juce::TextButton saveButton;
+    juce::TextButton loadButton;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiMappingEditor)
 }; 

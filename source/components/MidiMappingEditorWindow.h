@@ -23,7 +23,7 @@ public:
         editorComponent->setLookAndFeel(&modernLookAndFeel);
         
         setContentOwned(editorComponent.release(), true);
-        centreWithSize(300, 600);
+        centreWithSize(300, 400);
         setResizable(false, false);
     }
     
