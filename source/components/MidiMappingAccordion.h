@@ -51,6 +51,7 @@ private:
         public:
             HeaderComponent(ControlItem& owner);
             void paint(juce::Graphics& g) override;
+            void mouseDown(const juce::MouseEvent&) override;
             
         private:
             ControlItem& owner;
@@ -98,6 +99,7 @@ private:
     void removeMapping(ControlItem* controlItem);
     void updateAppMappings();
     juce::String getControlName(const juce::String& controlType, int index) const;
+    juce::String getMidiNoteName(int midiNoteNumber);
     
     StandaloneApp& app;
     juce::Viewport viewport;

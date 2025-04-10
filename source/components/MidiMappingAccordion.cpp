@@ -41,8 +41,13 @@ void MidiMappingAccordion::ControlItem::MappingsList::paint(juce::Graphics& g)
                          " [" + juce::String(mapping.minValue) + "-" + juce::String(mapping.maxValue) + "]";
         }
         
-        g.drawText(mappingText, 10, y, getWidth() - 20, 20, juce::Justification::centredLeft, true);
-        y += 25;
+        // Draw a subtle background for each mapping item
+        g.setColour(juce::Colours::lightgrey.withAlpha(0.3f));
+        g.fillRect(juce::Rectangle<float>(5.0f, y, getWidth() - 10, 22));
+        
+        g.setColour(juce::Colours::black);
+        g.drawText(mappingText, 10, y, getWidth() - 20, 22, juce::Justification::centredLeft, true);
+        y += 30;
     }
 }
 
@@ -61,19 +66,32 @@ void MidiMappingAccordion::ControlItem::MappingsList::updateMappings(const std::
 MidiMappingAccordion::ControlItem::HeaderComponent::HeaderComponent(ControlItem& owner)
     : owner(owner)
 {
+    // Make the header component mouse clickable
+    setMouseClickGrabsKeyboardFocus(true);
 }
 
 void MidiMappingAccordion::ControlItem::HeaderComponent::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds();
     
-    // Draw header background
-    g.fillAll(juce::Colours::lightgrey);
+    // Draw header background with a subtle gradient
+    juce::ColourGradient gradient(
+        juce::Colours::lightgrey,
+        0.0f, 0.0f,
+        juce::Colours::lightgrey.brighter(0.1f),
+        0.0f, (float)bounds.getHeight(),
+        false);
+    g.setGradientFill(gradient);
+    g.fillRect(bounds.toFloat());
+    
+    // Draw a subtle border
+    g.setColour(juce::Colours::grey.withAlpha(0.5f));
+    g.drawRect(bounds.toFloat(), 1.0f);
     
     // Draw control name
     g.setColour(juce::Colours::black);
     g.setFont(16.0f);
-    g.drawText(owner.controlName, bounds.reduced(5).withTrimmedRight(30), juce::Justification::centredLeft, true);
+    g.drawText(owner.controlName, bounds.reduced(10).withTrimmedRight(30), juce::Justification::centredLeft, true);
     
     // Draw summary of mappings if not expanded
     if (!owner.expanded && !owner.mappings.empty())
@@ -84,8 +102,14 @@ void MidiMappingAccordion::ControlItem::HeaderComponent::paint(juce::Graphics& g
         juce::String summaryText = juce::String(owner.mappings.size()) + " mapping" + 
                                   (owner.mappings.size() > 1 ? "s" : "");
         
-        g.drawText(summaryText, bounds.reduced(5).withTrimmedRight(30), juce::Justification::centredRight, true);
+        g.drawText(summaryText, bounds.reduced(10).withTrimmedRight(30), juce::Justification::centredRight, true);
     }
+}
+
+void MidiMappingAccordion::ControlItem::HeaderComponent::mouseDown(const juce::MouseEvent&)
+{
+    // Toggle expanded state when header is clicked
+    owner.setExpanded(!owner.expanded);
 }
 
 // Implementation of ControlItem
@@ -102,21 +126,27 @@ MidiMappingAccordion::ControlItem::ControlItem(const juce::String& name,
 {
     // Create header component
     headerComponent = std::make_unique<HeaderComponent>(*this);
-    headerComponent->setSize(100, 40);
+    headerComponent->setSize(100, 30);
     addAndMakeVisible(headerComponent.get());
     
-    // Set up expand button in header
+    // Set up expand button in header with improved styling
     expandButton.setButtonText("+");
     expandButton.addListener(this);
+    expandButton.setColour(juce::TextButton::buttonColourId, juce::Colours::transparentBlack);
+    // expandButton.setColour(juce::TextButton::textColourId, juce::Colours::black);
     headerComponent->addAndMakeVisible(expandButton);
     
-    // Set up add/remove buttons
+    // Set up add/remove buttons with improved styling
     addMappingButton.setButtonText("Add Mapping");
     addMappingButton.addListener(this);
+    addMappingButton.setColour(juce::TextButton::buttonColourId, juce::Colours::lightblue);
+    // addMappingButton.setColour(juce::TextButton::textColourId, juce::Colours::black);
     addAndMakeVisible(addMappingButton);
     
     removeMappingButton.setButtonText("Remove Mapping");
     removeMappingButton.addListener(this);
+    removeMappingButton.setColour(juce::TextButton::buttonColourId, juce::Colours::lightcoral);
+    // removeMappingButton.setColour(juce::TextButton::textColourId, juce::Colours::black);
     addAndMakeVisible(removeMappingButton);
     
     // Set up mappings list
@@ -136,28 +166,32 @@ void MidiMappingAccordion::ControlItem::paint(juce::Graphics& g)
         bool isFlashing = (currentTime / 100) % 2 == 0; // Flash every 100ms
         
         if (isFlashing)
-            g.fillAll(juce::Colours::orange);
+            g.fillAll(juce::Colours::orange.withAlpha(0.3f));
         else
-            g.fillAll(juce::Colours::lightblue);
+            g.fillAll(juce::Colours::lightblue.withAlpha(0.3f));
     }
     else
     {
         g.fillAll(juce::Colours::white);
     }
+    
+    // Draw a subtle border around the entire control item
+    g.setColour(juce::Colours::grey.withAlpha(0.3f));
+    g.drawRect(bounds.toFloat(), 1.0f);
 }
 
 void MidiMappingAccordion::ControlItem::resized()
 {
     auto bounds = getLocalBounds();
     
-    // Define header height
-    const int headerHeight = 40;
+    // Define header height - reduced from 40 to 30
+    const int headerHeight = 30;
     
     // Position header component
     headerComponent->setBounds(bounds.removeFromTop(headerHeight));
     
     // Position expand button in header
-    expandButton.setBounds(headerComponent->getWidth() - 30, 5, 25, 30);
+    expandButton.setBounds(headerComponent->getWidth() - 25, 2, 20, 26);
     
     // Position add/remove buttons if expanded
     if (expanded)
@@ -221,8 +255,18 @@ void MidiMappingAccordion::ControlItem::setExpanded(bool shouldBeExpanded)
         if (headerComponent != nullptr)
             headerComponent->repaint();
         
+        // Store the current viewport position before resizing
+        auto* viewport = findParentComponentOfClass<juce::Viewport>();
+        int scrollY = 0;
+        if (viewport != nullptr)
+            scrollY = viewport->getViewPositionY();
+        
         resized();
         parent.resized();
+        
+        // Restore the viewport position after resizing
+        if (viewport != nullptr)
+            viewport->setViewPosition(0, scrollY);
     }
 }
 
@@ -239,18 +283,27 @@ void MidiMappingAccordion::ControlItem::setHighlighted(bool shouldBeHighlighted)
 MidiMappingAccordion::MidiMappingAccordion(StandaloneApp& app)
     : app(app)
 {
+    // Set a fixed width for the component
+    setSize(400, 500);
+    
     // Set up viewport
     viewport.setViewedComponent(&viewportContent);
     viewport.setScrollBarsShown(true, true);
+    viewport.setScrollOnDragEnabled(true);
+    viewport.setScrollBarThickness(12);
     addAndMakeVisible(viewport);
     
-    // Set up buttons
+    // Set up buttons with improved styling
     saveButton.setButtonText("Save");
     saveButton.addListener(this);
+    saveButton.setColour(juce::TextButton::buttonColourId, juce::Colours::lightblue);
+    // saveButton.setColour(juce::TextButton::textColourId, juce::Colours::black);
     addAndMakeVisible(saveButton);
     
     loadButton.setButtonText("Load");
     loadButton.addListener(this);
+    loadButton.setColour(juce::TextButton::buttonColourId, juce::Colours::lightgreen);
+    // loadButton.setColour(juce::TextButton::textColourId, juce::Colours::black);
     addAndMakeVisible(loadButton);
     
     // Initialize mapping data
@@ -265,6 +318,13 @@ MidiMappingAccordion::~MidiMappingAccordion()
 void MidiMappingAccordion::paint(juce::Graphics& g)
 {
     g.fillAll(juce::Colours::white);
+    
+    // Draw a subtle border around the entire component
+    g.setColour(juce::Colours::grey.withAlpha(0.5f));
+    g.drawRect(getLocalBounds().toFloat(), 1.0f);
+    
+    // Set a fixed width for the component
+    setSize(400, getHeight());
 }
 
 void MidiMappingAccordion::resized()
@@ -283,17 +343,17 @@ void MidiMappingAccordion::resized()
     area.removeFromBottom(10);
     viewport.setBounds(area);
     
-    // Position control items
+    // Position control items with no padding between them
     int y = 0;
     int maxWidth = 0;
     
     for (auto& item : controlItems)
     {
         // Calculate height based on expanded state
-        int itemHeight = item->isExpanded() ? 200 : 40; // 40px for header, 160px for body when expanded
+        int itemHeight = item->isExpanded() ? 200 : 30; // 30px for header, 170px for body when expanded
         
         item->setBounds(0, y, viewport.getWidth() - 20, itemHeight);
-        y += itemHeight + 5; // 5px spacing between items
+        y += itemHeight; // No spacing between items
         maxWidth = juce::jmax(maxWidth, item->getWidth());
     }
     
@@ -387,12 +447,50 @@ void MidiMappingAccordion::addMapping(ControlItem* controlItem)
     
     auto* noteLabel = new juce::Label("note", "Note Number:");
     noteLabel->setColour(juce::Label::textColourId, juce::Colours::black);
-    auto* noteEditor = new juce::TextEditor();
-    noteEditor->setText("60");  // Middle C
-    noteEditor->setColour(juce::TextEditor::textColourId, juce::Colours::black);
-    noteEditor->setColour(juce::TextEditor::backgroundColourId, juce::Colours::white);
-    noteEditor->setEnabled(false);  // Initially disabled
-    noteEditor->setVisible(false);  // Initially hidden
+    
+    // Replace the text editor with a ComboBox for note selection
+    auto* noteComboBox = new juce::ComboBox("noteComboBox");
+    noteComboBox->setColour(juce::ComboBox::textColourId, juce::Colours::black);
+    noteComboBox->setColour(juce::ComboBox::backgroundColourId, juce::Colours::white);
+    
+    // Configure the ComboBox to show a scrollable list
+    noteComboBox->setScrollWheelEnabled(true);
+    
+    // Set a reasonable height for the ComboBox
+    noteComboBox->setSize(noteComboBox->getWidth(), 24);
+    
+    // Create a custom LookAndFeel to limit the dropdown height
+    class LimitedHeightComboBoxLookAndFeel : public juce::LookAndFeel_V4
+    {
+    public:
+        juce::PopupMenu::Options getOptionsForComboBoxPopupMenu(juce::ComboBox& box, juce::Label& label) override
+        {
+            auto options = juce::LookAndFeel_V4::getOptionsForComboBoxPopupMenu(box, label);
+            
+            // Calculate a reasonable height for the dropdown (12 items)
+            const int itemHeight = label.getHeight();
+            const int maxHeight = itemHeight * 12;
+            
+            // Set the maximum height for the popup menu
+            options = options.withMaximumNumColumns(1);
+            
+            return options;
+        }
+    };
+    
+    // Apply the custom LookAndFeel to the ComboBox
+    static LimitedHeightComboBoxLookAndFeel limitedHeightLookAndFeel;
+    noteComboBox->setLookAndFeel(&limitedHeightLookAndFeel);
+    
+    // Add MIDI notes to the combo box (0-127)
+    for (int i = 0; i < 128; ++i)
+    {
+        juce::String noteName = getMidiNoteName(i);
+        noteComboBox->addItem(juce::String(i) + " - " + noteName, i + 1);
+    }
+    noteComboBox->setSelectedId(61); // Middle C (MIDI note 60) + 1 for 1-based indexing
+    noteComboBox->setEnabled(false);  // Initially disabled
+    noteComboBox->setVisible(false);  // Initially hidden
     noteLabel->setVisible(false);   // Initially hidden
     
     auto* minLabel = new juce::Label("min", "Min Value:");
@@ -419,7 +517,7 @@ void MidiMappingAccordion::addMapping(ControlItem* controlItem)
     content->addAndMakeVisible(ccLabel);
     content->addAndMakeVisible(ccEditor);
     content->addAndMakeVisible(noteLabel);
-    content->addAndMakeVisible(noteEditor);
+    content->addAndMakeVisible(noteComboBox);
     content->addAndMakeVisible(minLabel);
     content->addAndMakeVisible(minEditor);
     content->addAndMakeVisible(maxLabel);
@@ -459,7 +557,7 @@ void MidiMappingAccordion::addMapping(ControlItem* controlItem)
         
         if (noteLabel->isVisible()) {
             noteLabel->setBounds(layoutBounds.removeFromTop(20));
-            noteEditor->setBounds(layoutBounds.removeFromTop(20));
+            noteComboBox->setBounds(layoutBounds.removeFromTop(20));
             layoutBounds.removeFromTop(10);
         }
         
@@ -482,13 +580,13 @@ void MidiMappingAccordion::addMapping(ControlItem* controlItem)
     updateLayout();
     
     // Handle type selection change
-    typeComboBox->onChange = [ccEditor, noteEditor, ccLabel, noteLabel, typeComboBox, updateLayout]() {
+    typeComboBox->onChange = [ccEditor, noteComboBox, ccLabel, noteLabel, typeComboBox, updateLayout]() {
         bool isCC = typeComboBox->getSelectedId() == 1;
         ccEditor->setEnabled(isCC);
         ccEditor->setVisible(isCC);
         ccLabel->setVisible(isCC);
-        noteEditor->setEnabled(!isCC);
-        noteEditor->setVisible(!isCC);
+        noteComboBox->setEnabled(!isCC);
+        noteComboBox->setVisible(!isCC);
         noteLabel->setVisible(!isCC);
         
         // Update layout after changing visibility
@@ -496,7 +594,7 @@ void MidiMappingAccordion::addMapping(ControlItem* controlItem)
     };
     
     // Handle button clicks
-    okButton->onClick = [this, content, channelEditor, typeComboBox, ccEditor, noteEditor, minEditor, maxEditor, controlItem]()
+    okButton->onClick = [this, content, channelEditor, typeComboBox, ccEditor, noteComboBox, minEditor, maxEditor, controlItem]()
     {
         StandaloneApp::MidiMapping mapping;
         mapping.channel = channelEditor->getText().getIntValue();
@@ -512,7 +610,7 @@ void MidiMappingAccordion::addMapping(ControlItem* controlItem)
         else
         {
             mapping.ccNumber = 0;  // Not used for Note
-            mapping.noteNumber = noteEditor->getText().getIntValue();
+            mapping.noteNumber = noteComboBox->getSelectedId() - 1; // Convert back to 0-based MIDI note number
         }
         
         mapping.minValue = minEditor->getText().getFloatValue();
@@ -823,4 +921,16 @@ void MidiMappingAccordion::highlightControl(const juce::String& controlType, int
             break;
         }
     }
+}
+
+juce::String MidiMappingAccordion::getMidiNoteName(int midiNoteNumber)
+{
+    if (midiNoteNumber < 0 || midiNoteNumber > 127)
+        return "Invalid";
+        
+    const char* noteNames[] = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
+    int octave = (midiNoteNumber / 12) - 1;
+    int noteIndex = midiNoteNumber % 12;
+    
+    return juce::String(noteNames[noteIndex]) + juce::String(octave);
 } 
