@@ -6,6 +6,7 @@
 #include "MidiOutputManager.h"
 #include "components/ModernGamepadComponent.h"
 #include "components/MidiDeviceSelector.h"
+#include "components/ModernLookAndFeel.h"
 #include "BinaryData.h"
 #include "MidiCCMapping.h"
 
@@ -82,6 +83,7 @@ private:
             websiteLink->setJustificationType(juce::Justification::centred);
             websiteLink->setFont(juce::Font(14.0f), false);
             websiteLink->setBounds(10, 150, 280, 30);
+            websiteLink->setLookAndFeel(&modernLookAndFeel);
             content->addAndMakeVisible(websiteLink);
             
             setContentOwned(content.release(), true);
@@ -93,6 +95,10 @@ private:
         {
             setVisible(false);
         }
+        
+    private:
+        // Custom look and feel
+        ModernLookAndFeel modernLookAndFeel;
     };
     
     void handleLogoClick();
@@ -134,6 +140,9 @@ private:
     std::unique_ptr<MidiDeviceSelector> midiDeviceSelector;
     juce::ImageComponent logoComponent;
     juce::TextButton midiMappingButton;
+    
+    // Custom look and feel
+    ModernLookAndFeel modernLookAndFeel;
     
     // Managers
     GamepadManager gamepadManager;

@@ -27,6 +27,7 @@ StandaloneApp::StandaloneApp()
     // Set up MIDI mapping button
     midiMappingButton.setButtonText("Map");
     midiMappingButton.addListener(this);
+    midiMappingButton.setLookAndFeel(&modernLookAndFeel);
     addAndMakeVisible(midiMappingButton);
     
     // Add components
@@ -44,6 +45,9 @@ StandaloneApp::StandaloneApp()
 StandaloneApp::~StandaloneApp()
 {
     stopTimer();
+    
+    // Remove look and feel from button to avoid dangling pointer
+    midiMappingButton.setLookAndFeel(nullptr);
 }
 
 void StandaloneApp::paint(juce::Graphics& g)
@@ -322,7 +326,7 @@ void StandaloneApp::notifyGamepadControlActivated(const juce::String& controlTyp
         if (auto* window = dynamic_cast<MidiMappingEditorWindow*>(juce::TopLevelWindow::getTopLevelWindow(i)))
         {
             // Get the editor component from the window
-            if (auto* editor = dynamic_cast<MidiMappingEditor*>(window->getContentComponent()))
+            if (auto* editor = dynamic_cast<MidiMappingAccordion*>(window->getContentComponent()))
             {
                 // Highlight the control in the editor
                 editor->highlightControl(controlType, controlIndex);

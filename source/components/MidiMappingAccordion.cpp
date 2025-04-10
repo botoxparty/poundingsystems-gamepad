@@ -1,0 +1,826 @@
+#include "MidiMappingAccordion.h"
+#include <juce_gui_basics/juce_gui_basics.h>
+#include <juce_core/juce_core.h>
+
+// Implementation of ControlItem::MappingsList
+MidiMappingAccordion::ControlItem::MappingsList::MappingsList(const std::vector<StandaloneApp::MidiMapping>& mappings)
+    : mappings(mappings)
+{
+}
+
+void MidiMappingAccordion::ControlItem::MappingsList::paint(juce::Graphics& g)
+{
+    g.fillAll(juce::Colours::white);
+    
+    if (mappings.empty())
+    {
+        g.setColour(juce::Colours::darkgrey);
+        g.drawText("No mappings", getLocalBounds(), juce::Justification::centred, true);
+        return;
+    }
+    
+    g.setColour(juce::Colours::black);
+    g.setFont(14.0f);
+    
+    int y = 5;
+    for (size_t i = 0; i < mappings.size(); ++i)
+    {
+        const auto& mapping = mappings[i];
+        juce::String mappingText;
+        
+        if (mapping.type == StandaloneApp::MidiMapping::Type::ControlChange)
+        {
+            mappingText = juce::String("Ch:") + juce::String(mapping.channel) +
+                         " CC:" + juce::String(mapping.ccNumber) +
+                         " [" + juce::String(mapping.minValue) + "-" + juce::String(mapping.maxValue) + "]";
+        }
+        else // Note
+        {
+            mappingText = juce::String("Ch:") + juce::String(mapping.channel) +
+                         " Note:" + juce::String(mapping.noteNumber) +
+                         " [" + juce::String(mapping.minValue) + "-" + juce::String(mapping.maxValue) + "]";
+        }
+        
+        g.drawText(mappingText, 10, y, getWidth() - 20, 20, juce::Justification::centredLeft, true);
+        y += 25;
+    }
+}
+
+void MidiMappingAccordion::ControlItem::MappingsList::resized()
+{
+    // Nothing to do here
+}
+
+void MidiMappingAccordion::ControlItem::MappingsList::updateMappings(const std::vector<StandaloneApp::MidiMapping>& newMappings)
+{
+    mappings = newMappings;
+    repaint();
+}
+
+// Implementation of HeaderComponent
+MidiMappingAccordion::ControlItem::HeaderComponent::HeaderComponent(ControlItem& owner)
+    : owner(owner)
+{
+}
+
+void MidiMappingAccordion::ControlItem::HeaderComponent::paint(juce::Graphics& g)
+{
+    auto bounds = getLocalBounds();
+    
+    // Draw header background
+    g.fillAll(juce::Colours::lightgrey);
+    
+    // Draw control name
+    g.setColour(juce::Colours::black);
+    g.setFont(16.0f);
+    g.drawText(owner.controlName, bounds.reduced(5).withTrimmedRight(30), juce::Justification::centredLeft, true);
+    
+    // Draw summary of mappings if not expanded
+    if (!owner.expanded && !owner.mappings.empty())
+    {
+        g.setFont(14.0f);
+        g.setColour(juce::Colours::darkgrey);
+        
+        juce::String summaryText = juce::String(owner.mappings.size()) + " mapping" + 
+                                  (owner.mappings.size() > 1 ? "s" : "");
+        
+        g.drawText(summaryText, bounds.reduced(5).withTrimmedRight(30), juce::Justification::centredRight, true);
+    }
+}
+
+// Implementation of ControlItem
+MidiMappingAccordion::ControlItem::ControlItem(const juce::String& name, 
+                                             const juce::String& type, 
+                                             int index, 
+                                             const std::vector<StandaloneApp::MidiMapping>& mappings,
+                                             MidiMappingAccordion& parent)
+    : controlName(name),
+      controlType(type),
+      controlIndex(index),
+      mappings(mappings),
+      parent(parent)
+{
+    // Create header component
+    headerComponent = std::make_unique<HeaderComponent>(*this);
+    headerComponent->setSize(100, 40);
+    addAndMakeVisible(headerComponent.get());
+    
+    // Set up expand button in header
+    expandButton.setButtonText("+");
+    expandButton.addListener(this);
+    headerComponent->addAndMakeVisible(expandButton);
+    
+    // Set up add/remove buttons
+    addMappingButton.setButtonText("Add Mapping");
+    addMappingButton.addListener(this);
+    addAndMakeVisible(addMappingButton);
+    
+    removeMappingButton.setButtonText("Remove Mapping");
+    removeMappingButton.addListener(this);
+    addAndMakeVisible(removeMappingButton);
+    
+    // Set up mappings list
+    mappingsList = std::make_unique<MappingsList>(mappings);
+    addAndMakeVisible(mappingsList.get());
+}
+
+void MidiMappingAccordion::ControlItem::paint(juce::Graphics& g)
+{
+    auto bounds = getLocalBounds();
+    
+    // Draw background
+    if (highlighted)
+    {
+        // Flash effect for highlighted controls
+        auto currentTime = juce::Time::getMillisecondCounter();
+        bool isFlashing = (currentTime / 100) % 2 == 0; // Flash every 100ms
+        
+        if (isFlashing)
+            g.fillAll(juce::Colours::orange);
+        else
+            g.fillAll(juce::Colours::lightblue);
+    }
+    else
+    {
+        g.fillAll(juce::Colours::white);
+    }
+}
+
+void MidiMappingAccordion::ControlItem::resized()
+{
+    auto bounds = getLocalBounds();
+    
+    // Define header height
+    const int headerHeight = 40;
+    
+    // Position header component
+    headerComponent->setBounds(bounds.removeFromTop(headerHeight));
+    
+    // Position expand button in header
+    expandButton.setBounds(headerComponent->getWidth() - 30, 5, 25, 30);
+    
+    // Position add/remove buttons if expanded
+    if (expanded)
+    {
+        // Position buttons in the body area
+        auto buttonArea = bounds.removeFromBottom(30).reduced(5);
+        addMappingButton.setBounds(buttonArea.removeFromLeft(100));
+        buttonArea.removeFromLeft(10);
+        removeMappingButton.setBounds(buttonArea.removeFromLeft(100));
+        
+        // Position mappings list in the body area
+        mappingsList->setBounds(bounds.reduced(5));
+    }
+    else
+    {
+        // Ensure mappings list is hidden when collapsed
+        if (mappingsList != nullptr)
+            mappingsList->setBounds(0, 0, 0, 0);
+    }
+}
+
+void MidiMappingAccordion::ControlItem::buttonClicked(juce::Button* button)
+{
+    if (button == &expandButton)
+    {
+        setExpanded(!expanded);
+    }
+    else if (button == &addMappingButton)
+    {
+        parent.addMapping(this);
+    }
+    else if (button == &removeMappingButton)
+    {
+        parent.removeMapping(this);
+    }
+}
+
+void MidiMappingAccordion::ControlItem::updateMappings(const std::vector<StandaloneApp::MidiMapping>& newMappings)
+{
+    mappings = newMappings;
+    if (mappingsList != nullptr)
+        mappingsList->updateMappings(mappings);
+    repaint();
+}
+
+void MidiMappingAccordion::ControlItem::setExpanded(bool shouldBeExpanded)
+{
+    if (expanded != shouldBeExpanded)
+    {
+        expanded = shouldBeExpanded;
+        expandButton.setButtonText(expanded ? "-" : "+");
+        
+        // Ensure proper visibility of components
+        if (mappingsList != nullptr)
+            mappingsList->setVisible(expanded);
+        
+        addMappingButton.setVisible(expanded);
+        removeMappingButton.setVisible(expanded);
+        
+        // Repaint the header component to update the UI
+        if (headerComponent != nullptr)
+            headerComponent->repaint();
+        
+        resized();
+        parent.resized();
+    }
+}
+
+void MidiMappingAccordion::ControlItem::setHighlighted(bool shouldBeHighlighted)
+{
+    if (highlighted != shouldBeHighlighted)
+    {
+        highlighted = shouldBeHighlighted;
+        repaint();
+    }
+}
+
+// Implementation of MidiMappingAccordion
+MidiMappingAccordion::MidiMappingAccordion(StandaloneApp& app)
+    : app(app)
+{
+    // Set up viewport
+    viewport.setViewedComponent(&viewportContent);
+    viewport.setScrollBarsShown(true, true);
+    addAndMakeVisible(viewport);
+    
+    // Set up buttons
+    saveButton.setButtonText("Save");
+    saveButton.addListener(this);
+    addAndMakeVisible(saveButton);
+    
+    loadButton.setButtonText("Load");
+    loadButton.addListener(this);
+    addAndMakeVisible(loadButton);
+    
+    // Initialize mapping data
+    updateMappingData();
+}
+
+MidiMappingAccordion::~MidiMappingAccordion()
+{
+    viewport.setViewedComponent(nullptr);
+}
+
+void MidiMappingAccordion::paint(juce::Graphics& g)
+{
+    g.fillAll(juce::Colours::white);
+}
+
+void MidiMappingAccordion::resized()
+{
+    auto area = getLocalBounds();
+    
+    // Position buttons at the bottom
+    auto buttonArea = area.removeFromBottom(40);
+    buttonArea.reduce(10, 10);
+    
+    saveButton.setBounds(buttonArea.removeFromLeft(100));
+    buttonArea.removeFromLeft(10);
+    loadButton.setBounds(buttonArea.removeFromLeft(100));
+    
+    // Position viewport
+    area.removeFromBottom(10);
+    viewport.setBounds(area);
+    
+    // Position control items
+    int y = 0;
+    int maxWidth = 0;
+    
+    for (auto& item : controlItems)
+    {
+        // Calculate height based on expanded state
+        int itemHeight = item->isExpanded() ? 200 : 40; // 40px for header, 160px for body when expanded
+        
+        item->setBounds(0, y, viewport.getWidth() - 20, itemHeight);
+        y += itemHeight + 5; // 5px spacing between items
+        maxWidth = juce::jmax(maxWidth, item->getWidth());
+    }
+    
+    viewportContent.setBounds(0, 0, maxWidth, y);
+}
+
+void MidiMappingAccordion::buttonClicked(juce::Button* button)
+{
+    if (button == &saveButton)
+    {
+        saveMappings();
+    }
+    else if (button == &loadButton)
+    {
+        loadMappings();
+    }
+}
+
+void MidiMappingAccordion::updateMappingData()
+{
+    controlItems.clear();
+    
+    // Add axis mappings
+    for (int i = 0; i < GamepadManager::MAX_AXES; ++i)
+    {
+        auto name = getControlName("Axis", i);
+        auto item = std::make_unique<ControlItem>(name, "Axis", i, app.axisMappings[static_cast<size_t>(i)], *this);
+        controlItems.push_back(std::move(item));
+    }
+    
+    // Add button mappings
+    for (int i = 0; i < GamepadManager::MAX_BUTTONS; ++i)
+    {
+        auto name = getControlName("Button", i);
+        auto item = std::make_unique<ControlItem>(name, "Button", i, app.buttonMappings[static_cast<size_t>(i)], *this);
+        controlItems.push_back(std::move(item));
+    }
+    
+    // Add gyroscope mappings
+    for (int i = 0; i < 3; ++i)
+    {
+        auto name = getControlName("Gyro", i);
+        auto item = std::make_unique<ControlItem>(name, "Gyro", i, app.gyroMappings[static_cast<size_t>(i)], *this);
+        controlItems.push_back(std::move(item));
+    }
+    
+    // Add accelerometer mappings
+    for (int i = 0; i < 3; ++i)
+    {
+        auto name = getControlName("Accel", i);
+        auto item = std::make_unique<ControlItem>(name, "Accel", i, app.accelerometerMappings[static_cast<size_t>(i)], *this);
+        controlItems.push_back(std::move(item));
+    }
+    
+    // Add all items to the viewport content
+    for (auto& item : controlItems)
+    {
+        viewportContent.addAndMakeVisible(item.get());
+    }
+    
+    resized();
+}
+
+void MidiMappingAccordion::addMapping(ControlItem* controlItem)
+{
+    // Create a dialog to get mapping details
+    juce::DialogWindow::LaunchOptions options;
+    auto* content = new juce::Component();
+    content->setSize(300, 250);
+    
+    auto* channelLabel = new juce::Label("channel", "MIDI Channel:");
+    channelLabel->setColour(juce::Label::textColourId, juce::Colours::black);
+    auto* channelEditor = new juce::TextEditor();
+    channelEditor->setText("1");
+    channelEditor->setColour(juce::TextEditor::textColourId, juce::Colours::black);
+    channelEditor->setColour(juce::TextEditor::backgroundColourId, juce::Colours::white);
+    
+    auto* typeLabel = new juce::Label("type", "MIDI Type:");
+    typeLabel->setColour(juce::Label::textColourId, juce::Colours::black);
+    auto* typeComboBox = new juce::ComboBox("typeComboBox");
+    typeComboBox->addItem("Control Change (CC)", 1);
+    typeComboBox->addItem("Note", 2);
+    typeComboBox->setSelectedId(1);
+    
+    auto* ccLabel = new juce::Label("cc", "CC Number:");
+    ccLabel->setColour(juce::Label::textColourId, juce::Colours::black);
+    auto* ccEditor = new juce::TextEditor();
+    ccEditor->setText("1");
+    ccEditor->setColour(juce::TextEditor::textColourId, juce::Colours::black);
+    ccEditor->setColour(juce::TextEditor::backgroundColourId, juce::Colours::white);
+    
+    auto* noteLabel = new juce::Label("note", "Note Number:");
+    noteLabel->setColour(juce::Label::textColourId, juce::Colours::black);
+    auto* noteEditor = new juce::TextEditor();
+    noteEditor->setText("60");  // Middle C
+    noteEditor->setColour(juce::TextEditor::textColourId, juce::Colours::black);
+    noteEditor->setColour(juce::TextEditor::backgroundColourId, juce::Colours::white);
+    noteEditor->setEnabled(false);  // Initially disabled
+    noteEditor->setVisible(false);  // Initially hidden
+    noteLabel->setVisible(false);   // Initially hidden
+    
+    auto* minLabel = new juce::Label("min", "Min Value:");
+    minLabel->setColour(juce::Label::textColourId, juce::Colours::black);
+    auto* minEditor = new juce::TextEditor();
+    minEditor->setText("0");
+    minEditor->setColour(juce::TextEditor::textColourId, juce::Colours::black);
+    minEditor->setColour(juce::TextEditor::backgroundColourId, juce::Colours::white);
+    
+    auto* maxLabel = new juce::Label("max", "Max Value:");
+    maxLabel->setColour(juce::Label::textColourId, juce::Colours::black);
+    auto* maxEditor = new juce::TextEditor();
+    maxEditor->setText("127");
+    maxEditor->setColour(juce::TextEditor::textColourId, juce::Colours::black);
+    maxEditor->setColour(juce::TextEditor::backgroundColourId, juce::Colours::white);
+    
+    auto* okButton = new juce::TextButton("OK");
+    auto* cancelButton = new juce::TextButton("Cancel");
+    
+    content->addAndMakeVisible(channelLabel);
+    content->addAndMakeVisible(channelEditor);
+    content->addAndMakeVisible(typeLabel);
+    content->addAndMakeVisible(typeComboBox);
+    content->addAndMakeVisible(ccLabel);
+    content->addAndMakeVisible(ccEditor);
+    content->addAndMakeVisible(noteLabel);
+    content->addAndMakeVisible(noteEditor);
+    content->addAndMakeVisible(minLabel);
+    content->addAndMakeVisible(minEditor);
+    content->addAndMakeVisible(maxLabel);
+    content->addAndMakeVisible(maxEditor);
+    content->addAndMakeVisible(okButton);
+    content->addAndMakeVisible(cancelButton);
+    
+    // Layout components
+    auto bounds = content->getLocalBounds().reduced(10);
+    channelLabel->setBounds(bounds.removeFromTop(20));
+    channelEditor->setBounds(bounds.removeFromTop(20));
+    bounds.removeFromTop(10);
+    
+    typeLabel->setBounds(bounds.removeFromTop(20));
+    typeComboBox->setBounds(bounds.removeFromTop(20));
+    bounds.removeFromTop(10);
+    
+    // Create a function to update the layout when visibility changes
+    auto updateLayout = [=]() {
+        auto layoutBounds = content->getLocalBounds().reduced(10);
+        
+        // Position the first components
+        layoutBounds.removeFromTop(20); // channelLabel
+        layoutBounds.removeFromTop(20); // channelEditor
+        layoutBounds.removeFromTop(10);
+        
+        layoutBounds.removeFromTop(20); // typeLabel
+        layoutBounds.removeFromTop(20); // typeComboBox
+        layoutBounds.removeFromTop(10);
+        
+        // Position CC or Note components based on visibility
+        if (ccLabel->isVisible()) {
+            ccLabel->setBounds(layoutBounds.removeFromTop(20));
+            ccEditor->setBounds(layoutBounds.removeFromTop(20));
+            layoutBounds.removeFromTop(10);
+        }
+        
+        if (noteLabel->isVisible()) {
+            noteLabel->setBounds(layoutBounds.removeFromTop(20));
+            noteEditor->setBounds(layoutBounds.removeFromTop(20));
+            layoutBounds.removeFromTop(10);
+        }
+        
+        // Position the remaining components
+        auto minMaxRow = layoutBounds.removeFromTop(20);
+        minLabel->setBounds(minMaxRow.removeFromLeft(70));
+        minEditor->setBounds(minMaxRow.removeFromLeft(70));
+        minMaxRow.removeFromLeft(5); // Add some spacing between min and max
+        maxLabel->setBounds(minMaxRow.removeFromLeft(70));
+        maxEditor->setBounds(minMaxRow.removeFromLeft(70));
+        layoutBounds.removeFromTop(10);
+        
+        auto buttonArea = layoutBounds.removeFromBottom(30);
+        okButton->setBounds(buttonArea.removeFromLeft(100));
+        buttonArea.removeFromLeft(10);
+        cancelButton->setBounds(buttonArea.removeFromLeft(100));
+    };
+    
+    // Initial layout
+    updateLayout();
+    
+    // Handle type selection change
+    typeComboBox->onChange = [ccEditor, noteEditor, ccLabel, noteLabel, typeComboBox, updateLayout]() {
+        bool isCC = typeComboBox->getSelectedId() == 1;
+        ccEditor->setEnabled(isCC);
+        ccEditor->setVisible(isCC);
+        ccLabel->setVisible(isCC);
+        noteEditor->setEnabled(!isCC);
+        noteEditor->setVisible(!isCC);
+        noteLabel->setVisible(!isCC);
+        
+        // Update layout after changing visibility
+        updateLayout();
+    };
+    
+    // Handle button clicks
+    okButton->onClick = [this, content, channelEditor, typeComboBox, ccEditor, noteEditor, minEditor, maxEditor, controlItem]()
+    {
+        StandaloneApp::MidiMapping mapping;
+        mapping.channel = channelEditor->getText().getIntValue();
+        mapping.type = typeComboBox->getSelectedId() == 1 ? 
+                      StandaloneApp::MidiMapping::Type::ControlChange : 
+                      StandaloneApp::MidiMapping::Type::Note;
+        
+        if (mapping.type == StandaloneApp::MidiMapping::Type::ControlChange)
+        {
+            mapping.ccNumber = ccEditor->getText().getIntValue();
+            mapping.noteNumber = 0;  // Not used for CC
+        }
+        else
+        {
+            mapping.ccNumber = 0;  // Not used for Note
+            mapping.noteNumber = noteEditor->getText().getIntValue();
+        }
+        
+        mapping.minValue = minEditor->getText().getFloatValue();
+        mapping.maxValue = maxEditor->getText().getFloatValue();
+        mapping.isButton = (controlItem->getControlType() == "Button");
+        
+        // Get current mappings and add the new one
+        auto currentMappings = controlItem->getMappings();
+        currentMappings.push_back(mapping);
+        controlItem->updateMappings(currentMappings);
+        
+        // Update app mappings
+        updateAppMappings();
+        
+        if (auto* dialogWindow = content->findParentComponentOfClass<juce::DialogWindow>())
+            dialogWindow->closeButtonPressed();
+    };
+    
+    cancelButton->onClick = [content]()
+    {
+        if (auto* dialogWindow = content->findParentComponentOfClass<juce::DialogWindow>())
+            dialogWindow->closeButtonPressed();
+    };
+    
+    options.content.setOwned(content);
+    options.content->setSize(300, 250);
+    options.dialogTitle = "Add MIDI Mapping";
+    options.dialogBackgroundColour = juce::Colours::white;
+    options.escapeKeyTriggersCloseButton = true;
+    options.useNativeTitleBar = true;
+    options.resizable = false;
+    
+    auto* window = options.launchAsync();
+    window->centreWithSize(300, 250);
+}
+
+void MidiMappingAccordion::removeMapping(ControlItem* controlItem)
+{
+    auto currentMappings = controlItem->getMappings();
+    if (!currentMappings.empty())
+    {
+        currentMappings.pop_back();
+        controlItem->updateMappings(currentMappings);
+        updateAppMappings();
+    }
+}
+
+juce::String MidiMappingAccordion::getControlName(const juce::String& controlType, int index) const
+{
+    if (controlType == "Axis")
+    {
+        switch (index)
+        {
+            case 0: return "Left Stick X";
+            case 1: return "Left Stick Y";
+            case 2: return "Right Stick X";
+            case 3: return "Right Stick Y";
+            case 4: return "L2 Trigger";
+            case 5: return "R2 Trigger";
+            default: return "Axis " + juce::String(index);
+        }
+    }
+    else if (controlType == "Button")
+    {
+        switch (index)
+        {
+            case 0: return "A Button";
+            case 1: return "B Button";
+            case 2: return "X Button";
+            case 3: return "Y Button";
+            case 9: return "L1 Button";
+            case 10: return "R1 Button";
+            case 11: return "D-pad Up";
+            case 12: return "D-pad Down";
+            case 13: return "D-pad Left";
+            case 14: return "D-pad Right";
+            case 7: return "Left Stick Button";
+            case 8: return "Right Stick Button";
+            default: return "Button " + juce::String(index);
+        }
+    }
+    else if (controlType == "Gyro")
+    {
+        switch (index)
+        {
+            case 0: return "Gyroscope X";
+            case 1: return "Gyroscope Y";
+            case 2: return "Gyroscope Z";
+            default: return "Gyro " + juce::String(index);
+        }
+    }
+    else if (controlType == "Accel")
+    {
+        switch (index)
+        {
+            case 0: return "Accelerometer X";
+            case 1: return "Accelerometer Y";
+            case 2: return "Accelerometer Z";
+            default: return "Accel " + juce::String(index);
+        }
+    }
+    
+    return controlType + " " + juce::String(index);
+}
+
+void MidiMappingAccordion::updateAppMappings()
+{
+    // Clear existing mappings first
+    for (auto& mappings : app.axisMappings) mappings.clear();
+    for (auto& mappings : app.buttonMappings) mappings.clear();
+    for (auto& mappings : app.gyroMappings) mappings.clear();
+    for (auto& mappings : app.accelerometerMappings) mappings.clear();
+    
+    // Update mappings
+    for (const auto& item : controlItems)
+    {
+        const auto& mappings = item->getMappings();
+        const auto& controlType = item->getControlType();
+        const auto& controlIndex = item->getControlIndex();
+        
+        if (controlType == "Axis")
+        {
+            if (controlIndex >= 0 && controlIndex < GamepadManager::MAX_AXES)
+            {
+                app.axisMappings[static_cast<size_t>(controlIndex)] = mappings;
+            }
+        }
+        else if (controlType == "Button")
+        {
+            if (controlIndex >= 0 && controlIndex < GamepadManager::MAX_BUTTONS)
+            {
+                app.buttonMappings[static_cast<size_t>(controlIndex)] = mappings;
+            }
+        }
+        else if (controlType == "Gyro")
+        {
+            if (controlIndex >= 0 && controlIndex < 3)
+            {
+                app.gyroMappings[static_cast<size_t>(controlIndex)] = mappings;
+            }
+        }
+        else if (controlType == "Accel")
+        {
+            if (controlIndex >= 0 && controlIndex < 3)
+            {
+                app.accelerometerMappings[static_cast<size_t>(controlIndex)] = mappings;
+            }
+        }
+    }
+    
+    // Notify the gamepad component that mappings have changed
+    app.updateMidiMappings();
+}
+
+void MidiMappingAccordion::saveMappings()
+{
+    juce::FileChooser chooser("Save MIDI Mappings",
+                             juce::File::getSpecialLocation(juce::File::userHomeDirectory),
+                             "*.json");
+                             
+    if (chooser.browseForFileToSave(true))
+    {
+        juce::File file = chooser.getResult();
+        
+        juce::DynamicObject::Ptr jsonObj = new juce::DynamicObject();
+        
+        // Convert mapping data to JSON
+        juce::Array<juce::var> mappingsArray;
+        for (const auto& item : controlItems)
+        {
+            juce::DynamicObject::Ptr mappingObj = new juce::DynamicObject();
+            mappingObj->setProperty("controlName", item->getName());
+            mappingObj->setProperty("controlType", item->getControlType());
+            mappingObj->setProperty("controlIndex", item->getControlIndex());
+            
+            juce::Array<juce::var> midiMappingsArray;
+            for (const auto& mapping : item->getMappings())
+            {
+                juce::DynamicObject::Ptr midiMappingObj = new juce::DynamicObject();
+                midiMappingObj->setProperty("type", static_cast<int>(mapping.type));
+                midiMappingObj->setProperty("channel", mapping.channel);
+                midiMappingObj->setProperty("ccNumber", mapping.ccNumber);
+                midiMappingObj->setProperty("noteNumber", mapping.noteNumber);
+                midiMappingObj->setProperty("minValue", mapping.minValue);
+                midiMappingObj->setProperty("maxValue", mapping.maxValue);
+                midiMappingObj->setProperty("isButton", mapping.isButton);
+                midiMappingsArray.add(juce::var(midiMappingObj));
+            }
+            mappingObj->setProperty("mappings", midiMappingsArray);
+            mappingsArray.add(juce::var(mappingObj));
+        }
+        
+        jsonObj->setProperty("mappings", mappingsArray);
+        
+        // Convert to JSON string with proper formatting
+        juce::String jsonString = juce::JSON::toString(juce::var(jsonObj), true);
+        
+        // Write to file
+        file.replaceWithText(jsonString);
+    }
+}
+
+void MidiMappingAccordion::loadMappings()
+{
+    juce::FileChooser chooser("Load MIDI Mappings",
+                             juce::File::getSpecialLocation(juce::File::userHomeDirectory),
+                             "*.json");
+                             
+    if (chooser.browseForFileToOpen())
+    {
+        juce::File file = chooser.getResult();
+        
+        juce::var json = juce::JSON::parse(file);
+        if (json.isVoid())
+        {
+            return;
+        }
+        
+        if (auto* obj = json.getDynamicObject())
+        {
+            if (auto* mappingsVar = obj->getProperty("mappings").getArray())
+            {
+                // Clear existing mappings
+                for (auto& item : controlItems)
+                {
+                    item->updateMappings(std::vector<StandaloneApp::MidiMapping>());
+                }
+                
+                // Load mappings
+                for (const auto& mappingVar : *mappingsVar)
+                {
+                    if (auto* mappingObj = mappingVar.getDynamicObject())
+                    {
+                        juce::String controlType = mappingObj->getProperty("controlType").toString();
+                        int controlIndex = mappingObj->getProperty("controlIndex");
+                        
+                        // Find the matching control item
+                        for (auto& item : controlItems)
+                        {
+                            if (item->getControlType() == controlType && item->getControlIndex() == controlIndex)
+                            {
+                                if (auto* midiMappingsVar = mappingObj->getProperty("mappings").getArray())
+                                {
+                                    std::vector<StandaloneApp::MidiMapping> mappings;
+                                    
+                                    for (const auto& midiMappingVar : *midiMappingsVar)
+                                    {
+                                        if (auto* midiMappingObj = midiMappingVar.getDynamicObject())
+                                        {
+                                            StandaloneApp::MidiMapping mapping;
+                                            
+                                            if (midiMappingObj->hasProperty("type"))
+                                            {
+                                                mapping.type = static_cast<StandaloneApp::MidiMapping::Type>(
+                                                    midiMappingObj->getProperty("type").operator int());
+                                            }
+                                            else
+                                            {
+                                                mapping.type = StandaloneApp::MidiMapping::Type::ControlChange;
+                                            }
+                                            
+                                            mapping.channel = midiMappingObj->getProperty("channel");
+                                            mapping.ccNumber = midiMappingObj->getProperty("ccNumber");
+                                            mapping.noteNumber = midiMappingObj->hasProperty("noteNumber") ? 
+                                                static_cast<int>(midiMappingObj->getProperty("noteNumber")) : 0;
+                                            mapping.minValue = midiMappingObj->getProperty("minValue");
+                                            mapping.maxValue = midiMappingObj->getProperty("maxValue");
+                                            mapping.isButton = midiMappingObj->getProperty("isButton");
+                                            
+                                            mappings.push_back(mapping);
+                                        }
+                                    }
+                                    
+                                    item->updateMappings(mappings);
+                                }
+                                
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                updateAppMappings();
+            }
+        }
+    }
+}
+
+void MidiMappingAccordion::highlightControl(const juce::String& controlType, int controlIndex)
+{
+    // Find the control item that matches the control type and index
+    for (auto& item : controlItems)
+    {
+        if (item->getControlType() == controlType && item->getControlIndex() == controlIndex)
+        {
+            // Highlight the control and make it visible
+            item->setHighlighted(true);
+            item->setExpanded(true);
+            
+            // Scroll to make the item visible
+            viewport.setViewPosition(0, item->getY());
+            
+            // Start a timer to remove the highlight after a short time
+            juce::Timer::callAfterDelay(1000, [this, item = item.get()]() {
+                item->setHighlighted(false);
+            });
+            
+            break;
+        }
+    }
+} 

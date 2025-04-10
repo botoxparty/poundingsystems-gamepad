@@ -262,36 +262,52 @@ void MidiMappingEditor::addMapping(int rowIndex)
     // Create a dialog to get mapping details
     juce::DialogWindow::LaunchOptions options;
     auto* content = new juce::Component();
-    content->setSize(300, 300);
+    content->setSize(300, 250);
     
     auto* channelLabel = new juce::Label("channel", "MIDI Channel:");
+    channelLabel->setColour(juce::Label::textColourId, juce::Colours::black);
     auto* channelEditor = new juce::TextEditor();
     channelEditor->setText("1");
+    channelEditor->setColour(juce::TextEditor::textColourId, juce::Colours::black);
+    channelEditor->setColour(juce::TextEditor::backgroundColourId, juce::Colours::white);
     
     auto* typeLabel = new juce::Label("type", "MIDI Type:");
+    typeLabel->setColour(juce::Label::textColourId, juce::Colours::black);
     auto* typeComboBox = new juce::ComboBox("typeComboBox");
     typeComboBox->addItem("Control Change (CC)", 1);
     typeComboBox->addItem("Note", 2);
     typeComboBox->setSelectedId(1);
     
     auto* ccLabel = new juce::Label("cc", "CC Number:");
+    ccLabel->setColour(juce::Label::textColourId, juce::Colours::black);
     auto* ccEditor = new juce::TextEditor();
     ccEditor->setText("1");
+    ccEditor->setColour(juce::TextEditor::textColourId, juce::Colours::black);
+    ccEditor->setColour(juce::TextEditor::backgroundColourId, juce::Colours::white);
     
     auto* noteLabel = new juce::Label("note", "Note Number:");
+    noteLabel->setColour(juce::Label::textColourId, juce::Colours::black);
     auto* noteEditor = new juce::TextEditor();
     noteEditor->setText("60");  // Middle C
+    noteEditor->setColour(juce::TextEditor::textColourId, juce::Colours::black);
+    noteEditor->setColour(juce::TextEditor::backgroundColourId, juce::Colours::white);
     noteEditor->setEnabled(false);  // Initially disabled
     noteEditor->setVisible(false);  // Initially hidden
     noteLabel->setVisible(false);   // Initially hidden
     
     auto* minLabel = new juce::Label("min", "Min Value:");
+    minLabel->setColour(juce::Label::textColourId, juce::Colours::black);
     auto* minEditor = new juce::TextEditor();
     minEditor->setText("0");
+    minEditor->setColour(juce::TextEditor::textColourId, juce::Colours::black);
+    minEditor->setColour(juce::TextEditor::backgroundColourId, juce::Colours::white);
     
     auto* maxLabel = new juce::Label("max", "Max Value:");
+    maxLabel->setColour(juce::Label::textColourId, juce::Colours::black);
     auto* maxEditor = new juce::TextEditor();
     maxEditor->setText("127");
+    maxEditor->setColour(juce::TextEditor::textColourId, juce::Colours::black);
+    maxEditor->setColour(juce::TextEditor::backgroundColourId, juce::Colours::white);
     
     auto* okButton = new juce::TextButton("OK");
     auto* cancelButton = new juce::TextButton("Cancel");
@@ -348,12 +364,12 @@ void MidiMappingEditor::addMapping(int rowIndex)
         }
         
         // Position the remaining components
-        minLabel->setBounds(layoutBounds.removeFromTop(20));
-        minEditor->setBounds(layoutBounds.removeFromTop(20));
-        layoutBounds.removeFromTop(10);
-        
-        maxLabel->setBounds(layoutBounds.removeFromTop(20));
-        maxEditor->setBounds(layoutBounds.removeFromTop(20));
+        auto minMaxRow = layoutBounds.removeFromTop(20);
+        minLabel->setBounds(minMaxRow.removeFromLeft(70));
+        minEditor->setBounds(minMaxRow.removeFromLeft(70));
+        minMaxRow.removeFromLeft(5); // Add some spacing between min and max
+        maxLabel->setBounds(minMaxRow.removeFromLeft(70));
+        maxEditor->setBounds(minMaxRow.removeFromLeft(70));
         layoutBounds.removeFromTop(10);
         
         auto buttonArea = layoutBounds.removeFromBottom(30);
@@ -418,15 +434,15 @@ void MidiMappingEditor::addMapping(int rowIndex)
     };
     
     options.content.setOwned(content);
-    options.content->setSize(300, 300);
+    options.content->setSize(300, 250);
     options.dialogTitle = "Add MIDI Mapping";
-    options.dialogBackgroundColour = juce::Colours::lightgrey;
+    options.dialogBackgroundColour = juce::Colours::white;
     options.escapeKeyTriggersCloseButton = true;
     options.useNativeTitleBar = true;
     options.resizable = false;
     
     auto* window = options.launchAsync();
-    window->centreWithSize(300, 300);
+    window->centreWithSize(300, 250);
 }
 
 void MidiMappingEditor::removeMapping(int rowIndex)

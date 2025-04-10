@@ -1,7 +1,8 @@
 #pragma once
 
 #include <juce_gui_basics/juce_gui_basics.h>
-#include "MidiMappingEditor.h"
+#include "MidiMappingAccordion.h"
+#include "ModernLookAndFeel.h"
 #include "../StandaloneApp.h"
 
 /**
@@ -16,9 +17,13 @@ public:
                       true)
     {
         setUsingNativeTitleBar(true);
-        auto editorComponent = std::make_unique<MidiMappingEditor>(app);
+        auto editorComponent = std::make_unique<MidiMappingAccordion>(app);
+        
+        // Apply the custom look and feel to the editor component
+        editorComponent->setLookAndFeel(&modernLookAndFeel);
+        
         setContentOwned(editorComponent.release(), true);
-        centreWithSize(800, 600);
+        centreWithSize(300, 600);
         setResizable(true, true);
     }
     
@@ -29,7 +34,8 @@ public:
     }
     
 private:
-    // No need to store the editor as a member variable since it's owned by the DialogWindow
+    // Custom look and feel
+    ModernLookAndFeel modernLookAndFeel;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiMappingEditorWindow)
 }; 
