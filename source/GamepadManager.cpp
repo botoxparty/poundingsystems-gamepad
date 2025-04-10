@@ -417,20 +417,25 @@ void GamepadManager::handleSDLEvents()
                     // This is a gyroscope event
                     if (event.gsensor.sensor == SDL_SENSOR_GYRO)
                     {
+                        // Scale gyroscope values (radians/second) to a more manageable range
+                        // A typical gyroscope might have values from -10 to 10 radians/second
+                        // We'll scale this to a -1 to 1 range for display and MIDI
+                        const float gyroScale = 0.1f; // Scale factor to convert radians/second to normalized range
+                        
                         // Check if values have changed significantly (apply small threshold)
-                        if (std::abs(gamepadStates[i].gyroscope.x - event.gsensor.data[0]) > 0.01f)
+                        if (std::abs(gamepadStates[i].gyroscope.x - event.gsensor.data[0] * gyroScale) > 0.01f)
                         {
-                            gamepadStates[i].gyroscope.x = event.gsensor.data[0];
+                            gamepadStates[i].gyroscope.x = event.gsensor.data[0] * gyroScale;
                             stateChanged = true;
                         }
-                        if (std::abs(gamepadStates[i].gyroscope.y - event.gsensor.data[1]) > 0.01f)
+                        if (std::abs(gamepadStates[i].gyroscope.y - event.gsensor.data[1] * gyroScale) > 0.01f)
                         {
-                            gamepadStates[i].gyroscope.y = event.gsensor.data[1];
+                            gamepadStates[i].gyroscope.y = event.gsensor.data[1] * gyroScale;
                             stateChanged = true;
                         }
-                        if (std::abs(gamepadStates[i].gyroscope.z - event.gsensor.data[2]) > 0.01f)
+                        if (std::abs(gamepadStates[i].gyroscope.z - event.gsensor.data[2] * gyroScale) > 0.01f)
                         {
-                            gamepadStates[i].gyroscope.z = event.gsensor.data[2];
+                            gamepadStates[i].gyroscope.z = event.gsensor.data[2] * gyroScale;
                             stateChanged = true;
                         }
                         
@@ -454,20 +459,23 @@ void GamepadManager::handleSDLEvents()
                     // This is an accelerometer event
                     else if (event.gsensor.sensor == SDL_SENSOR_ACCEL)
                     {
+                        // Scale accelerometer values from -10/10 to -1/1 range
+                        const float accelScale = 0.1f; // Scale factor to convert from -10/10 to -1/1
+                        
                         // Check if values have changed significantly (apply small threshold)
-                        if (std::abs(gamepadStates[i].accelerometer.x - event.gsensor.data[0]) > 0.01f)
+                        if (std::abs(gamepadStates[i].accelerometer.x - event.gsensor.data[0] * accelScale) > 0.01f)
                         {
-                            gamepadStates[i].accelerometer.x = event.gsensor.data[0];
+                            gamepadStates[i].accelerometer.x = event.gsensor.data[0] * accelScale;
                             stateChanged = true;
                         }
-                        if (std::abs(gamepadStates[i].accelerometer.y - event.gsensor.data[1]) > 0.01f)
+                        if (std::abs(gamepadStates[i].accelerometer.y - event.gsensor.data[1] * accelScale) > 0.01f)
                         {
-                            gamepadStates[i].accelerometer.y = event.gsensor.data[1];
+                            gamepadStates[i].accelerometer.y = event.gsensor.data[1] * accelScale;
                             stateChanged = true;
                         }
-                        if (std::abs(gamepadStates[i].accelerometer.z - event.gsensor.data[2]) > 0.01f)
+                        if (std::abs(gamepadStates[i].accelerometer.z - event.gsensor.data[2] * accelScale) > 0.01f)
                         {
-                            gamepadStates[i].accelerometer.z = event.gsensor.data[2];
+                            gamepadStates[i].accelerometer.z = event.gsensor.data[2] * accelScale;
                             stateChanged = true;
                         }
                         

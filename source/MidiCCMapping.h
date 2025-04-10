@@ -7,6 +7,11 @@ namespace MidiCC {
     constexpr int X_BUTTON = 22;
     constexpr int Y_BUTTON = 23;
 
+    // Select/Home/Cancel Buttons (24-26)
+    constexpr int SELECT_BUTTON = 24;
+    constexpr int HOME_BUTTON = 25;
+    constexpr int CANCEL_BUTTON = 26;
+
     // Shoulder Buttons (29-30)
     constexpr int L1_BUTTON = 29;
     constexpr int R1_BUTTON = 30;

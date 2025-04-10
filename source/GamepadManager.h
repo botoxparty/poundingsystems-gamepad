@@ -24,7 +24,7 @@ public:
     static constexpr int MAX_AXES = 6;
     
     // Maximum number of buttons we'll track per gamepad
-    static constexpr int MAX_BUTTONS = 15;
+    static constexpr int MAX_BUTTONS = 27;
     
     struct GamepadState
     {

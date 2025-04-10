@@ -56,26 +56,41 @@ void ModernGamepadComponent::setupComponents()
     // Set up button callbacks
     selectButton.onClick = [this]() {
         if (midiLearnMode) {
-            if (selectButton.onLearnClick) selectButton.onLearnClick();
+            sendMidiCC(MidiCC::SELECT_BUTTON, 1.0f, true);
         } else {
-            if (selectButton.onClick) selectButton.onClick();
+            sendMidiCC(MidiCC::SELECT_BUTTON, 1.0f, true);
+            app.notifyGamepadControlActivated("Button", MidiCC::SELECT_BUTTON);
         }
+    };
+    
+    selectButton.onLearnClick = [this]() {
+        sendMidiCC(MidiCC::SELECT_BUTTON, 1.0f, true);
     };
     
     homeButton.onClick = [this]() {
         if (midiLearnMode) {
-            if (homeButton.onLearnClick) homeButton.onLearnClick();
+            sendMidiCC(MidiCC::HOME_BUTTON, 1.0f, true);
         } else {
-            if (homeButton.onClick) homeButton.onClick();
+            sendMidiCC(MidiCC::HOME_BUTTON, 1.0f, true);
+            app.notifyGamepadControlActivated("Button", MidiCC::HOME_BUTTON);
         }
+    };
+    
+    homeButton.onLearnClick = [this]() {
+        sendMidiCC(MidiCC::HOME_BUTTON, 1.0f, true);
     };
     
     cancelButton.onClick = [this]() {
         if (midiLearnMode) {
-            if (cancelButton.onLearnClick) cancelButton.onLearnClick();
+            sendMidiCC(MidiCC::CANCEL_BUTTON, 1.0f, true);
         } else {
-            if (cancelButton.onClick) cancelButton.onClick();
+            sendMidiCC(MidiCC::CANCEL_BUTTON, 1.0f, true);
+            app.notifyGamepadControlActivated("Button", MidiCC::CANCEL_BUTTON);
         }
+    };
+    
+    cancelButton.onLearnClick = [this]() {
+        sendMidiCC(MidiCC::CANCEL_BUTTON, 1.0f, true);
     };
 }
 
@@ -487,6 +502,28 @@ void ModernGamepadComponent::updateState(const GamepadManager::GamepadState& new
         midiLearnMode
     });
 
+    // Update select/home/cancel buttons
+    selectButton.setProperties({
+        "Select",
+        app.buttonMappings[MidiCC::SELECT_BUTTON].empty() ? 0 : app.buttonMappings[MidiCC::SELECT_BUTTON][0].ccNumber,
+        false,  // Not pressed by default
+        midiLearnMode
+    });
+    
+    homeButton.setProperties({
+        "Home",
+        app.buttonMappings[MidiCC::HOME_BUTTON].empty() ? 0 : app.buttonMappings[MidiCC::HOME_BUTTON][0].ccNumber,
+        false,  // Not pressed by default
+        midiLearnMode
+    });
+    
+    cancelButton.setProperties({
+        "Cancel",
+        app.buttonMappings[MidiCC::CANCEL_BUTTON].empty() ? 0 : app.buttonMappings[MidiCC::CANCEL_BUTTON][0].ccNumber,
+        false,  // Not pressed by default
+        midiLearnMode
+    });
+
     // Update analog sticks
     {
         AnalogStick::State stickState;
@@ -546,7 +583,7 @@ void ModernGamepadComponent::updateState(const GamepadManager::GamepadState& new
         gyroState.yCC = app.gyroMappings[1].empty() ? 0 : app.gyroMappings[1][0].ccNumber;  // Gyro Y
         gyroState.zCC = app.gyroMappings[2].empty() ? 0 : app.gyroMappings[2][0].ccNumber;  // Gyro Z
         gyroState.isLearnMode = midiLearnMode;
-        gyroState.isAccelerometer = false;
+        gyroState.isAccelerometer = true;
         gyroscopeDisplay.setState(gyroState);
     }
 
@@ -561,7 +598,7 @@ void ModernGamepadComponent::updateState(const GamepadManager::GamepadState& new
         accelState.yCC = app.accelerometerMappings[1].empty() ? 0 : app.accelerometerMappings[1][0].ccNumber;  // Accel Y
         accelState.zCC = app.accelerometerMappings[2].empty() ? 0 : app.accelerometerMappings[2][0].ccNumber;  // Accel Z
         accelState.isLearnMode = midiLearnMode;
-        accelState.isAccelerometer = true;
+        accelState.isAccelerometer = false;
         accelerometerDisplay.setState(accelState);
     }
 
@@ -591,6 +628,19 @@ void ModernGamepadComponent::setMidiLearnMode(bool enabled)
         touchPad.setLearnMode(enabled);
         gyroscopeDisplay.setLearnMode(enabled);
         accelerometerDisplay.setLearnMode(enabled);
+        
+        // Update select/home/cancel buttons
+        auto selectProps = selectButton.getProperties();
+        selectProps.isLearnMode = enabled;
+        selectButton.setProperties(selectProps);
+        
+        auto homeProps = homeButton.getProperties();
+        homeProps.isLearnMode = enabled;
+        homeButton.setProperties(homeProps);
+        
+        auto cancelProps = cancelButton.getProperties();
+        cancelProps.isLearnMode = enabled;
+        cancelButton.setProperties(cancelProps);
         
         repaint();
     }
