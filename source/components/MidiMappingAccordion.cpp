@@ -437,23 +437,25 @@ void MidiMappingAccordion::addMapping(ControlItem* controlItem)
     auto* channelLabel = new juce::Label("channel", "MIDI Channel:");
     channelLabel->setColour(juce::Label::textColourId, juce::Colours::black);
     auto* channelEditor = new juce::TextEditor();
-    channelEditor->setText("1");
     channelEditor->setColour(juce::TextEditor::textColourId, juce::Colours::black);
     channelEditor->setColour(juce::TextEditor::backgroundColourId, juce::Colours::white);
-    
+    channelEditor->setText("1");
+
     auto* typeLabel = new juce::Label("type", "MIDI Type:");
     typeLabel->setColour(juce::Label::textColourId, juce::Colours::black);
     auto* typeComboBox = new juce::ComboBox("typeComboBox");
     typeComboBox->addItem("Control Change (CC)", 1);
     typeComboBox->addItem("Note", 2);
+    typeComboBox->setColour(juce::ComboBox::textColourId, juce::Colours::black);
+    typeComboBox->setColour(juce::ComboBox::backgroundColourId, juce::Colours::white);
     typeComboBox->setSelectedId(1);
     
     auto* ccLabel = new juce::Label("cc", "CC Number:");
     ccLabel->setColour(juce::Label::textColourId, juce::Colours::black);
     auto* ccEditor = new juce::TextEditor();
-    ccEditor->setText("1");
     ccEditor->setColour(juce::TextEditor::textColourId, juce::Colours::black);
     ccEditor->setColour(juce::TextEditor::backgroundColourId, juce::Colours::white);
+    ccEditor->setText("1");
     
     auto* noteLabel = new juce::Label("note", "Note Number:");
     noteLabel->setColour(juce::Label::textColourId, juce::Colours::black);
@@ -506,16 +508,16 @@ void MidiMappingAccordion::addMapping(ControlItem* controlItem)
     auto* minLabel = new juce::Label("min", "Min Value:");
     minLabel->setColour(juce::Label::textColourId, juce::Colours::black);
     auto* minEditor = new juce::TextEditor();
-    minEditor->setText("0");
     minEditor->setColour(juce::TextEditor::textColourId, juce::Colours::black);
     minEditor->setColour(juce::TextEditor::backgroundColourId, juce::Colours::white);
+    minEditor->setText("0");
     
     auto* maxLabel = new juce::Label("max", "Max Value:");
     maxLabel->setColour(juce::Label::textColourId, juce::Colours::black);
     auto* maxEditor = new juce::TextEditor();
-    maxEditor->setText("127");
     maxEditor->setColour(juce::TextEditor::textColourId, juce::Colours::black);
     maxEditor->setColour(juce::TextEditor::backgroundColourId, juce::Colours::white);
+    maxEditor->setText("127");
     
     auto* okButton = new juce::TextButton("OK");
     auto* cancelButton = new juce::TextButton("Cancel");
@@ -651,7 +653,7 @@ void MidiMappingAccordion::addMapping(ControlItem* controlItem)
     options.content.setOwned(content);
     options.content->setSize(300, 250);
     options.dialogTitle = "Add MIDI Mapping";
-    options.dialogBackgroundColour = juce::Colours::white;
+    options.dialogBackgroundColour = juce::Colours::lightgrey;
     options.escapeKeyTriggersCloseButton = true;
     options.useNativeTitleBar = true;
     options.resizable = false;
