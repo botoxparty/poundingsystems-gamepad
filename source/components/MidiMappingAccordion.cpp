@@ -898,15 +898,18 @@ juce::String MidiMappingAccordion::getControlName(const juce::String& controlTyp
             case 1: return "B Button";
             case 2: return "X Button";
             case 3: return "Y Button";
+            case 4: return "Select Button";
+            case 5: return "Home Button";
+            case 6: return "Start Button";
+            case 7: return "Left Stick Button";
+            case 8: return "Right Stick Button";
             case 9: return "L1 Button";
             case 10: return "R1 Button";
             case 11: return "D-pad Up";
             case 12: return "D-pad Down";
             case 13: return "D-pad Left";
             case 14: return "D-pad Right";
-            case 7: return "Left Stick Button";
-            case 8: return "Right Stick Button";
-            default: return "Button " + juce::String(index);
+            default: return "Unknown Button";
         }
     }
     else if (controlType == "Gyro")
