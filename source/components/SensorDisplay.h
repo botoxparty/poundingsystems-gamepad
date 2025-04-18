@@ -27,8 +27,7 @@ public:
     const State& getState() const { return state; }
 
     // Callbacks for button interactions
-    std::function<void(const juce::String&)> onButtonClick;
-    std::function<void(const juce::String&)> onLearnClick;
+    std::function<void(const juce::String&, float)> onButtonStateChanged;  // Called when button state changes (1.0f for press, 0.0f for release)
     std::function<void(float, float, float)> onValueChange;
 
     void setLearnMode(bool enabled) {

@@ -88,45 +88,45 @@ void FaceButtons::setupCallbacks()
 {
     // A button callbacks
     aButton.onPress = [this]() {
-        if (state.isLearnMode) {
-            if (onLearnClick)
-                onLearnClick("A");
-        } else {
-            if (onButtonClick)
-                onButtonClick("A");
-        }
+        if (onButtonStateChanged)
+            onButtonStateChanged("A", 1.0f);
+    };
+    
+    aButton.onRelease = [this]() {
+        if (onButtonStateChanged)
+            onButtonStateChanged("A", 0.0f);
     };
 
     // B button callbacks
     bButton.onPress = [this]() {
-        if (state.isLearnMode) {
-            if (onLearnClick)
-                onLearnClick("B");
-        } else {
-            if (onButtonClick)
-                onButtonClick("B");
-        }
+        if (onButtonStateChanged)
+            onButtonStateChanged("B", 1.0f);
+    };
+    
+    bButton.onRelease = [this]() {
+        if (onButtonStateChanged)
+            onButtonStateChanged("B", 0.0f);
     };
 
     // X button callbacks
     xButton.onPress = [this]() {
-        if (state.isLearnMode) {
-            if (onLearnClick)
-                onLearnClick("X");
-        } else {
-            if (onButtonClick)
-                onButtonClick("X");
-        }
+        if (onButtonStateChanged)
+            onButtonStateChanged("X", 1.0f);
+    };
+    
+    xButton.onRelease = [this]() {
+        if (onButtonStateChanged)
+            onButtonStateChanged("X", 0.0f);
     };
 
     // Y button callbacks
     yButton.onPress = [this]() {
-        if (state.isLearnMode) {
-            if (onLearnClick)
-                onLearnClick("Y");
-        } else {
-            if (onButtonClick)
-                onButtonClick("Y");
-        }
+        if (onButtonStateChanged)
+            onButtonStateChanged("Y", 1.0f);
+    };
+    
+    yButton.onRelease = [this]() {
+        if (onButtonStateChanged)
+            onButtonStateChanged("Y", 0.0f);
     };
 } 

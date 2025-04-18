@@ -97,34 +97,40 @@ void SensorDisplay::setupCallbacks()
 {
     // X button callbacks
     xButton.onPress = [this]() {
-        if (state.isLearnMode) {
-            if (onLearnClick)
-                onLearnClick("X");
-        } else {
-            if (onButtonClick)
-                onButtonClick("X");
-        }
+        if (onButtonStateChanged)
+            onButtonStateChanged("X", 1.0f);
+    };
+    
+    xButton.onRelease = [this]() {
+        if (onButtonStateChanged)
+            onButtonStateChanged("X", 0.0f);
+        if (onValueChange)
+            onValueChange(0.0f, state.y, state.z);
     };
 
     // Y button callbacks
     yButton.onPress = [this]() {
-        if (state.isLearnMode) {
-            if (onLearnClick)
-                onLearnClick("Y");
-        } else {
-            if (onButtonClick)
-                onButtonClick("Y");
-        }
+        if (onButtonStateChanged)
+            onButtonStateChanged("Y", 1.0f);
+    };
+    
+    yButton.onRelease = [this]() {
+        if (onButtonStateChanged)
+            onButtonStateChanged("Y", 0.0f);
+        if (onValueChange)
+            onValueChange(state.x, 0.0f, state.z);
     };
 
     // Z button callbacks
     zButton.onPress = [this]() {
-        if (state.isLearnMode) {
-            if (onLearnClick)
-                onLearnClick("Z");
-        } else {
-            if (onButtonClick)
-                onButtonClick("Z");
-        }
+        if (onButtonStateChanged)
+            onButtonStateChanged("Z", 1.0f);
+    };
+    
+    zButton.onRelease = [this]() {
+        if (onButtonStateChanged)
+            onButtonStateChanged("Z", 0.0f);
+        if (onValueChange)
+            onValueChange(state.x, state.y, 0.0f);
     };
 } 

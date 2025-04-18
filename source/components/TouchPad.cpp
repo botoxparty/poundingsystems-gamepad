@@ -105,46 +105,54 @@ void TouchPad::setupCallbacks()
 {
     // X axis button callbacks
     xButton.onPress = [this]() {
-        if (state.isLearnMode) {
-            if (onLearnClick)
-                onLearnClick("X");
-        } else {
-            if (onButtonClick)
-                onButtonClick("X");
-        }
+        if (onButtonStateChanged)
+            onButtonStateChanged("X", 1.0f);
+    };
+    
+    xButton.onRelease = [this]() {
+        if (onButtonStateChanged)
+            onButtonStateChanged("X", 0.0f);
+        if (onXValueChange)
+            onXValueChange(0.0f);
     };
 
     // Y axis button callbacks
     yButton.onPress = [this]() {
-        if (state.isLearnMode) {
-            if (onLearnClick)
-                onLearnClick("Y");
-        } else {
-            if (onButtonClick)
-                onButtonClick("Y");
-        }
+        if (onButtonStateChanged)
+            onButtonStateChanged("Y", 1.0f);
+    };
+    
+    yButton.onRelease = [this]() {
+        if (onButtonStateChanged)
+            onButtonStateChanged("Y", 0.0f);
+        if (onYValueChange)
+            onYValueChange(0.0f);
     };
 
     // Pressure button callbacks
     pressureButton.onPress = [this]() {
-        if (state.isLearnMode) {
-            if (onLearnClick)
-                onLearnClick("Pressure");
-        } else {
-            if (onButtonClick)
-                onButtonClick("Pressure");
-        }
+        if (onButtonStateChanged)
+            onButtonStateChanged("Pressure", 1.0f);
+    };
+    
+    pressureButton.onRelease = [this]() {
+        if (onButtonStateChanged)
+            onButtonStateChanged("Pressure", 0.0f);
+        if (onPressureValueChange)
+            onPressureValueChange(0.0f);
     };
 
     // Button press button callbacks
     buttonPressButton.onPress = [this]() {
-        if (state.isLearnMode) {
-            if (onLearnClick)
-                onLearnClick("Button");
-        } else {
-            if (onButtonClick)
-                onButtonClick("Button");
-        }
+        if (onButtonStateChanged)
+            onButtonStateChanged("Button", 1.0f);
+    };
+    
+    buttonPressButton.onRelease = [this]() {
+        if (onButtonStateChanged)
+            onButtonStateChanged("Button", 0.0f);
+        if (onButtonValueChange)
+            onButtonValueChange(0.0f);
     };
 }
 

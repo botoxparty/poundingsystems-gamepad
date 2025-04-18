@@ -88,45 +88,45 @@ void DirectionalPad::setupCallbacks()
 {
     // Up button callbacks
     upButton.onPress = [this]() {
-        if (state.isLearnMode) {
-            if (onLearnClick)
-                onLearnClick("Up");
-        } else {
-            if (onButtonClick)
-                onButtonClick("Up");
-        }
+        if (onButtonStateChanged)
+            onButtonStateChanged("Up", 1.0f);
+    };
+    
+    upButton.onRelease = [this]() {
+        if (onButtonStateChanged)
+            onButtonStateChanged("Up", 0.0f);
     };
 
     // Down button callbacks
     downButton.onPress = [this]() {
-        if (state.isLearnMode) {
-            if (onLearnClick)
-                onLearnClick("Down");
-        } else {
-            if (onButtonClick)
-                onButtonClick("Down");
-        }
+        if (onButtonStateChanged)
+            onButtonStateChanged("Down", 1.0f);
+    };
+    
+    downButton.onRelease = [this]() {
+        if (onButtonStateChanged)
+            onButtonStateChanged("Down", 0.0f);
     };
 
     // Left button callbacks
     leftButton.onPress = [this]() {
-        if (state.isLearnMode) {
-            if (onLearnClick)
-                onLearnClick("Left");
-        } else {
-            if (onButtonClick)
-                onButtonClick("Left");
-        }
+        if (onButtonStateChanged)
+            onButtonStateChanged("Left", 1.0f);
+    };
+    
+    leftButton.onRelease = [this]() {
+        if (onButtonStateChanged)
+            onButtonStateChanged("Left", 0.0f);
     };
 
     // Right button callbacks
     rightButton.onPress = [this]() {
-        if (state.isLearnMode) {
-            if (onLearnClick)
-                onLearnClick("Right");
-        } else {
-            if (onButtonClick)
-                onButtonClick("Right");
-        }
+        if (onButtonStateChanged)
+            onButtonStateChanged("Right", 1.0f);
+    };
+    
+    rightButton.onRelease = [this]() {
+        if (onButtonStateChanged)
+            onButtonStateChanged("Right", 0.0f);
     };
 } 

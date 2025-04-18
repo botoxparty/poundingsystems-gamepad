@@ -48,18 +48,7 @@ public:
     }
 
     // Event callbacks
-    std::function<void()> onAClick;
-    std::function<void()> onBClick;
-    std::function<void()> onXClick;
-    std::function<void()> onYClick;
-    std::function<void()> onALearnClick;
-    std::function<void()> onBLearnClick;
-    std::function<void()> onXLearnClick;
-    std::function<void()> onYLearnClick;
-
-    // Callbacks
-    std::function<void(const juce::String&)> onButtonClick;
-    std::function<void(const juce::String&)> onLearnClick;
+    std::function<void(const juce::String&, float)> onButtonStateChanged;  // Called when button state changes (1.0f for press, 0.0f for release)
 
     // Component override
     void resized() override;

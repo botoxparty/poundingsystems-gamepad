@@ -49,8 +49,7 @@ public:
     }
 
     // Event callbacks
-    std::function<void(const juce::String&)> onLearnClick;  // Passes "L1", "R1", "L2", or "R2"
-    std::function<void(const juce::String&)> onButtonClick; // For L1/R1 clicks
+    std::function<void(const juce::String&, float)> onButtonStateChanged;  // Called when button state changes (1.0f for press, 0.0f for release)
 
     // Component overrides
     void resized() override;

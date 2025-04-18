@@ -113,6 +113,10 @@ void AnalogStick::setupCallbacks()
                 onButtonClick("X");
         }
     };
+    
+    xButton.onRelease = [this]() {
+        onAxisChange("X", 0.0f);
+    };
 
     // Y axis button callbacks
     yButton.onPress = [this]() {
@@ -123,6 +127,10 @@ void AnalogStick::setupCallbacks()
             if (onButtonClick)
                 onButtonClick("Y");
         }
+    };
+    
+    yButton.onRelease = [this]() {
+        onAxisChange("Y", 0.0f);
     };
 }
 
@@ -219,6 +227,11 @@ void AnalogStick::mouseUp(const juce::MouseEvent& e)
     if (state.isPressed)
     {
         state.isPressed = false;
+        
+        if (!state.isLearnMode && onAxisChange) {
+            onAxisChange(state.name + " Press", 0.0f);
+        }
+        
         repaint();
     }
 }

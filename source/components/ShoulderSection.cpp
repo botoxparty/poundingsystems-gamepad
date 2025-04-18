@@ -75,35 +75,23 @@ void ShoulderSection::setupCallbacks()
 {
     // L1 button callbacks
     l1Button.onPress = [this]() {
-        if (state.isLearnMode) {
-            if (onLearnClick)
-                onLearnClick("L1");
-        } else {
-            if (onButtonClick)
-                onButtonClick("L1");
-        }
+        if (onButtonStateChanged)
+            onButtonStateChanged("L1", 1.0f);
+    };
+    
+    l1Button.onRelease = [this]() {
+        if (onButtonStateChanged)
+            onButtonStateChanged("L1", 0.0f);
     };
 
     // R1 button callbacks
     r1Button.onPress = [this]() {
-        if (state.isLearnMode) {
-            if (onLearnClick)
-                onLearnClick("R1");
-        } else {
-            if (onButtonClick)
-                onButtonClick("R1");
-        }
+        if (onButtonStateChanged)
+            onButtonStateChanged("R1", 1.0f);
     };
-
-    // L2 trigger callback
-    l2Trigger.onLearnClick = [this]() {
-        if (onLearnClick)
-            onLearnClick("L2");
-    };
-
-    // R2 trigger callback
-    r2Trigger.onLearnClick = [this]() {
-        if (onLearnClick)
-            onLearnClick("R2");
+    
+    r1Button.onRelease = [this]() {
+        if (onButtonStateChanged)
+            onButtonStateChanged("R1", 0.0f);
     };
 } 
