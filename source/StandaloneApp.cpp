@@ -321,18 +321,13 @@ void StandaloneApp::mouseUp(const juce::MouseEvent& event)
 
 void StandaloneApp::notifyGamepadControlActivated(const juce::String& controlType, int controlIndex)
 {
-    // Find the MIDI editor window if it's open
-    for (int i = 0; i < juce::TopLevelWindow::getNumTopLevelWindows(); ++i)
+    if (auto* window = MidiMappingEditorWindow::getExistingInstance())
     {
-        if (auto* window = dynamic_cast<MidiMappingEditorWindow*>(juce::TopLevelWindow::getTopLevelWindow(i)))
+        // Get the editor component from the window
+        if (auto* editor = dynamic_cast<MidiMappingEditor*>(window->getContentComponent()))
         {
-            // Get the editor component from the window
-            if (auto* editor = dynamic_cast<MidiMappingAccordion*>(window->getContentComponent()))
-            {
-                // Highlight the control in the editor
-                editor->highlightControl(controlType, controlIndex);
-                break;
-            }
+            // Highlight the control in the editor
+            editor->highlightControl(controlType, controlIndex);
         }
     }
 }
