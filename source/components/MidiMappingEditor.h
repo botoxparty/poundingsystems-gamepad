@@ -21,8 +21,8 @@ public:
     // Button::Listener implementation
     void buttonClicked(juce::Button* button) override;
     
-    // Save and load mappings
-    void saveMappings();
+    // Export and load mappings
+    void exportMappings();
     void loadMappings();
     
     // Highlight a control in the editor
@@ -34,7 +34,7 @@ private:
     std::unique_ptr<MidiMappingAccordion> accordion;
     
     // Buttons
-    juce::TextButton saveButton;
+    juce::TextButton exportButton;
     juce::TextButton loadButton;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiMappingEditor)

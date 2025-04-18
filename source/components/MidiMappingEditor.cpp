@@ -20,9 +20,9 @@ MidiMappingEditor::MidiMappingEditor(StandaloneApp& app)
     addAndMakeVisible(viewport.get());
     
     // Set up buttons
-    saveButton.setButtonText("Save Mappings");
-    saveButton.addListener(this);
-    addAndMakeVisible(saveButton);
+    exportButton.setButtonText("Export Mappings");
+    exportButton.addListener(this);
+    addAndMakeVisible(exportButton);
     
     loadButton.setButtonText("Load Mappings");
     loadButton.addListener(this);
@@ -46,7 +46,7 @@ void MidiMappingEditor::resized()
     
     // Position the buttons
     auto buttonWidth = (buttonArea.getWidth() - 10) / 2;
-    saveButton.setBounds(buttonArea.removeFromLeft(buttonWidth));
+    exportButton.setBounds(buttonArea.removeFromLeft(buttonWidth));
     buttonArea.removeFromLeft(10);
     loadButton.setBounds(buttonArea);
     
@@ -66,9 +66,9 @@ void MidiMappingEditor::resized()
 
 void MidiMappingEditor::buttonClicked(juce::Button* button)
 {
-    if (button == &saveButton)
+    if (button == &exportButton)
     {
-        saveMappings();
+        exportMappings();
     }
     else if (button == &loadButton)
     {
@@ -76,9 +76,9 @@ void MidiMappingEditor::buttonClicked(juce::Button* button)
     }
 }
 
-void MidiMappingEditor::saveMappings()
+void MidiMappingEditor::exportMappings()
 {
-    accordion->saveMappings();
+    accordion->exportMappings();
 }
 
 void MidiMappingEditor::loadMappings()

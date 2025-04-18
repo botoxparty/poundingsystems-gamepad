@@ -711,7 +711,7 @@ void MidiMappingAccordion::updateAppMappings()
     app.updateMidiMappings();
 }
 
-void MidiMappingAccordion::saveMappings()
+void MidiMappingAccordion::exportMappings()
 {
     juce::FileChooser chooser("Save MIDI Mappings",
                              juce::File::getSpecialLocation(juce::File::userHomeDirectory),

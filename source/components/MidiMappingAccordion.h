@@ -20,8 +20,8 @@ public:
     // Button::Listener implementation
     void buttonClicked(juce::Button* button) override;
     
-    // Save and load mappings
-    void saveMappings();
+    // Export and load mappings
+    void exportMappings();
     void loadMappings();
     
     // Highlight a control in the editor
