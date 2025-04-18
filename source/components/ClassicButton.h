@@ -27,8 +27,8 @@ public:
     const Properties& getProperties() const { return props; }
 
     // Event callbacks
-    std::function<void()> onClick;
-    std::function<void()> onLearnClick;
+    std::function<void()> onPress;   // Called when button is pressed down
+    std::function<void()> onRelease; // Called when button is released
 
     // Component overrides
     void paint(juce::Graphics& g) override;

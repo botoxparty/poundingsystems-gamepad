@@ -106,20 +106,15 @@ void ClassicButton::mouseDown(const juce::MouseEvent& event)
     isMouseDown = true;
     repaint();
 
-    if (props.isLearnMode)
-    {
-        if (onLearnClick)
-            onLearnClick();
-    }
-    else
-    {
-        if (onClick)
-            onClick();
-    }
+    if (onPress)
+        onPress();
 }
 
 void ClassicButton::mouseUp(const juce::MouseEvent& event)
 {
     isMouseDown = false;
     repaint();
+    
+    if (onRelease)
+        onRelease();
 } 

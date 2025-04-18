@@ -87,46 +87,46 @@ void FaceButtons::paint(juce::Graphics& g)
 void FaceButtons::setupCallbacks()
 {
     // A button callbacks
-    aButton.onClick = [this]() {
-        if (onButtonClick)
-            onButtonClick("A");
-    };
-    
-    aButton.onLearnClick = [this]() {
-        if (onLearnClick)
-            onLearnClick("A");
+    aButton.onPress = [this]() {
+        if (state.isLearnMode) {
+            if (onLearnClick)
+                onLearnClick("A");
+        } else {
+            if (onButtonClick)
+                onButtonClick("A");
+        }
     };
 
     // B button callbacks
-    bButton.onClick = [this]() {
-        if (onButtonClick)
-            onButtonClick("B");
-    };
-    
-    bButton.onLearnClick = [this]() {
-        if (onLearnClick)
-            onLearnClick("B");
+    bButton.onPress = [this]() {
+        if (state.isLearnMode) {
+            if (onLearnClick)
+                onLearnClick("B");
+        } else {
+            if (onButtonClick)
+                onButtonClick("B");
+        }
     };
 
     // X button callbacks
-    xButton.onClick = [this]() {
-        if (onButtonClick)
-            onButtonClick("X");
-    };
-    
-    xButton.onLearnClick = [this]() {
-        if (onLearnClick)
-            onLearnClick("X");
+    xButton.onPress = [this]() {
+        if (state.isLearnMode) {
+            if (onLearnClick)
+                onLearnClick("X");
+        } else {
+            if (onButtonClick)
+                onButtonClick("X");
+        }
     };
 
     // Y button callbacks
-    yButton.onClick = [this]() {
-        if (onButtonClick)
-            onButtonClick("Y");
-    };
-    
-    yButton.onLearnClick = [this]() {
-        if (onLearnClick)
-            onLearnClick("Y");
+    yButton.onPress = [this]() {
+        if (state.isLearnMode) {
+            if (onLearnClick)
+                onLearnClick("Y");
+        } else {
+            if (onButtonClick)
+                onButtonClick("Y");
+        }
     };
 } 

@@ -54,7 +54,7 @@ void ModernGamepadComponent::setupComponents()
     statusLabel.setBorderSize(juce::BorderSize<int>(1, 10, 1, 1)); // Left: 10px, Others: 1px
     
     // Set up button callbacks
-    selectButton.onClick = [this]() {
+    selectButton.onPress = [this]() {
         if (midiLearnMode) {
             sendMidiCC(MidiCC::SELECT_BUTTON, 1.0f, true);
         } else {
@@ -63,11 +63,11 @@ void ModernGamepadComponent::setupComponents()
         }
     };
     
-    selectButton.onLearnClick = [this]() {
-        sendMidiCC(MidiCC::SELECT_BUTTON, 1.0f, true);
+    selectButton.onRelease = [this]() {
+        sendMidiCC(MidiCC::SELECT_BUTTON, 0.0f, true);
     };
     
-    homeButton.onClick = [this]() {
+    homeButton.onPress = [this]() {
         if (midiLearnMode) {
             sendMidiCC(MidiCC::HOME_BUTTON, 1.0f, true);
         } else {
@@ -76,11 +76,11 @@ void ModernGamepadComponent::setupComponents()
         }
     };
     
-    homeButton.onLearnClick = [this]() {
-        sendMidiCC(MidiCC::HOME_BUTTON, 1.0f, true);
+    homeButton.onRelease = [this]() {
+        sendMidiCC(MidiCC::HOME_BUTTON, 0.0f, true);
     };
     
-    cancelButton.onClick = [this]() {
+    cancelButton.onPress = [this]() {
         if (midiLearnMode) {
             sendMidiCC(MidiCC::CANCEL_BUTTON, 1.0f, true);
         } else {
@@ -89,8 +89,8 @@ void ModernGamepadComponent::setupComponents()
         }
     };
     
-    cancelButton.onLearnClick = [this]() {
-        sendMidiCC(MidiCC::CANCEL_BUTTON, 1.0f, true);
+    cancelButton.onRelease = [this]() {
+        sendMidiCC(MidiCC::CANCEL_BUTTON, 0.0f, true);
     };
 }
 

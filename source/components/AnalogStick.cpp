@@ -104,25 +104,25 @@ void AnalogStick::paint(juce::Graphics& g)
 void AnalogStick::setupCallbacks()
 {
     // X axis button callbacks
-    xButton.onClick = [this]() {
-        if (onButtonClick)
-            onButtonClick("X");
-    };
-    
-    xButton.onLearnClick = [this]() {
-        if (onLearnClick)
-            onLearnClick("X");
+    xButton.onPress = [this]() {
+        if (state.isLearnMode) {
+            if (onLearnClick)
+                onLearnClick("X");
+        } else {
+            if (onButtonClick)
+                onButtonClick("X");
+        }
     };
 
     // Y axis button callbacks
-    yButton.onClick = [this]() {
-        if (onButtonClick)
-            onButtonClick("Y");
-    };
-    
-    yButton.onLearnClick = [this]() {
-        if (onLearnClick)
-            onLearnClick("Y");
+    yButton.onPress = [this]() {
+        if (state.isLearnMode) {
+            if (onLearnClick)
+                onLearnClick("Y");
+        } else {
+            if (onButtonClick)
+                onButtonClick("Y");
+        }
     };
 }
 

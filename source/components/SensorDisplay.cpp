@@ -96,35 +96,35 @@ void SensorDisplay::paint(juce::Graphics& g)
 void SensorDisplay::setupCallbacks()
 {
     // X button callbacks
-    xButton.onClick = [this]() {
-        if (onButtonClick)
-            onButtonClick("X");
-    };
-
-    xButton.onLearnClick = [this]() {
-        if (onLearnClick)
-            onLearnClick("X");
+    xButton.onPress = [this]() {
+        if (state.isLearnMode) {
+            if (onLearnClick)
+                onLearnClick("X");
+        } else {
+            if (onButtonClick)
+                onButtonClick("X");
+        }
     };
 
     // Y button callbacks
-    yButton.onClick = [this]() {
-        if (onButtonClick)
-            onButtonClick("Y");
-    };
-
-    yButton.onLearnClick = [this]() {
-        if (onLearnClick)
-            onLearnClick("Y");
+    yButton.onPress = [this]() {
+        if (state.isLearnMode) {
+            if (onLearnClick)
+                onLearnClick("Y");
+        } else {
+            if (onButtonClick)
+                onButtonClick("Y");
+        }
     };
 
     // Z button callbacks
-    zButton.onClick = [this]() {
-        if (onButtonClick)
-            onButtonClick("Z");
-    };
-
-    zButton.onLearnClick = [this]() {
-        if (onLearnClick)
-            onLearnClick("Z");
+    zButton.onPress = [this]() {
+        if (state.isLearnMode) {
+            if (onLearnClick)
+                onLearnClick("Z");
+        } else {
+            if (onButtonClick)
+                onButtonClick("Z");
+        }
     };
 } 

@@ -104,47 +104,47 @@ void TouchPad::paint(juce::Graphics& g)
 void TouchPad::setupCallbacks()
 {
     // X axis button callbacks
-    xButton.onClick = [this]() {
-        if (onButtonClick)
-            onButtonClick("X");
-    };
-    
-    xButton.onLearnClick = [this]() {
-        if (onLearnClick)
-            onLearnClick("X");
+    xButton.onPress = [this]() {
+        if (state.isLearnMode) {
+            if (onLearnClick)
+                onLearnClick("X");
+        } else {
+            if (onButtonClick)
+                onButtonClick("X");
+        }
     };
 
     // Y axis button callbacks
-    yButton.onClick = [this]() {
-        if (onButtonClick)
-            onButtonClick("Y");
-    };
-    
-    yButton.onLearnClick = [this]() {
-        if (onLearnClick)
-            onLearnClick("Y");
+    yButton.onPress = [this]() {
+        if (state.isLearnMode) {
+            if (onLearnClick)
+                onLearnClick("Y");
+        } else {
+            if (onButtonClick)
+                onButtonClick("Y");
+        }
     };
 
     // Pressure button callbacks
-    pressureButton.onClick = [this]() {
-        if (onButtonClick)
-            onButtonClick("Pressure");
-    };
-    
-    pressureButton.onLearnClick = [this]() {
-        if (onLearnClick)
-            onLearnClick("Pressure");
+    pressureButton.onPress = [this]() {
+        if (state.isLearnMode) {
+            if (onLearnClick)
+                onLearnClick("Pressure");
+        } else {
+            if (onButtonClick)
+                onButtonClick("Pressure");
+        }
     };
 
     // Button press button callbacks
-    buttonPressButton.onClick = [this]() {
-        if (onButtonClick)
-            onButtonClick("Button");
-    };
-    
-    buttonPressButton.onLearnClick = [this]() {
-        if (onLearnClick)
-            onLearnClick("Button");
+    buttonPressButton.onPress = [this]() {
+        if (state.isLearnMode) {
+            if (onLearnClick)
+                onLearnClick("Button");
+        } else {
+            if (onButtonClick)
+                onButtonClick("Button");
+        }
     };
 }
 

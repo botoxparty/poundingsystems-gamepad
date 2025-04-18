@@ -74,25 +74,25 @@ void ShoulderSection::resized()
 void ShoulderSection::setupCallbacks()
 {
     // L1 button callbacks
-    l1Button.onClick = [this]() {
-        if (onButtonClick)
-            onButtonClick("L1");
-    };
-    
-    l1Button.onLearnClick = [this]() {
-        if (onLearnClick)
-            onLearnClick("L1");
+    l1Button.onPress = [this]() {
+        if (state.isLearnMode) {
+            if (onLearnClick)
+                onLearnClick("L1");
+        } else {
+            if (onButtonClick)
+                onButtonClick("L1");
+        }
     };
 
     // R1 button callbacks
-    r1Button.onClick = [this]() {
-        if (onButtonClick)
-            onButtonClick("R1");
-    };
-    
-    r1Button.onLearnClick = [this]() {
-        if (onLearnClick)
-            onLearnClick("R1");
+    r1Button.onPress = [this]() {
+        if (state.isLearnMode) {
+            if (onLearnClick)
+                onLearnClick("R1");
+        } else {
+            if (onButtonClick)
+                onButtonClick("R1");
+        }
     };
 
     // L2 trigger callback

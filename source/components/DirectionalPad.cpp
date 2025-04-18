@@ -87,46 +87,46 @@ void DirectionalPad::paint(juce::Graphics& g)
 void DirectionalPad::setupCallbacks()
 {
     // Up button callbacks
-    upButton.onClick = [this]() {
-        if (onButtonClick)
-            onButtonClick("Up");
-    };
-    
-    upButton.onLearnClick = [this]() {
-        if (onLearnClick)
-            onLearnClick("Up");
+    upButton.onPress = [this]() {
+        if (state.isLearnMode) {
+            if (onLearnClick)
+                onLearnClick("Up");
+        } else {
+            if (onButtonClick)
+                onButtonClick("Up");
+        }
     };
 
     // Down button callbacks
-    downButton.onClick = [this]() {
-        if (onButtonClick)
-            onButtonClick("Down");
-    };
-    
-    downButton.onLearnClick = [this]() {
-        if (onLearnClick)
-            onLearnClick("Down");
+    downButton.onPress = [this]() {
+        if (state.isLearnMode) {
+            if (onLearnClick)
+                onLearnClick("Down");
+        } else {
+            if (onButtonClick)
+                onButtonClick("Down");
+        }
     };
 
     // Left button callbacks
-    leftButton.onClick = [this]() {
-        if (onButtonClick)
-            onButtonClick("Left");
-    };
-    
-    leftButton.onLearnClick = [this]() {
-        if (onLearnClick)
-            onLearnClick("Left");
+    leftButton.onPress = [this]() {
+        if (state.isLearnMode) {
+            if (onLearnClick)
+                onLearnClick("Left");
+        } else {
+            if (onButtonClick)
+                onButtonClick("Left");
+        }
     };
 
     // Right button callbacks
-    rightButton.onClick = [this]() {
-        if (onButtonClick)
-            onButtonClick("Right");
-    };
-    
-    rightButton.onLearnClick = [this]() {
-        if (onLearnClick)
-            onLearnClick("Right");
+    rightButton.onPress = [this]() {
+        if (state.isLearnMode) {
+            if (onLearnClick)
+                onLearnClick("Right");
+        } else {
+            if (onButtonClick)
+                onButtonClick("Right");
+        }
     };
 } 
