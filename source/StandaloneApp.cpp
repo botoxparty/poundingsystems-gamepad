@@ -9,6 +9,9 @@ StandaloneApp::StandaloneApp()
     // Set up MIDI mappings first
     setupMidiMappings();
     
+    // Try to load saved mappings
+    loadMidiMappings();
+    
     // Create single gamepad component
     gamepadComponent = std::make_unique<ModernGamepadComponent>(gamepadManager.getGamepadState(0), *this);
     addAndMakeVisible(gamepadComponent.get());  // Make visible immediately
@@ -334,4 +337,251 @@ void StandaloneApp::notifyGamepadControlActivated(const juce::String& controlTyp
             }
         }
     }
+}
+
+juce::File StandaloneApp::getMidiMappingsFile() const
+{
+    // Get the application data directory
+    juce::File appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+        .getChildFile("PoundingSystems")
+        .getChildFile("Gamepad");
+    
+    // Create the directory if it doesn't exist
+    if (!appDataDir.exists())
+        appDataDir.createDirectory();
+    
+    // Return the mappings file
+    return appDataDir.getChildFile("midi_mappings.json");
+}
+
+void StandaloneApp::saveMidiMappings()
+{
+    juce::File file = getMidiMappingsFile();
+    
+    juce::DynamicObject::Ptr jsonObj = new juce::DynamicObject();
+    
+    // Convert mapping data to JSON
+    juce::Array<juce::var> mappingsArray;
+    
+    // Save axis mappings
+    for (size_t i = 0; i < axisMappings.size(); ++i)
+    {
+        if (!axisMappings[i].empty())
+        {
+            juce::DynamicObject::Ptr mappingObj = new juce::DynamicObject();
+            mappingObj->setProperty("controlType", "Axis");
+            mappingObj->setProperty("controlIndex", static_cast<int>(i));
+            
+            juce::Array<juce::var> midiMappingsArray;
+            for (const auto& mapping : axisMappings[i])
+            {
+                juce::DynamicObject::Ptr midiMappingObj = new juce::DynamicObject();
+                midiMappingObj->setProperty("type", static_cast<int>(mapping.type));
+                midiMappingObj->setProperty("channel", mapping.channel);
+                midiMappingObj->setProperty("ccNumber", mapping.ccNumber);
+                midiMappingObj->setProperty("noteNumber", mapping.noteNumber);
+                midiMappingObj->setProperty("minValue", mapping.minValue);
+                midiMappingObj->setProperty("maxValue", mapping.maxValue);
+                midiMappingObj->setProperty("isButton", mapping.isButton);
+                midiMappingsArray.add(juce::var(midiMappingObj));
+            }
+            mappingObj->setProperty("mappings", midiMappingsArray);
+            mappingsArray.add(juce::var(mappingObj));
+        }
+    }
+    
+    // Save button mappings
+    for (size_t i = 0; i < buttonMappings.size(); ++i)
+    {
+        if (!buttonMappings[i].empty())
+        {
+            juce::DynamicObject::Ptr mappingObj = new juce::DynamicObject();
+            mappingObj->setProperty("controlType", "Button");
+            mappingObj->setProperty("controlIndex", static_cast<int>(i));
+            
+            juce::Array<juce::var> midiMappingsArray;
+            for (const auto& mapping : buttonMappings[i])
+            {
+                juce::DynamicObject::Ptr midiMappingObj = new juce::DynamicObject();
+                midiMappingObj->setProperty("type", static_cast<int>(mapping.type));
+                midiMappingObj->setProperty("channel", mapping.channel);
+                midiMappingObj->setProperty("ccNumber", mapping.ccNumber);
+                midiMappingObj->setProperty("noteNumber", mapping.noteNumber);
+                midiMappingObj->setProperty("minValue", mapping.minValue);
+                midiMappingObj->setProperty("maxValue", mapping.maxValue);
+                midiMappingObj->setProperty("isButton", mapping.isButton);
+                midiMappingsArray.add(juce::var(midiMappingObj));
+            }
+            mappingObj->setProperty("mappings", midiMappingsArray);
+            mappingsArray.add(juce::var(mappingObj));
+        }
+    }
+    
+    // Save gyro mappings
+    for (size_t i = 0; i < gyroMappings.size(); ++i)
+    {
+        if (!gyroMappings[i].empty())
+        {
+            juce::DynamicObject::Ptr mappingObj = new juce::DynamicObject();
+            mappingObj->setProperty("controlType", "Gyro");
+            mappingObj->setProperty("controlIndex", static_cast<int>(i));
+            
+            juce::Array<juce::var> midiMappingsArray;
+            for (const auto& mapping : gyroMappings[i])
+            {
+                juce::DynamicObject::Ptr midiMappingObj = new juce::DynamicObject();
+                midiMappingObj->setProperty("type", static_cast<int>(mapping.type));
+                midiMappingObj->setProperty("channel", mapping.channel);
+                midiMappingObj->setProperty("ccNumber", mapping.ccNumber);
+                midiMappingObj->setProperty("noteNumber", mapping.noteNumber);
+                midiMappingObj->setProperty("minValue", mapping.minValue);
+                midiMappingObj->setProperty("maxValue", mapping.maxValue);
+                midiMappingObj->setProperty("isButton", mapping.isButton);
+                midiMappingsArray.add(juce::var(midiMappingObj));
+            }
+            mappingObj->setProperty("mappings", midiMappingsArray);
+            mappingsArray.add(juce::var(mappingObj));
+        }
+    }
+    
+    // Save accelerometer mappings
+    for (size_t i = 0; i < accelerometerMappings.size(); ++i)
+    {
+        if (!accelerometerMappings[i].empty())
+        {
+            juce::DynamicObject::Ptr mappingObj = new juce::DynamicObject();
+            mappingObj->setProperty("controlType", "Accel");
+            mappingObj->setProperty("controlIndex", static_cast<int>(i));
+            
+            juce::Array<juce::var> midiMappingsArray;
+            for (const auto& mapping : accelerometerMappings[i])
+            {
+                juce::DynamicObject::Ptr midiMappingObj = new juce::DynamicObject();
+                midiMappingObj->setProperty("type", static_cast<int>(mapping.type));
+                midiMappingObj->setProperty("channel", mapping.channel);
+                midiMappingObj->setProperty("ccNumber", mapping.ccNumber);
+                midiMappingObj->setProperty("noteNumber", mapping.noteNumber);
+                midiMappingObj->setProperty("minValue", mapping.minValue);
+                midiMappingObj->setProperty("maxValue", mapping.maxValue);
+                midiMappingObj->setProperty("isButton", mapping.isButton);
+                midiMappingsArray.add(juce::var(midiMappingObj));
+            }
+            mappingObj->setProperty("mappings", midiMappingsArray);
+            mappingsArray.add(juce::var(mappingObj));
+        }
+    }
+    
+    jsonObj->setProperty("mappings", mappingsArray);
+    
+    // Convert to JSON string with proper formatting
+    juce::String jsonString = juce::JSON::toString(juce::var(jsonObj), true);
+    
+    // Write to file
+    file.replaceWithText(jsonString);
+}
+
+void StandaloneApp::loadMidiMappings()
+{
+    juce::File file = getMidiMappingsFile();
+    
+    if (!file.existsAsFile())
+        return;
+        
+    juce::var json = juce::JSON::parse(file);
+    if (json.isVoid())
+        return;
+        
+    if (auto* obj = json.getDynamicObject())
+    {
+        if (auto* mappingsVar = obj->getProperty("mappings").getArray())
+        {
+            // Clear existing mappings
+            for (auto& mappings : axisMappings) mappings.clear();
+            for (auto& mappings : buttonMappings) mappings.clear();
+            for (auto& mappings : gyroMappings) mappings.clear();
+            for (auto& mappings : accelerometerMappings) mappings.clear();
+            
+            // Load mappings
+            for (const auto& mappingVar : *mappingsVar)
+            {
+                if (auto* mappingObj = mappingVar.getDynamicObject())
+                {
+                    juce::String controlType = mappingObj->getProperty("controlType").toString();
+                    int controlIndex = mappingObj->getProperty("controlIndex");
+                    
+                    if (auto* midiMappingsVar = mappingObj->getProperty("mappings").getArray())
+                    {
+                        std::vector<MidiMapping> mappings;
+                        
+                        for (const auto& midiMappingVar : *midiMappingsVar)
+                        {
+                            if (auto* midiMappingObj = midiMappingVar.getDynamicObject())
+                            {
+                                MidiMapping mapping;
+                                
+                                if (midiMappingObj->hasProperty("type"))
+                                {
+                                    mapping.type = static_cast<MidiMapping::Type>(
+                                        midiMappingObj->getProperty("type").operator int());
+                                }
+                                else
+                                {
+                                    mapping.type = MidiMapping::Type::ControlChange;
+                                }
+                                
+                                mapping.channel = midiMappingObj->getProperty("channel");
+                                mapping.ccNumber = midiMappingObj->getProperty("ccNumber");
+                                mapping.noteNumber = midiMappingObj->hasProperty("noteNumber") ? 
+                                    static_cast<int>(midiMappingObj->getProperty("noteNumber")) : 0;
+                                mapping.minValue = midiMappingObj->getProperty("minValue");
+                                mapping.maxValue = midiMappingObj->getProperty("maxValue");
+                                mapping.isButton = midiMappingObj->getProperty("isButton");
+                                
+                                mappings.push_back(mapping);
+                            }
+                        }
+                        
+                        // Store the mappings in the appropriate array
+                        if (controlType == "Axis" && controlIndex >= 0 && controlIndex < GamepadManager::MAX_AXES)
+                        {
+                            axisMappings[static_cast<size_t>(controlIndex)] = mappings;
+                        }
+                        else if (controlType == "Button" && controlIndex >= 0 && controlIndex < GamepadManager::MAX_BUTTONS)
+                        {
+                            buttonMappings[static_cast<size_t>(controlIndex)] = mappings;
+                        }
+                        else if (controlType == "Gyro" && controlIndex >= 0 && controlIndex < 3)
+                        {
+                            gyroMappings[static_cast<size_t>(controlIndex)] = mappings;
+                        }
+                        else if (controlType == "Accel" && controlIndex >= 0 && controlIndex < 3)
+                        {
+                            accelerometerMappings[static_cast<size_t>(controlIndex)] = mappings;
+                        }
+                    }
+                }
+            }
+            
+            // Update the gamepad component
+            updateMidiMappings();
+        }
+    }
+}
+
+void StandaloneApp::resetMidiMappingsToDefaults()
+{
+    // Clear existing mappings
+    for (auto& mappings : axisMappings) mappings.clear();
+    for (auto& mappings : buttonMappings) mappings.clear();
+    for (auto& mappings : gyroMappings) mappings.clear();
+    for (auto& mappings : accelerometerMappings) mappings.clear();
+    
+    // Set up default mappings
+    setupMidiMappings();
+    
+    // Update the gamepad component
+    updateMidiMappings();
+    
+    // Save the default mappings
+    saveMidiMappings();
 }

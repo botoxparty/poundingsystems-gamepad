@@ -675,40 +675,31 @@ void MidiMappingAccordion::updateAppMappings()
     {
         const auto& mappings = item->getMappings();
         const auto& controlType = item->getControlType();
-        const auto& controlIndex = item->getControlIndex();
+        const auto controlIndex = item->getControlIndex();
         
-        if (controlType == "Axis")
+        if (controlType == "Axis" && controlIndex >= 0 && controlIndex < GamepadManager::MAX_AXES)
         {
-            if (controlIndex >= 0 && controlIndex < GamepadManager::MAX_AXES)
-            {
-                app.axisMappings[static_cast<size_t>(controlIndex)] = mappings;
-            }
+            app.axisMappings[static_cast<size_t>(controlIndex)] = mappings;
         }
-        else if (controlType == "Button")
+        else if (controlType == "Button" && controlIndex >= 0 && controlIndex < GamepadManager::MAX_BUTTONS)
         {
-            if (controlIndex >= 0 && controlIndex < GamepadManager::MAX_BUTTONS)
-            {
-                app.buttonMappings[static_cast<size_t>(controlIndex)] = mappings;
-            }
+            app.buttonMappings[static_cast<size_t>(controlIndex)] = mappings;
         }
-        else if (controlType == "Gyro")
+        else if (controlType == "Gyro" && controlIndex >= 0 && controlIndex < 3)
         {
-            if (controlIndex >= 0 && controlIndex < 3)
-            {
-                app.gyroMappings[static_cast<size_t>(controlIndex)] = mappings;
-            }
+            app.gyroMappings[static_cast<size_t>(controlIndex)] = mappings;
         }
-        else if (controlType == "Accel")
+        else if (controlType == "Accel" && controlIndex >= 0 && controlIndex < 3)
         {
-            if (controlIndex >= 0 && controlIndex < 3)
-            {
-                app.accelerometerMappings[static_cast<size_t>(controlIndex)] = mappings;
-            }
+            app.accelerometerMappings[static_cast<size_t>(controlIndex)] = mappings;
         }
     }
     
-    // Notify the gamepad component that mappings have changed
+    // Update the gamepad component
     app.updateMidiMappings();
+    
+    // Save the mappings to make them persistent
+    app.saveMidiMappings();
 }
 
 void MidiMappingAccordion::exportMappings()

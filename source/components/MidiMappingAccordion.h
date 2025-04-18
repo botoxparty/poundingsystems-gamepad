@@ -26,6 +26,7 @@ public:
     
     // Highlight a control in the editor
     void highlightControl(const juce::String& controlType, int controlIndex);
+    void updateMappingData();
     
 private:
     // Represents a single control with its mappings
@@ -101,7 +102,6 @@ private:
         bool highlighted = false;
     };
     
-    void updateMappingData();
     void addMapping(ControlItem* controlItem);
     void updateAppMappings();
     juce::String getControlName(const juce::String& controlType, int index) const;

@@ -20,13 +20,17 @@ MidiMappingEditor::MidiMappingEditor(StandaloneApp& app)
     addAndMakeVisible(viewport.get());
     
     // Set up buttons
-    exportButton.setButtonText("Export Mappings");
+    exportButton.setButtonText("Export");
     exportButton.addListener(this);
     addAndMakeVisible(exportButton);
     
-    loadButton.setButtonText("Load Mappings");
+    loadButton.setButtonText("Load");
     loadButton.addListener(this);
     addAndMakeVisible(loadButton);
+    
+    resetButton.setButtonText("Reset");
+    resetButton.addListener(this);
+    addAndMakeVisible(resetButton);
 }
 
 MidiMappingEditor::~MidiMappingEditor() = default;
@@ -45,10 +49,12 @@ void MidiMappingEditor::resized()
     buttonArea.reduce(10, 5);
     
     // Position the buttons
-    auto buttonWidth = (buttonArea.getWidth() - 10) / 2;
+    auto buttonWidth = (buttonArea.getWidth() - 20) / 3; // Three buttons with spacing
     exportButton.setBounds(buttonArea.removeFromLeft(buttonWidth));
     buttonArea.removeFromLeft(10);
-    loadButton.setBounds(buttonArea);
+    loadButton.setBounds(buttonArea.removeFromLeft(buttonWidth));
+    buttonArea.removeFromLeft(10);
+    resetButton.setBounds(buttonArea);
     
     // Set the viewport to fill the remaining space
     viewport->setBounds(bounds);
@@ -74,6 +80,10 @@ void MidiMappingEditor::buttonClicked(juce::Button* button)
     {
         loadMappings();
     }
+    else if (button == &resetButton)
+    {
+        resetMappings();
+    }
 }
 
 void MidiMappingEditor::exportMappings()
@@ -84,6 +94,17 @@ void MidiMappingEditor::exportMappings()
 void MidiMappingEditor::loadMappings()
 {
     accordion->loadMappings();
+    // Save the loaded mappings to make them persistent
+    app.saveMidiMappings();
+}
+
+void MidiMappingEditor::resetMappings()
+{
+    // Reset mappings to defaults
+    app.resetMidiMappingsToDefaults();
+    
+    // Update the accordion to reflect the changes
+    accordion->updateMappingData();
 }
 
 void MidiMappingEditor::highlightControl(const juce::String& controlType, int controlIndex)

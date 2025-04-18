@@ -55,6 +55,14 @@ public:
     // Notify the MIDI editor window when a gamepad control is activated
     void notifyGamepadControlActivated(const juce::String& controlType, int controlIndex);
     
+    // Save and load MIDI mappings
+    void saveMidiMappings();
+    void loadMidiMappings();
+    void resetMidiMappingsToDefaults();
+    
+    // Get the path to the mappings file
+    juce::File getMidiMappingsFile() const;
+    
 private:
     // About window component
     class AboutWindow : public juce::DialogWindow

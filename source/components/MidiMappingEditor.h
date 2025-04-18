@@ -25,6 +25,9 @@ public:
     void exportMappings();
     void loadMappings();
     
+    // Reset mappings to defaults
+    void resetMappings();
+    
     // Highlight a control in the editor
     void highlightControl(const juce::String& controlType, int controlIndex);
     
@@ -36,6 +39,7 @@ private:
     // Buttons
     juce::TextButton exportButton;
     juce::TextButton loadButton;
+    juce::TextButton resetButton;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiMappingEditor)
 }; 
