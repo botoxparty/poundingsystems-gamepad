@@ -300,9 +300,7 @@ void StandaloneApp::handleLogoClick()
 
 void StandaloneApp::openMidiMappingEditor()
 {
-    // Create a new window that will delete itself when closed
-    auto* window = new MidiMappingEditorWindow(*this);
-    window->setVisible(true);
+    MidiMappingEditorWindow::showOrBringToFront(*this);
 }
 
 void StandaloneApp::buttonClicked(juce::Button* button)

@@ -11,11 +11,33 @@
 class MidiMappingEditorWindow : public juce::DialogWindow
 {
 public:
+    static MidiMappingEditorWindow* getExistingInstance()
+    {
+        return existingInstance;
+    }
+
+    static MidiMappingEditorWindow* showOrBringToFront(StandaloneApp& app)
+    {
+        if (existingInstance != nullptr)
+        {
+            existingInstance->toFront(true);
+            return existingInstance;
+        }
+
+        auto* window = new MidiMappingEditorWindow(app);
+        window->setVisible(true);
+        return window;
+    }
+
+private:
     MidiMappingEditorWindow(StandaloneApp& app)
         : DialogWindow("MIDI Mapping Editor", 
                       juce::Colours::lightgrey,
                       true)
     {
+        jassert(existingInstance == nullptr); // Should never create a second instance
+        existingInstance = this;
+
         setUsingNativeTitleBar(true);
         auto editorComponent = std::make_unique<MidiMappingEditor>(app);
         
@@ -29,7 +51,7 @@ public:
     
     void closeButtonPressed() override
     {
-        // Delete this window when it's closed
+        existingInstance = nullptr;
         delete this;
     }
     
@@ -37,5 +59,8 @@ private:
     // Custom look and feel
     ModernLookAndFeel modernLookAndFeel;
     
+    // Static instance pointer for singleton pattern
+    static MidiMappingEditorWindow* existingInstance;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiMappingEditorWindow)
 }; 
