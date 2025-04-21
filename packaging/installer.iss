@@ -1,4 +1,4 @@
-#define Version "0.0.3"
+#define Version "0.0.4"
 #define ProjectName GetEnv('PROJECT_NAME')
 #define ProductName GetEnv('PRODUCT_NAME')
 #define Publisher GetEnv('COMPANY_NAME')
