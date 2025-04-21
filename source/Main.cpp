@@ -9,7 +9,7 @@
 #endif
 
 #ifndef JUCE_APPLICATION_VERSION_STRING
-#define JUCE_APPLICATION_VERSION_STRING "1.0.0"
+#define JUCE_APPLICATION_VERSION_STRING "0.0.4"
 #endif
 
 class GamepadMidiApplication : public juce::JUCEApplication

@@ -10,10 +10,10 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(FetchContent)
 
 # Add a version manually if PamplejuceVersion is not available
-set(CURRENT_VERSION "0.0.3")
+set(CURRENT_VERSION "0.0.4")
 set(MAJOR_VERSION "0")
 set(MINOR_VERSION "0")
-set(PATCH_VERSION "3")
+set(PATCH_VERSION "4")
 
 # Add debug symbols configuration for Release builds
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -g")
