@@ -15,8 +15,8 @@ env:
   BUILD_DIR: Builds
   DISPLAY: :0 # linux pluginval needs this
   HOMEBREW_NO_INSTALL_CLEANUP: 1
-  SCCACHE_GHA_ENABLED: true
-  SCCACHE_CACHE_MULTIARCH: 1
+  SCCACHE_GHA_VERSION: "1"
+  SCCACHE_CACHE_SIZE: "2G"
   IPP_DIR: C:\Program Files (x86)\Intel\oneAPI\ipp\latest\lib\cmake\ipp
 
 defaults:
@@ -112,7 +112,7 @@ jobs:
           token: ${{ secrets.GH_PAT }}
           
       - name: Cache the build
-        uses: mozilla-actions/sccache-action@v0.0.7
+        uses: mozilla-actions/sccache-action@v0.0.8
 
       - name: Import Certificates (macOS)
         uses: sudara/basic-macos-keychain-action@v1
