@@ -1,27 +1,6 @@
 #pragma once
 
 namespace MidiCC {
-    // Face Buttons (20-23)
-    constexpr int A_BUTTON = 20;
-    constexpr int B_BUTTON = 21;
-    constexpr int X_BUTTON = 22;
-    constexpr int Y_BUTTON = 23;
-
-    // Select/Home/Cancel Buttons (24-26)
-    constexpr int SELECT_BUTTON = 24;
-    constexpr int HOME_BUTTON = 25;
-    constexpr int CANCEL_BUTTON = 26;
-
-    // Shoulder Buttons (29-30)
-    constexpr int L1_BUTTON = 29;
-    constexpr int R1_BUTTON = 30;
-
-    // D-Pad (31-34)
-    constexpr int DPAD_UP = 31;
-    constexpr int DPAD_DOWN = 32;
-    constexpr int DPAD_LEFT = 33;
-    constexpr int DPAD_RIGHT = 34;
-
     // Analog Sticks (1-4)
     constexpr int LEFT_STICK_X = 1;
     constexpr int LEFT_STICK_Y = 2;
@@ -32,19 +11,44 @@ namespace MidiCC {
     constexpr int L2_TRIGGER = 5;
     constexpr int R2_TRIGGER = 6;
 
-    // Touchpad (35-38)
-    constexpr int TOUCHPAD_X = 35;
-    constexpr int TOUCHPAD_Y = 36;
-    constexpr int TOUCHPAD_PRESSURE = 37;
-    constexpr int TOUCHPAD_BUTTON = 38;
+    // Face Buttons (7-10)
+    constexpr int A_BUTTON = 7;
+    constexpr int B_BUTTON = 8;
+    constexpr int X_BUTTON = 9;
+    constexpr int Y_BUTTON = 10;
 
-    // Gyroscope (39-41)
-    constexpr int GYRO_X = 39;
-    constexpr int GYRO_Y = 40;
-    constexpr int GYRO_Z = 41;
+    // Select/Home/Cancel Buttons (11-13)
+    constexpr int SELECT_BUTTON = 11;
+    constexpr int HOME_BUTTON = 12;
+    constexpr int CANCEL_BUTTON = 13;
 
-    // Accelerometer CCs (42-44)
-    constexpr int ACCEL_X = 42;
-    constexpr int ACCEL_Y = 43;
-    constexpr int ACCEL_Z = 44;
+    // Shoulder Buttons (14-15)
+    constexpr int L1_BUTTON = 14;
+    constexpr int R1_BUTTON = 15;
+
+    // Stick Buttons (16-17)
+    constexpr int LEFT_STICK_BUTTON = 16;
+    constexpr int RIGHT_STICK_BUTTON = 17;
+
+    // D-Pad (18-21)
+    constexpr int DPAD_UP = 18;
+    constexpr int DPAD_DOWN = 19;
+    constexpr int DPAD_LEFT = 20;
+    constexpr int DPAD_RIGHT = 21;
+
+    // Touchpad (22-25)
+    constexpr int TOUCHPAD_X = 22;
+    constexpr int TOUCHPAD_Y = 23;
+    constexpr int TOUCHPAD_PRESSURE = 24;
+    constexpr int TOUCHPAD_BUTTON = 25;
+
+    // Gyroscope (26-28)
+    constexpr int GYRO_X = 26;
+    constexpr int GYRO_Y = 27;
+    constexpr int GYRO_Z = 28;
+
+    // Accelerometer CCs (29-31)
+    constexpr int ACCEL_X = 29;
+    constexpr int ACCEL_Y = 30;
+    constexpr int ACCEL_Z = 31;
 } 

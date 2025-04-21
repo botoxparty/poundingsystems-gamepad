@@ -221,74 +221,137 @@ void StandaloneApp::handleGamepadStateChange()
 
 void StandaloneApp::setupMidiMappings()
 {
-    // Initialize axis mappings with multiple MIDI CCs per control
-    for (int i = 0; i < GamepadManager::MAX_AXES; ++i)
-    {
-        axisMappings[static_cast<size_t>(i)].clear();
-        
-        // Add default mapping for each axis
-        MidiMapping defaultMapping;
-        defaultMapping.type = MidiMapping::Type::ControlChange;
-        defaultMapping.channel = 1;
-        defaultMapping.ccNumber = i + 1; // CC 1-8 for axes
-        defaultMapping.noteNumber = 0;  // Not used for CC
-        defaultMapping.minValue = 0;
-        defaultMapping.maxValue = 127;
-        defaultMapping.isButton = false;
-        
-        axisMappings[static_cast<size_t>(i)].push_back(defaultMapping);
+    // Initialize axis mappings
+    axisMappings[0].clear();  // Left Stick X
+    axisMappings[1].clear();  // Left Stick Y
+    axisMappings[2].clear();  // Right Stick X
+    axisMappings[3].clear();  // Right Stick Y
+    axisMappings[4].clear();  // L2 Trigger
+    axisMappings[5].clear();  // R2 Trigger
+    
+    // Set up axis mappings with their corresponding CC numbers
+    MidiMapping axisMapping;
+    axisMapping.type = MidiMapping::Type::ControlChange;
+    axisMapping.channel = 1;
+    axisMapping.noteNumber = 0;  // Not used for CC
+    axisMapping.minValue = 0;
+    axisMapping.maxValue = 127;
+    axisMapping.isButton = false;
+
+    axisMapping.ccNumber = MidiCC::LEFT_STICK_X;
+    axisMappings[0].push_back(axisMapping);
+    
+    axisMapping.ccNumber = MidiCC::LEFT_STICK_Y;
+    axisMappings[1].push_back(axisMapping);
+    
+    axisMapping.ccNumber = MidiCC::RIGHT_STICK_X;
+    axisMappings[2].push_back(axisMapping);
+    
+    axisMapping.ccNumber = MidiCC::RIGHT_STICK_Y;
+    axisMappings[3].push_back(axisMapping);
+    
+    axisMapping.ccNumber = MidiCC::L2_TRIGGER;
+    axisMappings[4].push_back(axisMapping);
+    
+    axisMapping.ccNumber = MidiCC::R2_TRIGGER;
+    axisMappings[5].push_back(axisMapping);
+    
+    // Initialize button mappings
+    for (auto& mapping : buttonMappings) {
+        mapping.clear();
     }
     
-    // Initialize button mappings with multiple MIDI CCs per control
-    for (int i = 0; i < GamepadManager::MAX_BUTTONS; ++i)
-    {
-        buttonMappings[static_cast<size_t>(i)].clear();
-        
-        // Add default mapping for each button
-        MidiMapping defaultMapping;
-        defaultMapping.type = MidiMapping::Type::ControlChange;
-        defaultMapping.channel = 1;
-        defaultMapping.ccNumber = i + 16; // CC 16-31 for buttons
-        defaultMapping.noteNumber = 0;  // Not used for CC
-        defaultMapping.minValue = 0;
-        defaultMapping.maxValue = 127;
-        defaultMapping.isButton = true;
-        
-        buttonMappings[static_cast<size_t>(i)].push_back(defaultMapping);
-    }
+    // Set up button mappings with their corresponding CC numbers
+    MidiMapping buttonMapping;
+    buttonMapping.type = MidiMapping::Type::ControlChange;
+    buttonMapping.channel = 1;
+    buttonMapping.noteNumber = 0;  // Not used for CC
+    buttonMapping.minValue = 0;
+    buttonMapping.maxValue = 127;
+    buttonMapping.isButton = true;
+
+    // Face Buttons
+    buttonMapping.ccNumber = MidiCC::A_BUTTON;
+    buttonMappings[0].push_back(buttonMapping);
+    
+    buttonMapping.ccNumber = MidiCC::B_BUTTON;
+    buttonMappings[1].push_back(buttonMapping);
+    
+    buttonMapping.ccNumber = MidiCC::X_BUTTON;
+    buttonMappings[2].push_back(buttonMapping);
+    
+    buttonMapping.ccNumber = MidiCC::Y_BUTTON;
+    buttonMappings[3].push_back(buttonMapping);
+    
+    // System Buttons
+    buttonMapping.ccNumber = MidiCC::SELECT_BUTTON;
+    buttonMappings[4].push_back(buttonMapping);
+    
+    buttonMapping.ccNumber = MidiCC::HOME_BUTTON;
+    buttonMappings[5].push_back(buttonMapping);
+    
+    buttonMapping.ccNumber = MidiCC::CANCEL_BUTTON;
+    buttonMappings[6].push_back(buttonMapping);
+    
+    // Stick Buttons
+    buttonMapping.ccNumber = MidiCC::LEFT_STICK_BUTTON;
+    buttonMappings[7].push_back(buttonMapping);
+    
+    buttonMapping.ccNumber = MidiCC::RIGHT_STICK_BUTTON;
+    buttonMappings[8].push_back(buttonMapping);
+    
+    // Shoulder Buttons
+    buttonMapping.ccNumber = MidiCC::L1_BUTTON;
+    buttonMappings[9].push_back(buttonMapping);
+    
+    buttonMapping.ccNumber = MidiCC::R1_BUTTON;
+    buttonMappings[10].push_back(buttonMapping);
+    
+    // D-Pad
+    buttonMapping.ccNumber = MidiCC::DPAD_UP;
+    buttonMappings[11].push_back(buttonMapping);
+    
+    buttonMapping.ccNumber = MidiCC::DPAD_DOWN;
+    buttonMappings[12].push_back(buttonMapping);
+    
+    buttonMapping.ccNumber = MidiCC::DPAD_LEFT;
+    buttonMappings[13].push_back(buttonMapping);
+    
+    buttonMapping.ccNumber = MidiCC::DPAD_RIGHT;
+    buttonMappings[14].push_back(buttonMapping);
 
     // Initialize gyroscope mappings
     for (int i = 0; i < 3; ++i)
     {
-        gyroMappings[static_cast<size_t>(i)].clear();
+        gyroMappings[i].clear();
         
-        MidiMapping defaultMapping;
-        defaultMapping.type = MidiMapping::Type::ControlChange;
-        defaultMapping.channel = 1;
-        defaultMapping.ccNumber = MidiCC::GYRO_X + i; // CC 39-41 for gyro
-        defaultMapping.noteNumber = 0;  // Not used for CC
-        defaultMapping.minValue = 0;
-        defaultMapping.maxValue = 127;
-        defaultMapping.isButton = false;
+        MidiMapping gyroMapping;
+        gyroMapping.type = MidiMapping::Type::ControlChange;
+        gyroMapping.channel = 1;
+        gyroMapping.ccNumber = MidiCC::GYRO_X + i;  // GYRO_X, GYRO_Y, GYRO_Z
+        gyroMapping.noteNumber = 0;
+        gyroMapping.minValue = 0;
+        gyroMapping.maxValue = 127;
+        gyroMapping.isButton = false;
         
-        gyroMappings[static_cast<size_t>(i)].push_back(defaultMapping);
+        gyroMappings[i].push_back(gyroMapping);
     }
 
     // Initialize accelerometer mappings
     for (int i = 0; i < 3; ++i)
     {
-        accelerometerMappings[static_cast<size_t>(i)].clear();
+        accelerometerMappings[i].clear();
         
-        MidiMapping defaultMapping;
-        defaultMapping.type = MidiMapping::Type::ControlChange;
-        defaultMapping.channel = 1;
-        defaultMapping.ccNumber = MidiCC::ACCEL_X + i; // CC 42-44 for accelerometer
-        defaultMapping.noteNumber = 0;  // Not used for CC
-        defaultMapping.minValue = 0;
-        defaultMapping.maxValue = 127;
-        defaultMapping.isButton = false;
+        MidiMapping accelMapping;
+        accelMapping.type = MidiMapping::Type::ControlChange;
+        accelMapping.channel = 1;
+        accelMapping.ccNumber = MidiCC::ACCEL_X + i;  // ACCEL_X, ACCEL_Y, ACCEL_Z
+        accelMapping.noteNumber = 0;
+        accelMapping.minValue = 0;
+        accelMapping.maxValue = 127;
+        accelMapping.isButton = false;
         
-        accelerometerMappings[static_cast<size_t>(i)].push_back(defaultMapping);
+        accelerometerMappings[i].push_back(accelMapping);
     }
 }
 
